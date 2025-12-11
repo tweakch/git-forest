@@ -1,3 +1,5 @@
+using GitForest.Core;
+
 namespace GitForest.Core.Services;
 
 /// <summary>

@@ -1,5 +1,4 @@
 ﻿using System.CommandLine;
-using System.CommandLine.Invocation;
 using GitForest.Core;
 
 var rootCommand = new RootCommand("git-forest - A .NET Aspire-based CLI for managing git repository forests");

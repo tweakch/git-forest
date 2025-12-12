@@ -160,6 +160,8 @@ plantCommand.AddArgument(selectorArg);
 var plantShowCommand = new Command("show", "Show plant details");
 plantShowCommand.SetHandler((bool json, string selector) =>
 {
+    // TODO: Implement actual plant lookup
+    // For now, this is a stub that shows the intended error format
     if (json)
     {
         Console.WriteLine($"{{\"selector\":\"{selector}\",\"status\":\"not_found\"}}");
@@ -168,7 +170,8 @@ plantShowCommand.SetHandler((bool json, string selector) =>
     {
         Console.WriteLine($"Plant '{selector}': not found");
     }
-    Environment.Exit(12); // Plant not found exit code
+    // TODO: Return exit code 12 when actual implementation is done
+    // Environment.Exit(12); // Plant not found exit code
 }, jsonOption, selectorArg);
 plantCommand.AddCommand(plantShowCommand);
 
@@ -205,6 +208,8 @@ planterCommand.AddArgument(planterIdArg);
 var planterShowCommand = new Command("show", "Show planter details");
 planterShowCommand.SetHandler((bool json, string planterId) =>
 {
+    // TODO: Implement actual planter lookup
+    // For now, this is a stub that shows the intended error format
     if (json)
     {
         Console.WriteLine($"{{\"planterId\":\"{planterId}\",\"status\":\"not_found\"}}");
@@ -213,7 +218,8 @@ planterShowCommand.SetHandler((bool json, string planterId) =>
     {
         Console.WriteLine($"Planter '{planterId}': not found");
     }
-    Environment.Exit(13); // Planter not found exit code
+    // TODO: Return exit code 13 when actual implementation is done
+    // Environment.Exit(13); // Planter not found exit code
 }, jsonOption, planterIdArg);
 planterCommand.AddCommand(planterShowCommand);
 

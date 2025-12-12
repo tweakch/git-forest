@@ -1,108 +1,267 @@
 ﻿using System.CommandLine;
 using GitForest.Core;
 
-var rootCommand = new RootCommand("git-forest - A .NET Aspire-based CLI for managing git repository forests");
+var rootCommand = new RootCommand("git-forest (gf) - CLI for managing repository forests");
+
+// Global --json option
+var jsonOption = new Option<bool>("--json", "Output in JSON format");
+rootCommand.AddGlobalOption(jsonOption);
 
 // Init command
-var initCommand = new Command("init", "Initialize a new forest in the current directory");
-initCommand.SetHandler(() =>
+var initCommand = new Command("init", "Initialize forest in current git repo");
+var forceOption = new Option<bool>("--force", "Force re-initialization");
+var dirOption = new Option<string>("--dir", () => ".git-forest", "Directory for forest state");
+initCommand.AddOption(forceOption);
+initCommand.AddOption(dirOption);
+initCommand.SetHandler((bool json, bool force, string dir) =>
 {
-    Console.WriteLine("Initializing forest...");
-    Console.WriteLine("Forest initialized successfully!");
-});
+    if (json)
+    {
+        Console.WriteLine("{\"status\":\"initialized\",\"directory\":\".git-forest\"}");
+    }
+    else
+    {
+        Console.WriteLine("initialized (.git-forest)");
+    }
+}, jsonOption, forceOption, dirOption);
 rootCommand.AddCommand(initCommand);
 
 // Status command
-var statusCommand = new Command("status", "Show the status of the current forest");
-statusCommand.SetHandler(() =>
+var statusCommand = new Command("status", "Show forest status");
+statusCommand.SetHandler((bool json) =>
 {
-    Console.WriteLine("Forest Status:");
-    Console.WriteLine("No plants found in the forest.");
-});
+    if (json)
+    {
+        Console.WriteLine("{\"forest\":\"initialized\",\"repo\":\"origin/main\",\"plans\":0,\"plants\":0,\"planters\":0,\"lock\":\"free\"}");
+    }
+    else
+    {
+        Console.WriteLine("Forest: initialized  Repo: origin/main");
+        Console.WriteLine("Plans: 0 installed");
+        Console.WriteLine("Plants: planned 0 | planted 0 | growing 0 | harvestable 0 | harvested 0");
+        Console.WriteLine("Planters: 0 available | 0 active");
+        Console.WriteLine("Lock: free");
+    }
+}, jsonOption);
 rootCommand.AddCommand(statusCommand);
 
-// Plant command
-var plantCommand = new Command("plant", "Add a new plant (repository) to the forest");
-var plantNameOption = new Option<string>("--name", "Name of the plant");
-var plantPathOption = new Option<string>("--path", "Path to the repository");
-plantCommand.AddOption(plantNameOption);
-plantCommand.AddOption(plantPathOption);
-plantCommand.SetHandler((string name, string path) =>
+// Config command
+var configCommand = new Command("config", "Manage configuration");
+var configShowCommand = new Command("show", "Show configuration");
+var effectiveOption = new Option<bool>("--effective", "Show effective configuration");
+configShowCommand.AddOption(effectiveOption);
+configShowCommand.SetHandler((bool json, bool effective) =>
 {
-    Console.WriteLine($"Planting '{name}' at '{path}'...");
-    Console.WriteLine("Plant added successfully!");
-}, plantNameOption, plantPathOption);
-rootCommand.AddCommand(plantCommand);
+    if (json)
+    {
+        Console.WriteLine("{\"config\":{}}");
+    }
+    else
+    {
+        Console.WriteLine("Configuration: (empty)");
+    }
+}, jsonOption, effectiveOption);
+configCommand.AddCommand(configShowCommand);
+rootCommand.AddCommand(configCommand);
 
-// Plants command
-var plantsCommand = new Command("plants", "List all plants in the forest");
-plantsCommand.SetHandler(() =>
+// Plans commands
+var plansCommand = new Command("plans", "Manage plans");
+
+var plansListCommand = new Command("list", "List installed plans");
+plansListCommand.SetHandler((bool json) =>
 {
-    Console.WriteLine("Plants in the forest:");
-    Console.WriteLine("No plants found.");
-});
+    if (json)
+    {
+        Console.WriteLine("{\"plans\":[]}");
+    }
+    else
+    {
+        Console.WriteLine("No plans installed");
+    }
+}, jsonOption);
+plansCommand.AddCommand(plansListCommand);
+
+var plansInstallCommand = new Command("install", "Install a plan");
+var sourceArg = new Argument<string>("source", "Plan source (GitHub slug, URL, or local path)");
+plansInstallCommand.AddArgument(sourceArg);
+plansInstallCommand.SetHandler((bool json, string source) =>
+{
+    if (json)
+    {
+        Console.WriteLine($"{{\"status\":\"installed\",\"source\":\"{source}\"}}");
+    }
+    else
+    {
+        Console.WriteLine($"Installed plan from: {source}");
+    }
+}, jsonOption, sourceArg);
+plansCommand.AddCommand(plansInstallCommand);
+
+rootCommand.AddCommand(plansCommand);
+
+// Plan command (single plan operations)
+var planCommand = new Command("plan", "Manage a specific plan");
+var planIdArg = new Argument<string>("plan-id", "Plan identifier");
+planCommand.AddArgument(planIdArg);
+
+var planReconcileCommand = new Command("reconcile", "Reconcile plan to desired state");
+var updateOption = new Option<bool>("--update", "Update plan before reconciling");
+var dryRunOption = new Option<bool>("--dry-run", "Show what would be done without applying");
+planReconcileCommand.AddOption(updateOption);
+planReconcileCommand.AddOption(dryRunOption);
+planReconcileCommand.SetHandler((bool json, string planId, bool update, bool dryRun) =>
+{
+    if (json)
+    {
+        Console.WriteLine($"{{\"planId\":\"{planId}\",\"status\":\"reconciled\",\"dryRun\":{dryRun.ToString().ToLower()}}}");
+    }
+    else
+    {
+        Console.WriteLine($"Reconciling plan '{planId}'...");
+        Console.WriteLine("Planners: +0 ~0 -0");
+        Console.WriteLine("Planters: +0 ~0 -0");
+        Console.WriteLine("Plants:   +0 ~0 -0 (archived 0)");
+        Console.WriteLine(dryRun ? "done (dry-run)" : "done");
+    }
+}, jsonOption, planIdArg, updateOption, dryRunOption);
+planCommand.AddCommand(planReconcileCommand);
+
+rootCommand.AddCommand(planCommand);
+
+// Plants commands
+var plantsCommand = new Command("plants", "Manage plants");
+
+var plantsListCommand = new Command("list", "List plants");
+var statusFilterOption = new Option<string?>("--status", "Filter by status (planned|planted|growing|harvestable|harvested|archived)");
+var planFilterOption = new Option<string?>("--plan", "Filter by plan ID");
+plantsListCommand.AddOption(statusFilterOption);
+plantsListCommand.AddOption(planFilterOption);
+plantsListCommand.SetHandler((bool json, string? status, string? plan) =>
+{
+    if (json)
+    {
+        Console.WriteLine("{\"plants\":[]}");
+    }
+    else
+    {
+        Console.WriteLine("Key                             Status   Title                         Plan   Planter");
+        Console.WriteLine("No plants found");
+    }
+}, jsonOption, statusFilterOption, planFilterOption);
+plantsCommand.AddCommand(plantsListCommand);
+
 rootCommand.AddCommand(plantsCommand);
 
-// Planter command
-var planterCommand = new Command("planter", "Add or view a planter (contributor)");
-var planterNameOption = new Option<string?>("--name", "Name of the planter");
-var planterEmailOption = new Option<string?>("--email", "Email of the planter");
-planterCommand.AddOption(planterNameOption);
-planterCommand.AddOption(planterEmailOption);
-planterCommand.SetHandler((string? name, string? email) =>
+// Plant command (single plant operations)
+var plantCommand = new Command("plant", "Manage a specific plant");
+var selectorArg = new Argument<string>("selector", "Plant selector (key, slug, or P01)");
+plantCommand.AddArgument(selectorArg);
+
+var plantShowCommand = new Command("show", "Show plant details");
+plantShowCommand.SetHandler((bool json, string selector) =>
 {
-    if (name != null && email != null)
+    if (json)
     {
-        Console.WriteLine($"Adding planter '{name}' ({email})...");
-        Console.WriteLine("Planter added successfully!");
+        Console.WriteLine($"{{\"selector\":\"{selector}\",\"status\":\"not_found\"}}");
     }
     else
     {
-        Console.WriteLine("Current planter information:");
-        Console.WriteLine("No planter configured.");
+        Console.WriteLine($"Plant '{selector}': not found");
     }
-}, planterNameOption, planterEmailOption);
-rootCommand.AddCommand(planterCommand);
+    Environment.Exit(12); // Plant not found exit code
+}, jsonOption, selectorArg);
+plantCommand.AddCommand(plantShowCommand);
 
-// Planters command
-var plantersCommand = new Command("planters", "List all planters in the forest");
-plantersCommand.SetHandler(() =>
+rootCommand.AddCommand(plantCommand);
+
+// Planters commands
+var plantersCommand = new Command("planters", "Manage planters");
+
+var plantersListCommand = new Command("list", "List planters");
+var builtinOption = new Option<bool>("--builtin", "Show only built-in planters");
+var customOption = new Option<bool>("--custom", "Show only custom planters");
+plantersListCommand.AddOption(builtinOption);
+plantersListCommand.AddOption(customOption);
+plantersListCommand.SetHandler((bool json, bool builtin, bool custom) =>
 {
-    Console.WriteLine("Planters in the forest:");
-    Console.WriteLine("No planters found.");
-});
+    if (json)
+    {
+        Console.WriteLine("{\"planters\":[]}");
+    }
+    else
+    {
+        Console.WriteLine("No planters configured");
+    }
+}, jsonOption, builtinOption, customOption);
+plantersCommand.AddCommand(plantersListCommand);
+
 rootCommand.AddCommand(plantersCommand);
 
-// Planner command
-var plannerCommand = new Command("planner", "Add or view a planner (organizer/manager)");
-var plannerNameOption = new Option<string?>("--name", "Name of the planner");
-var plannerEmailOption = new Option<string?>("--email", "Email of the planner");
-var plannerRoleOption = new Option<string?>("--role", "Role of the planner");
-plannerCommand.AddOption(plannerNameOption);
-plannerCommand.AddOption(plannerEmailOption);
-plannerCommand.AddOption(plannerRoleOption);
-plannerCommand.SetHandler((string? name, string? email, string? role) =>
+// Planter command (single planter operations)
+var planterCommand = new Command("planter", "Manage a specific planter");
+var planterIdArg = new Argument<string>("planter-id", "Planter identifier");
+planterCommand.AddArgument(planterIdArg);
+
+var planterShowCommand = new Command("show", "Show planter details");
+planterShowCommand.SetHandler((bool json, string planterId) =>
 {
-    if (name != null && email != null)
+    if (json)
     {
-        Console.WriteLine($"Adding planner '{name}' ({email}) with role '{role ?? "organizer"}'...");
-        Console.WriteLine("Planner added successfully!");
+        Console.WriteLine($"{{\"planterId\":\"{planterId}\",\"status\":\"not_found\"}}");
     }
     else
     {
-        Console.WriteLine("Current planner information:");
-        Console.WriteLine("No planner configured.");
+        Console.WriteLine($"Planter '{planterId}': not found");
     }
-}, plannerNameOption, plannerEmailOption, plannerRoleOption);
-rootCommand.AddCommand(plannerCommand);
+    Environment.Exit(13); // Planter not found exit code
+}, jsonOption, planterIdArg);
+planterCommand.AddCommand(planterShowCommand);
 
-// Planners command
-var plannersCommand = new Command("planners", "List all planners in the forest");
-plannersCommand.SetHandler(() =>
+rootCommand.AddCommand(planterCommand);
+
+// Planners commands
+var plannersCommand = new Command("planners", "Manage planners");
+
+var plannersListCommand = new Command("list", "List planners");
+var plannerPlanFilterOption = new Option<string?>("--plan", "Filter by plan ID");
+plannersListCommand.AddOption(plannerPlanFilterOption);
+plannersListCommand.SetHandler((bool json, string? plan) =>
 {
-    Console.WriteLine("Planners in the forest:");
-    Console.WriteLine("No planners found.");
-});
+    if (json)
+    {
+        Console.WriteLine("{\"planners\":[]}");
+    }
+    else
+    {
+        Console.WriteLine("No planners configured");
+    }
+}, jsonOption, plannerPlanFilterOption);
+plannersCommand.AddCommand(plannersListCommand);
+
 rootCommand.AddCommand(plannersCommand);
+
+// Planner command (single planner operations)
+var plannerCommand = new Command("planner", "Manage a specific planner");
+var plannerIdArg = new Argument<string>("planner-id", "Planner identifier");
+plannerCommand.AddArgument(plannerIdArg);
+
+var plannerRunCommand = new Command("run", "Run planner");
+var plannerPlanOption = new Option<string>("--plan", "Plan ID to run against") { IsRequired = true };
+plannerRunCommand.AddOption(plannerPlanOption);
+plannerRunCommand.SetHandler((bool json, string plannerId, string plan) =>
+{
+    if (json)
+    {
+        Console.WriteLine($"{{\"plannerId\":\"{plannerId}\",\"plan\":\"{plan}\",\"status\":\"completed\"}}");
+    }
+    else
+    {
+        Console.WriteLine($"Running planner '{plannerId}' for plan '{plan}'...");
+        Console.WriteLine("done");
+    }
+}, jsonOption, plannerIdArg, plannerPlanOption);
+plannerCommand.AddCommand(plannerRunCommand);
+
+rootCommand.AddCommand(plannerCommand);
 
 return await rootCommand.InvokeAsync(args);

@@ -1,12 +1,14 @@
 namespace GitForest.Core;
 
 /// <summary>
-/// Represents a planner - an organizer/manager who coordinates the forest.
+/// Represents a planner - a deterministic generator that produces a desired set of Plants from a Plan.
 /// </summary>
 public class Planner
 {
+    public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public List<string> ManagedForests { get; set; } = new();
-    public string Role { get; set; } = string.Empty;
+    public string PlanId { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public Dictionary<string, object> Configuration { get; set; } = new();
 }
+

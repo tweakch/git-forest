@@ -1,11 +1,15 @@
 namespace GitForest.Core;
 
 /// <summary>
-/// Represents a planter - a contributor/user who plants repositories.
+/// Represents a planter - an executor persona (agent) that proposes diffs/PRs for plants.
 /// </summary>
 public class Planter
 {
+    public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public List<string> PlantedRepositories { get; set; } = new();
+    public string Type { get; set; } = "builtin"; // builtin or custom
+    public string Origin { get; set; } = "plan"; // plan or user
+    public List<string> AssignedPlants { get; set; } = new();
+    public bool IsActive { get; set; } = false;
 }
+

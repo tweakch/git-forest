@@ -1,13 +1,35 @@
 namespace GitForest.Core;
 
 /// <summary>
-/// Represents a plant in the forest - an individual git repository or tree.
+/// Represents a plant - a concrete work item with stable key and lifecycle facts.
 /// </summary>
 public class Plant
 {
-    public string Name { get; set; } = string.Empty;
-    public string Path { get; set; } = string.Empty;
+    /// <summary>
+    /// Stable plant key in format: planId:plantSlug (e.g., sample:backend-memory-hygiene)
+    /// </summary>
+    public string Key { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Plant slug (unique within a plan)
+    /// </summary>
+    public string Slug { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Plan ID this plant belongs to
+    /// </summary>
+    public string PlanId { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Status: planned, planted, growing, harvestable, harvested, archived
+    /// </summary>
+    public string Status { get; set; } = "planned";
+    
+    public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public DateTime PlantedDate { get; set; }
-    public string PlantedBy { get; set; } = string.Empty;
+    public List<string> AssignedPlanters { get; set; } = new();
+    public List<string> Branches { get; set; } = new();
+    public DateTime CreatedDate { get; set; }
+    public DateTime? LastActivityDate { get; set; }
 }
+

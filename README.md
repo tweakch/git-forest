@@ -6,40 +6,43 @@ A .NET Aspire-based CLI for managing collections of git repositories as a unifie
 
 git-forest is a powerful command-line tool that helps you manage multiple git repositories as a cohesive unit called a "forest". It provides an intuitive way to organize, track, and coordinate work across multiple related repositories.
 
+Design goals: **idempotent**, **deterministic IDs**, **reconcile desired state**, **automation-friendly output**, **clear ownership**, **safe concurrency**.
+
 ## Core Concepts
 
-### 🌱 Plants
-**Plants** represent individual git repositories or trees in your forest. Each plant is a standalone repository that grows with commits, branches, and tags. Just as a plant in nature grows from a seed, a git repository grows from its initial commit.
+### 📦 Plan
+**Plans** are versioned packages that define the desired forest intent. A plan includes:
+- Planners (generators)
+- Planters (executors)
+- Plant templates
+- Scopes and policies
 
-- Tracked by name and path
-- Contains git commit history (the tree)
-- Can be planted (added) or removed from the forest
-- Maintains its own identity while being part of the collective
+Plans can be sourced from GitHub, URLs, or local paths.
 
-### 🌳 Trees
-**Trees** refer to the git commit history within each plant. In git terminology, a tree is the structure of files and directories at a specific point in time. In git-forest, we embrace this metaphor - your commit history is the growth rings of your repository tree.
+### 🌱 Plant
+**Plants** are concrete work items with stable keys and lifecycle facts. Each plant has:
+- Stable key format: `planId:plantSlug` (e.g., `sample:backend-memory-hygiene`)
+- Status lifecycle: planned → planted → growing → harvestable → harvested
+- Assignments to planters
+- Branch tracking
+- Candidate diffs and harvest results
+
+### 🤖 Planter
+**Planters** are executor personas (agents) that propose diffs/PRs for plants under policies. They can be:
+- Built-in planters (provided by plans)
+- Custom planters (user-defined)
+
+Planters operate with capacity limits and follow execution modes (propose vs apply).
+
+### 🧠 Planner
+**Planners** are deterministic generators that produce a **desired set** of Plants from a Plan + repo context. Same plan + repo context always produces the same plant keys.
 
 ### 🌲 Forest
-The **Forest** is a collection of plants (repositories) that are managed together. A forest provides:
-- Centralized configuration
-- Unified view of multiple repositories
-- Coordinated operations across plants
-- Relationship tracking between repositories
+The **Forest** is the repo-local state stored under `.git-forest/` with optional user config.
 
-### 👷 Planters
-**Planters** are contributors and developers who plant new repositories and nurture existing ones. They are the active participants who:
-- Add new plants to the forest
-- Commit changes to repositories
-- Collaborate on development
-- Maintain the health of their plants
+## Command Alias
 
-### 📋 Planners
-**Planners** are organizers, managers, and technical leads who coordinate the forest. They:
-- Define forest strategy and structure
-- Oversee multiple forests
-- Coordinate between planters
-- Ensure forest health and sustainability
-- Plan the overall architecture
+The CLI can be invoked as `git-forest` (default) or `gf` (alias).
 
 ## Installation
 
@@ -58,43 +61,69 @@ dotnet run --project src/GitForest.Cli
 ## Quick Start
 
 ```bash
-# Initialize a new forest
+# Initialize a forest in current git repo
 git-forest init
 
-# Add a repository as a plant
-git-forest plant --name my-app --path ./my-app
-
-# Check the status of your forest
+# Check forest status
 git-forest status
 
+# Get status in JSON format
+git-forest status --json
+
+# Install a plan
+git-forest plans install tweakch/git-forest-plans/sample
+
+# List installed plans
+git-forest plans list
+
+# Reconcile a plan (create plants from plan)
+git-forest plan sample reconcile
+
 # List all plants
-git-forest plants
+git-forest plants list
 
-# Add yourself as a planter
-git-forest planter --name "Your Name" --email your.email@example.com
+# Show specific plant details
+git-forest plant sample:backend-hygiene show
 
-# List all planters
-git-forest planters
+# List planters
+git-forest planters list
 
-# Add a planner
-git-forest planner --name "Tech Lead" --email lead@example.com --role "Technical Lead"
+# Assign planter to plant
+git-forest plant sample:backend-hygiene assign backend-planter
 
-# List all planners
-git-forest planners
+# Run a planner
+git-forest planner code-analyzer run --plan sample
 ```
 
-## Commands
+## Command Structure
 
-- **init** - Initialize a new forest in the current directory
-- **status** - Show the status of the current forest
-- **plant** - Add a new plant (repository) to the forest
-- **plants** - List all plants in the forest
-- **planter** - Add or view a planter (contributor)
-- **planters** - List all planters in the forest
-- **planner** - Add or view a planner (organizer/manager)
-- **planners** - List all planners in the forest
+The CLI follows this layout:
 
-For detailed documentation on each command, see the [CLI documentation](./docs/cli/README.md).
+```text
+git-forest init                    # Initialize forest
+git-forest status                  # Show status
+git-forest config show             # Configuration
+
+git-forest plans list              # List plans
+git-forest plans install <source>  # Install plan
+git-forest plan <id> reconcile     # Reconcile plan
+
+git-forest plants list             # List plants
+git-forest plant <selector> show   # Show plant
+
+git-forest planters list           # List planters
+git-forest planter <id> show       # Show planter
+
+git-forest planners list           # List planners
+git-forest planner <id> run        # Run planner
+```
+
+### Global Options
+
+All commands support:
+- `--json` - Output in JSON format for automation
+
+For detailed documentation on each command, see the [CLI specification](./CLI.md).
 
 ## Project Structure
 
@@ -105,27 +134,61 @@ git-forest/
 │   └── GitForest.Cli/        # Command-line interface
 ├── config/                   # Configuration files
 ├── docs/
-│   └── cli/                  # CLI command documentation
+│   └── cli/                  # CLI command documentation (legacy)
 ├── .github/
+│   ├── copilot-instructions.md  # GitHub Copilot instructions
 │   └── workflows/            # GitHub Actions CI/CD
+├── CLI.md                    # CLI specification (v0.2)
 └── GitForest.sln            # Solution file
+```
+
+## On-Disk Layout
+
+When initialized, git-forest creates a `.git-forest/` directory:
+
+```text
+.git-forest/
+  forest.yaml              # Forest metadata
+  config.yaml              # Configuration
+  lock                     # Concurrency lock
+  plans/<plan-id>/         # Installed plans
+  plants/<planId__slug>/   # Plant state and history
+  planters/<planter-id>/   # Planter state
+  planners/<planner-id>/   # Planner definitions
+  logs/                    # Activity logs
 ```
 
 ## Technology Stack
 
 - **.NET 10.0** - Latest .NET runtime
-- **.NET Aspire** - Cloud-native application framework
+- **.NET Aspire** - Cloud-native application framework (via NuGet)
 - **System.CommandLine** - Modern CLI framework
 - **C#** - Primary language
 
+## Exit Codes
+
+For automation, the CLI provides stable exit codes:
+
+- `0` - Success
+- `2` - Invalid arguments / parse error
+- `10` - Forest not initialized
+- `11` - Plan not found
+- `12` - Plant not found / ambiguous selector
+- `13` - Planter not found
+- `20` - Schema validation failed
+- `23` - Lock timeout / busy
+- `30` - Git operation failed
+- `40` - Execution not permitted by policy
+
 ## Contributing
 
-We welcome contributions from both planters (developers) and planners (organizers)!
+Please follow the guidelines in [.github/copilot-instructions.md](.github/copilot-instructions.md) when contributing.
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+1. Review existing code patterns
+2. Keep changes minimal and focused
+3. Follow the CLI specification in CLI.md
+4. Update documentation for functional changes
+5. Submit a pull request
 
 ## License
 

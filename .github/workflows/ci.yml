@@ -30,6 +30,15 @@ jobs:
     
     - name: Test
       run: dotnet test --no-build --configuration Release --verbosity normal
+
+    - name: Pack (NuGet / .NET tool)
+      run: dotnet pack src/GitForest.Cli/GitForest.Cli.csproj --no-build --configuration Release --output ./artifacts/packages
+
+    - name: Upload package artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: git-forest-package
+        path: ./artifacts/packages
     
     - name: Publish
       run: dotnet publish src/GitForest.Cli/GitForest.Cli.csproj --configuration Release --output ./publish

@@ -5,7 +5,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.AppHost" Version="13.0.2" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
 
@@ -14,6 +13,28 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <!-- .NET Global Tool packaging -->
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <!-- Single command shim emitted by .NET tools. Alias `gf` is documented as a shell alias. -->
+    <ToolCommandName>git-forest</ToolCommandName>
+    <PackageId>git-forest</PackageId>
+    <Title>git-forest</Title>
+    <Description>A .NET CLI for managing collections of git repositories as a unified forest, enabling systematic codebase cultivation.</Description>
+    <PackageTags>git;automation;refactoring;dotnet;cli;developer-tools</PackageTags>
+    <RepositoryUrl>https://github.com/tweakch/git-forest</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <!-- Default local version; release workflow overrides with tag version -->
+    <VersionPrefix>0.1.0</VersionPrefix>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>

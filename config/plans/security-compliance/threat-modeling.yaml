@@ -1,0 +1,68 @@
+id: threat-modeling
+name: Threat Modeling
+version: 1.0.0
+category: security-compliance
+description: |
+  Surface attack vectors and trust boundaries.
+  This plan identifies potential security threats by analyzing system architecture,
+  identifying trust boundaries, and documenting attack vectors that need protection.
+
+focus_areas:
+  - Identify trust boundaries in the system
+  - Map data flows across boundaries
+  - Identify potential attack vectors
+  - Document threat scenarios (STRIDE)
+  - Validate authentication/authorization points
+  - Analyze external input handling
+
+scopes:
+  - security
+  - architecture
+  - risk-management
+
+planners:
+  - threat-detector
+  - boundary-analyzer
+  - attack-vector-mapper
+
+planters:
+  - threat-documenter
+  - security-hardener
+
+policies:
+  execution_mode: propose
+  risk_level: high
+  max_concurrent_plants: 3
+  require_review: true
+  require_security_review: true
+
+metrics:
+  - name: undocumented_boundaries
+    description: Number of trust boundaries without documentation
+    target: 0
+  - name: unvalidated_inputs
+    description: Number of external inputs without validation
+    target: 0
+  - name: identified_threats
+    description: Number of identified but unmitigated threats
+    target: 0
+  - name: attack_surface_score
+    description: Overall attack surface complexity score
+    target: reduce_by_30_percent
+
+plant_templates:
+  - name: document-trust-boundary
+    title_template: "Document trust boundary: {boundary_name}"
+    priority: high
+  - name: analyze-attack-vector
+    title_template: "Analyze attack vector: {vector_description}"
+    priority: critical
+  - name: validate-boundary-protection
+    title_template: "Validate protection at {boundary_name}"
+    priority: high
+  - name: document-threat-scenario
+    title_template: "Document threat: {threat_type} - {scenario}"
+    priority: medium
+  - name: harden-input-validation
+    title_template: "Harden input validation for {input_source}"
+    priority: high

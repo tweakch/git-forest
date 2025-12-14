@@ -1,0 +1,70 @@
+id: dependency-hygiene
+name: Dependency Hygiene
+version: 1.0.0
+category: engineering-excellence
+description: |
+  Reduce transitive dependencies, pin versions, and remove unused packages.
+  This plan ensures your dependency graph stays clean, secure, and maintainable by
+  identifying unnecessary dependencies, managing version constraints, and preventing
+  dependency bloat.
+
+focus_areas:
+  - Identify and remove unused dependencies
+  - Reduce transitive dependency chains
+  - Pin critical dependency versions
+  - Update outdated dependencies safely
+  - Prevent dependency duplication
+  - Analyze dependency tree complexity
+
+scopes:
+  - dependencies
+  - maintenance
+  - security
+
+planners:
+  - dependency-analyzer
+  - unused-package-detector
+  - version-drift-scanner
+
+planters:
+  - dependency-pruner
+  - version-updater
+  - package-consolidator
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 5
+  require_review: true
+  auto_update_safe: true
+
+metrics:
+  - name: unused_dependencies
+    description: Number of unused dependencies in the project
+    target: 0
+  - name: outdated_dependencies
+    description: Number of dependencies with available updates
+    target: 0
+  - name: transitive_depth
+    description: Maximum depth of transitive dependency chains
+    target: 3
+  - name: duplicate_packages
+    description: Number of packages with multiple versions
+    target: 0
+
+plant_templates:
+  - name: remove-unused-dependency
+    title_template: "Remove unused dependency: {package_name}"
+    priority: low
+  - name: update-dependency
+    title_template: "Update {package_name} from {current_version} to {target_version}"
+    priority: medium
+  - name: pin-critical-version
+    title_template: "Pin {package_name} to {version} for stability"
+    priority: high
+  - name: consolidate-versions
+    title_template: "Consolidate {package_name} versions across modules"
+    priority: medium
+  - name: reduce-transitive-deps
+    title_template: "Reduce transitive dependencies for {package_name}"
+    priority: low

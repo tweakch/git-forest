@@ -1,0 +1,68 @@
+id: memory-guard
+name: Memory Guard
+version: 1.0.0
+category: ai-native
+description: |
+  Prevent context loss across long refactor cycles.
+  This plan maintains context and continuity across extended refactoring
+  efforts, ensuring AI agents and developers don't lose important decisions,
+  constraints, or progress made in earlier phases.
+
+focus_areas:
+  - Track refactoring context across sessions
+  - Preserve decision history and rationale
+  - Maintain constraint awareness
+  - Document progress and completed steps
+  - Link related refactoring efforts
+  - Prevent duplicate or conflicting work
+
+scopes:
+  - ai
+  - refactoring
+  - context-management
+
+planners:
+  - context-tracker
+  - decision-recorder
+  - progress-monitor
+
+planters:
+  - context-maintainer
+  - memory-preserver
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 4
+  require_review: false
+
+metrics:
+  - name: context_loss_incidents
+    description: Number of times context was lost during refactoring
+    target: 0
+  - name: documented_decisions
+    description: Number of refactoring decisions with documentation
+    target: 100_percent
+  - name: linked_refactorings
+    description: Percentage of related refactorings that are linked
+    target: 90
+  - name: duplicate_work_prevented
+    description: Number of duplicate refactoring efforts prevented
+    target: maximized
+
+plant_templates:
+  - name: capture-refactor-context
+    title_template: "Capture context for {refactoring_name}"
+    priority: high
+  - name: document-refactor-decision
+    title_template: "Document decision: {decision_summary}"
+    priority: medium
+  - name: link-related-refactorings
+    title_template: "Link refactorings: {refactor_a} ↔ {refactor_b}"
+    priority: low
+  - name: checkpoint-progress
+    title_template: "Checkpoint progress on {refactoring_name}"
+    priority: medium
+  - name: restore-context
+    title_template: "Restore context for {refactoring_name}"
+    priority: high

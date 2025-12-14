@@ -1,0 +1,70 @@
+id: onboarding-acceleration
+name: Onboarding Acceleration
+version: 1.0.0
+category: team-process
+description: |
+  Docs, examples, guided walkthroughs.
+  This plan improves new team member onboarding by creating comprehensive documentation,
+  providing working examples, and developing guided walkthroughs for common tasks.
+
+focus_areas:
+  - Create getting started documentation
+  - Provide working code examples
+  - Develop guided tutorials
+  - Document architecture and design decisions
+  - Create troubleshooting guides
+  - Establish contribution guidelines
+
+scopes:
+  - documentation
+  - onboarding
+  - knowledge-sharing
+
+planners:
+  - onboarding-gap-analyzer
+  - documentation-validator
+  - example-detector
+
+planters:
+  - documentation-writer
+  - example-creator
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 8
+  require_review: true
+
+metrics:
+  - name: missing_getting_started_docs
+    description: Number of components without getting started docs
+    target: 0
+  - name: components_without_examples
+    description: Number of components without working examples
+    target: 0
+  - name: onboarding_time_days
+    description: Average days for new team member to be productive
+    target: 3
+  - name: undocumented_workflows
+    description: Number of common workflows without documentation
+    target: 0
+
+plant_templates:
+  - name: create-getting-started
+    title_template: "Create getting started guide for {component_name}"
+    priority: high
+  - name: add-code-example
+    title_template: "Add code example for {feature_name}"
+    priority: high
+  - name: create-tutorial
+    title_template: "Create tutorial: {tutorial_topic}"
+    priority: medium
+  - name: document-workflow
+    title_template: "Document {workflow_name} workflow"
+    priority: medium
+  - name: create-troubleshooting-guide
+    title_template: "Create troubleshooting guide for {problem_area}"
+    priority: medium
+  - name: update-contribution-guidelines
+    title_template: "Update contribution guidelines for {area_name}"
+    priority: low

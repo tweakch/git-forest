@@ -19,6 +19,21 @@ Design goals: **idempotent**, **deterministic IDs**, **reconcile desired state**
 
 Plans can be sourced from GitHub, URLs, or local paths.
 
+#### Pre-defined Plans
+git-forest includes a comprehensive catalog of pre-defined plans organized by category:
+- **Engineering Excellence** - Code health, sustainability, and long-term velocity
+- **Quality & Reliability** - Correctness, confidence, and operability
+- **Performance & Scalability** - Speed, predictability, and scale
+- **Security & Compliance** - Preventative security and regulatory compliance
+- **Team & Process** - Developer experience and workflow optimization
+- **Documentation & Knowledge** - Living documentation and knowledge management
+- **Evolution & Migration** - Strategic change and system evolution
+- **AI-Native** - AI-assisted development and automation
+- **Meta/Governance** - Plan management and resource governance
+- **Experimental** - Innovative approaches to code quality
+
+See [config/plans/README.md](config/plans/README.md) for the complete catalog with 48 pre-defined plans.
+
 ### 🌱 Plant
 **Plants** are concrete work items with stable keys and lifecycle facts. Each plant has:
 - Stable key format: `planId:plantSlug` (e.g., `sample:backend-memory-hygiene`)
@@ -94,6 +109,41 @@ git-forest plant sample:backend-hygiene assign backend-planter
 # Run a planner
 git-forest planner code-analyzer run --plan sample
 ```
+
+## Plans Catalog
+
+git-forest includes 48 pre-defined plans across 10 categories to help you improve your codebase systematically:
+
+### Using Pre-defined Plans
+
+```bash
+# Install a pre-defined plan from the catalog
+git-forest plans install config/plans/engineering-excellence/dependency-hygiene.yaml
+
+# Or install from a specific category
+git-forest plans install config/plans/security-compliance/secret-hygiene.yaml
+
+# Reconcile the plan to generate plants
+git-forest plan dependency-hygiene reconcile
+
+# List plants created by the plan
+git-forest plants list --plan dependency-hygiene
+```
+
+### Plan Categories
+
+1. **Engineering Excellence** (6 plans) - architecture-hardening, dependency-hygiene, api-contract-stability, refactor-hotspots, cyclomatic-reduction, dead-code-elimination
+2. **Quality & Reliability** (5 plans) - test-pyramid-balance, mutation-testing, flaky-test-eradication, chaos-readiness, observability-boost
+3. **Performance & Scalability** (5 plans) - latency-budgeting, allocation-pressure-reduction, throughput-optimization, io-efficiency, orleans-readiness
+4. **Security & Compliance** (5 plans) - threat-modeling, secret-hygiene, authz-consistency, dependency-vulnerability-guard, audit-trail-enforcement
+5. **Team & Process** (5 plans) - developer-experience, onboarding-acceleration, scrum-signal, flow-efficiency, knowledge-radiation
+6. **Documentation & Knowledge** (4 plans) - living-architecture, decision-recording, public-api-docs, internal-playbooks
+7. **Evolution & Migration** (5 plans) - monolith-modularization, legacy-extraction, cloud-readiness, framework-upgrade, orleans-adoption
+8. **AI-Native** (5 plans) - semantic-code-map, intent-preservation, regression-scout, memory-guard, self-healing-forest
+9. **Meta/Governance** (4 plans) - forest-governance, plan-composition, risk-aware-planning, harvest-discipline
+10. **Experimental** (4 plans) - code-archeology, intent-drift-detection, complexity-budgeting, entropy-reduction
+
+For detailed descriptions of each plan, see [config/plans/README.md](config/plans/README.md).
 
 ## Command Structure
 

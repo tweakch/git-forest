@@ -1,0 +1,72 @@
+id: orleans-adoption
+name: Orleans Adoption
+version: 1.0.0
+category: evolution-migration
+description: |
+  Move coordination logic to virtual actors.
+  This plan guides the adoption of Microsoft Orleans (virtual actor framework)
+  by identifying coordination patterns that benefit from the actor model and
+  systematically migrating them.
+
+focus_areas:
+  - Identify coordination and orchestration logic
+  - Design grain interfaces and contracts
+  - Implement grain state management
+  - Migrate coordination logic to grains
+  - Establish grain communication patterns
+  - Test grain behavior and lifecycle
+
+scopes:
+  - orleans
+  - actors
+  - migration
+
+planners:
+  - coordination-pattern-detector
+  - grain-design-analyzer
+  - migration-sequencer
+
+planters:
+  - orleans-migrator
+  - grain-implementer
+
+policies:
+  execution_mode: propose
+  risk_level: high
+  max_concurrent_plants: 3
+  require_review: true
+  require_architecture_review: true
+
+metrics:
+  - name: coordination_patterns
+    description: Number of coordination patterns suitable for Orleans
+    target: identified
+  - name: migrated_grains
+    description: Number of successfully migrated grains
+    target: progress
+  - name: grain_design_issues
+    description: Number of grains with design or performance issues
+    target: 0
+  - name: orleans_coverage
+    description: Percentage of coordination logic using Orleans
+    target: 80
+
+plant_templates:
+  - name: identify-coordination-pattern
+    title_template: "Identify coordination pattern: {pattern_name}"
+    priority: high
+  - name: design-grain
+    title_template: "Design grain for {business_entity}"
+    priority: high
+  - name: implement-grain
+    title_template: "Implement {grain_name} grain"
+    priority: critical
+  - name: migrate-to-grain
+    title_template: "Migrate {logic_name} to {grain_name}"
+    priority: high
+  - name: implement-grain-state
+    title_template: "Implement state management for {grain_name}"
+    priority: high
+  - name: test-grain-behavior
+    title_template: "Add tests for {grain_name} behavior"
+    priority: high

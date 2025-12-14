@@ -1,0 +1,70 @@
+id: internal-playbooks
+name: Internal Playbooks
+version: 1.0.0
+category: documentation-knowledge
+description: |
+  Runbooks for ops, incidents, migrations.
+  This plan creates and maintains operational playbooks covering incident response,
+  routine operations, and complex migration procedures.
+
+focus_areas:
+  - Create incident response runbooks
+  - Document operational procedures
+  - Write migration guides
+  - Establish rollback procedures
+  - Document emergency contacts and escalation
+  - Maintain troubleshooting playbooks
+
+scopes:
+  - operations
+  - documentation
+  - incident-management
+
+planners:
+  - playbook-gap-analyzer
+  - incident-pattern-detector
+  - operational-procedure-mapper
+
+planters:
+  - playbook-creator
+  - runbook-updater
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 7
+  require_review: true
+
+metrics:
+  - name: critical_ops_without_runbooks
+    description: Number of critical operations without runbooks
+    target: 0
+  - name: incident_types_without_playbooks
+    description: Number of incident types lacking response playbooks
+    target: 0
+  - name: undocumented_migrations
+    description: Number of migrations without documented procedures
+    target: 0
+  - name: runbook_usage_rate
+    description: Percentage of incidents resolved using runbooks
+    target: 80
+
+plant_templates:
+  - name: create-incident-runbook
+    title_template: "Create runbook for {incident_type}"
+    priority: high
+  - name: document-operation
+    title_template: "Document operational procedure: {operation_name}"
+    priority: medium
+  - name: create-migration-guide
+    title_template: "Create migration guide for {migration_type}"
+    priority: high
+  - name: document-rollback
+    title_template: "Document rollback procedure for {deployment_type}"
+    priority: high
+  - name: update-escalation-path
+    title_template: "Update escalation path for {service_name}"
+    priority: medium
+  - name: create-troubleshooting-playbook
+    title_template: "Create troubleshooting playbook for {problem_area}"
+    priority: medium

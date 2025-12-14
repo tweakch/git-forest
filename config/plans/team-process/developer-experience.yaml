@@ -1,0 +1,68 @@
+id: developer-experience
+name: Developer Experience
+version: 1.0.0
+category: team-process
+description: |
+  Faster builds, better errors, tooling cleanup.
+  This plan improves the day-to-day development experience by optimizing build times,
+  improving error messages, cleaning up tooling, and reducing friction in the
+  development workflow.
+
+focus_areas:
+  - Optimize build and compilation times
+  - Improve error message clarity
+  - Clean up unused or redundant tooling
+  - Streamline development workflow
+  - Reduce local development setup time
+  - Improve IDE integration and support
+
+scopes:
+  - developer-experience
+  - productivity
+  - tooling
+
+planners:
+  - build-time-analyzer
+  - error-message-scanner
+  - tooling-auditor
+
+planters:
+  - build-optimizer
+  - dx-improver
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 7
+  require_review: false
+
+metrics:
+  - name: build_time_seconds
+    description: Average full build time in seconds
+    target: reduce_by_50_percent
+  - name: unclear_error_messages
+    description: Number of error messages lacking context
+    target: 0
+  - name: unused_tools
+    description: Number of installed but unused tools
+    target: 0
+  - name: setup_time_minutes
+    description: Time to set up local development environment
+    target: 15
+
+plant_templates:
+  - name: optimize-build-step
+    title_template: "Optimize {build_step} ({current_time} → target: {target_time})"
+    priority: high
+  - name: improve-error-message
+    title_template: "Improve error message in {component_name}"
+    priority: medium
+  - name: remove-unused-tool
+    title_template: "Remove unused tool: {tool_name}"
+    priority: low
+  - name: streamline-workflow
+    title_template: "Streamline {workflow_name} process"
+    priority: medium
+  - name: improve-ide-integration
+    title_template: "Improve IDE integration for {feature_name}"
+    priority: low

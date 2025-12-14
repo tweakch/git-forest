@@ -1,0 +1,69 @@
+id: regression-scout
+name: Regression Scout
+version: 1.0.0
+category: ai-native
+description: |
+  Continuously look for subtle behavior changes.
+  This plan uses AI to detect subtle behavioral regressions that traditional
+  testing might miss, including performance degradation, edge case handling
+  changes, and semantic shifts.
+
+focus_areas:
+  - Monitor for behavioral changes across commits
+  - Detect performance regressions
+  - Identify edge case handling changes
+  - Track semantic shifts in business logic
+  - Alert on subtle breaking changes
+  - Validate backward compatibility
+
+scopes:
+  - ai
+  - testing
+  - regression-detection
+
+planners:
+  - behavior-monitor
+  - regression-detector
+  - performance-tracker
+
+planters:
+  - regression-analyzer
+  - behavior-validator
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 6
+  require_review: false
+  continuous_monitoring: true
+
+metrics:
+  - name: detected_regressions
+    description: Number of subtle regressions detected
+    target: identified
+  - name: performance_degradations
+    description: Number of detected performance regressions
+    target: 0
+  - name: edge_case_changes
+    description: Number of changed edge case behaviors
+    target: 0
+  - name: false_positive_rate
+    description: Percentage of false positive regression alerts
+    target: less_than_10_percent
+
+plant_templates:
+  - name: investigate-behavior-change
+    title_template: "Investigate behavior change in {component_name}"
+    priority: high
+  - name: fix-performance-regression
+    title_template: "Fix performance regression: {operation_name} ({degradation})"
+    priority: critical
+  - name: validate-edge-case
+    title_template: "Validate edge case handling change in {method_name}"
+    priority: high
+  - name: add-regression-test
+    title_template: "Add regression test for {behavior_name}"
+    priority: high
+  - name: document-intentional-change
+    title_template: "Document intentional behavior change: {change_description}"
+    priority: medium

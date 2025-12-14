@@ -1,0 +1,67 @@
+id: decision-recording
+name: Decision Recording
+version: 1.0.0
+category: documentation-knowledge
+description: |
+  Extract implicit decisions into ADRs.
+  This plan identifies undocumented architectural and design decisions embedded
+  in code and converts them into explicit Architecture Decision Records.
+
+focus_areas:
+  - Identify implicit design decisions in code
+  - Extract decision rationale from git history
+  - Document technology choices
+  - Record trade-off analyses
+  - Capture rejected alternatives
+  - Maintain decision context
+
+scopes:
+  - architecture
+  - decision-making
+  - knowledge-capture
+
+planners:
+  - implicit-decision-detector
+  - decision-extractor
+  - rationale-analyzer
+
+planters:
+  - adr-creator
+  - decision-documenter
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 6
+  require_review: true
+
+metrics:
+  - name: implicit_decisions
+    description: Number of identified but undocumented decisions
+    target: 0
+  - name: decisions_without_rationale
+    description: Number of decisions lacking documented rationale
+    target: 0
+  - name: missing_alternatives
+    description: Number of decisions without considered alternatives
+    target: 0
+  - name: adr_coverage
+    description: Percentage of significant decisions with ADRs
+    target: 90
+
+plant_templates:
+  - name: create-adr-from-code
+    title_template: "Create ADR for implicit decision: {decision_summary}"
+    priority: high
+  - name: document-technology-choice
+    title_template: "Document choice of {technology_name}"
+    priority: medium
+  - name: record-trade-offs
+    title_template: "Record trade-offs for {decision_topic}"
+    priority: medium
+  - name: document-rejected-alternative
+    title_template: "Document why {alternative_name} was rejected"
+    priority: low
+  - name: extract-decision-from-history
+    title_template: "Extract decision from commit history: {topic}"
+    priority: medium

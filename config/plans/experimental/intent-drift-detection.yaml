@@ -1,0 +1,68 @@
+id: intent-drift-detection
+name: Intent Drift Detection
+version: 1.0.0
+category: experimental
+description: |
+  Compare current code vs original commits.
+  This plan detects when code has drifted from its original intent by comparing
+  current implementation with initial commits, revealing gradual erosion of
+  design principles and architectural decisions.
+
+focus_areas:
+  - Compare current code to initial implementation
+  - Detect deviations from original design
+  - Identify incremental drift patterns
+  - Find violations of original constraints
+  - Track architectural erosion
+  - Alert on significant divergence
+
+scopes:
+  - quality
+  - architecture
+  - evolution
+
+planners:
+  - drift-analyzer
+  - original-intent-extractor
+  - divergence-detector
+
+planters:
+  - drift-corrector
+  - intent-realigner
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 5
+  require_review: true
+
+metrics:
+  - name: drifted_components
+    description: Number of components that drifted from original intent
+    target: 0
+  - name: architectural_violations
+    description: Number of violations of original architecture
+    target: 0
+  - name: drift_severity_score
+    description: Average severity of detected drift
+    target: low
+  - name: corrected_drift
+    description: Number of drift issues corrected
+    target: progress
+
+plant_templates:
+  - name: detect-intent-drift
+    title_template: "Detect intent drift in {component_name}"
+    priority: medium
+  - name: compare-to-original
+    title_template: "Compare {component_name} to original implementation"
+    priority: low
+  - name: correct-drift
+    title_template: "Correct drift in {component_name}: {drift_description}"
+    priority: high
+  - name: document-intentional-divergence
+    title_template: "Document intentional divergence: {reason}"
+    priority: medium
+  - name: restore-original-intent
+    title_template: "Restore original intent for {feature_name}"
+    priority: high

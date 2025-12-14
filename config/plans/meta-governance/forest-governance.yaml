@@ -1,0 +1,68 @@
+id: forest-governance
+name: Forest Governance
+version: 1.0.0
+category: meta-governance
+description: |
+  Rules, limits, quotas for planters.
+  This plan establishes and enforces governance policies for the forest,
+  including resource limits, execution quotas, and behavioral rules for
+  planters and plants.
+
+focus_areas:
+  - Define planter resource limits
+  - Establish plant quotas per plan
+  - Enforce execution policies
+  - Monitor resource consumption
+  - Validate planter compliance
+  - Audit policy violations
+
+scopes:
+  - governance
+  - policy
+  - resource-management
+
+planners:
+  - policy-validator
+  - resource-monitor
+  - compliance-checker
+
+planters:
+  - governance-enforcer
+  - policy-auditor
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 3
+  require_review: false
+
+metrics:
+  - name: policy_violations
+    description: Number of governance policy violations
+    target: 0
+  - name: over_quota_planters
+    description: Number of planters exceeding quotas
+    target: 0
+  - name: resource_limit_breaches
+    description: Number of resource limit breaches
+    target: 0
+  - name: governance_compliance_rate
+    description: Percentage compliance with governance policies
+    target: 100
+
+plant_templates:
+  - name: define-governance-policy
+    title_template: "Define governance policy: {policy_name}"
+    priority: high
+  - name: enforce-quota
+    title_template: "Enforce quota for {planter_name}"
+    priority: medium
+  - name: audit-policy-violation
+    title_template: "Audit policy violation by {planter_name}: {violation_type}"
+    priority: high
+  - name: update-resource-limits
+    title_template: "Update resource limits for {resource_type}"
+    priority: medium
+  - name: validate-planter-compliance
+    title_template: "Validate compliance for {planter_name}"
+    priority: low

@@ -1,0 +1,67 @@
+id: intent-preservation
+name: Intent Preservation
+version: 1.0.0
+category: ai-native
+description: |
+  Ensure refactors don't drift from original intent.
+  This plan validates that code refactorings maintain the original business
+  intent and behavioral contracts, preventing subtle bugs from semantic drift.
+
+focus_areas:
+  - Capture original code intent
+  - Validate behavioral equivalence after refactoring
+  - Detect semantic drift in changes
+  - Preserve business logic invariants
+  - Track intent through refactoring chains
+  - Alert on unintended behavior changes
+
+scopes:
+  - ai
+  - refactoring
+  - quality
+
+planners:
+  - intent-extractor
+  - behavior-validator
+  - drift-detector
+
+planters:
+  - intent-validator
+  - behavior-preserver
+
+policies:
+  execution_mode: propose
+  risk_level: medium
+  max_concurrent_plants: 4
+  require_review: true
+
+metrics:
+  - name: intent_drift_detections
+    description: Number of refactorings with detected intent drift
+    target: 0
+  - name: behavioral_regressions
+    description: Number of unintended behavior changes
+    target: 0
+  - name: preserved_invariants
+    description: Percentage of business invariants preserved
+    target: 100
+  - name: intent_documentation_coverage
+    description: Percentage of code with documented intent
+    target: 80
+
+plant_templates:
+  - name: capture-intent
+    title_template: "Capture intent for {component_name} before refactoring"
+    priority: high
+  - name: validate-refactoring
+    title_template: "Validate refactoring preserves intent: {refactor_name}"
+    priority: critical
+  - name: fix-intent-drift
+    title_template: "Fix intent drift in {component_name}"
+    priority: critical
+  - name: document-intent
+    title_template: "Document business intent for {feature_name}"
+    priority: medium
+  - name: add-invariant-test
+    title_template: "Add invariant test for {business_rule}"
+    priority: high

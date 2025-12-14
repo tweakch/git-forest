@@ -1,0 +1,70 @@
+id: flow-efficiency
+name: Flow Efficiency
+version: 1.0.0
+category: team-process
+description: |
+  Reduce WIP, PR size, cycle time.
+  This plan improves development flow by limiting work in progress, encouraging
+  smaller pull requests, and reducing cycle time from commit to deployment.
+
+focus_areas:
+  - Monitor and limit work in progress
+  - Encourage smaller, focused PRs
+  - Reduce PR review cycle time
+  - Minimize context switching
+  - Track lead time and cycle time
+  - Identify process bottlenecks
+
+scopes:
+  - process
+  - efficiency
+  - flow
+
+planners:
+  - flow-analyzer
+  - bottleneck-detector
+  - cycle-time-tracker
+
+planters:
+  - flow-optimizer
+  - process-improver
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 4
+  require_review: false
+
+metrics:
+  - name: work_in_progress
+    description: Number of active branches per developer
+    target: 2
+  - name: average_pr_size
+    description: Average lines changed per PR
+    target: 300
+  - name: pr_review_time_hours
+    description: Average time from PR creation to approval
+    target: 4
+  - name: cycle_time_days
+    description: Average days from commit to deployment
+    target: 2
+  - name: large_prs
+    description: Number of PRs with more than 500 lines changed
+    target: reduce_by_70_percent
+
+plant_templates:
+  - name: split-large-pr
+    title_template: "Split large PR #{pr_number} ({lines_changed} lines)"
+    priority: medium
+  - name: reduce-wip
+    title_template: "Reduce WIP for {developer_name}"
+    priority: low
+  - name: address-bottleneck
+    title_template: "Address bottleneck in {process_step}"
+    priority: high
+  - name: improve-review-time
+    title_template: "Improve review time for {team_name}"
+    priority: medium
+  - name: streamline-deployment
+    title_template: "Streamline deployment process for {component_name}"
+    priority: high

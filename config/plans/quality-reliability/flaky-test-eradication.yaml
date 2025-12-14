@@ -1,0 +1,72 @@
+id: flaky-test-eradication
+name: Flaky Test Eradication
+version: 1.0.0
+category: quality-reliability
+description: |
+  Detect and stabilize nondeterministic tests.
+  This plan identifies tests that fail intermittently (flaky tests), analyzes root causes,
+  and proposes fixes to make them deterministic and reliable.
+
+focus_areas:
+  - Detect flaky tests through repeated runs
+  - Analyze flakiness patterns and root causes
+  - Fix timing issues and race conditions
+  - Eliminate test order dependencies
+  - Stabilize external dependencies in tests
+  - Improve test isolation
+
+scopes:
+  - testing
+  - reliability
+  - quality
+
+planners:
+  - flaky-test-detector
+  - test-stability-analyzer
+  - root-cause-analyzer
+
+planters:
+  - test-stabilizer
+  - flaky-test-fixer
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 6
+  require_review: true
+  detection_runs: 10
+  flakiness_threshold: 0.01
+
+metrics:
+  - name: flaky_tests
+    description: Number of tests exhibiting flaky behavior
+    target: 0
+  - name: test_stability_rate
+    description: Percentage of tests passing consistently
+    target: 100
+  - name: timing_dependent_tests
+    description: Number of tests with timing dependencies
+    target: 0
+  - name: order_dependent_tests
+    description: Number of tests dependent on execution order
+    target: 0
+
+plant_templates:
+  - name: fix-flaky-test
+    title_template: "Fix flaky test: {test_name} (fail rate: {fail_rate})"
+    priority: high
+  - name: fix-race-condition
+    title_template: "Fix race condition in {test_name}"
+    priority: critical
+  - name: remove-timing-dependency
+    title_template: "Remove timing dependency from {test_name}"
+    priority: high
+  - name: improve-test-isolation
+    title_template: "Improve isolation for {test_name}"
+    priority: medium
+  - name: stabilize-external-dependency
+    title_template: "Stabilize external dependency in {test_suite}"
+    priority: medium
+  - name: fix-test-order-dependency
+    title_template: "Fix test order dependency: {test_name}"
+    priority: high

@@ -1,0 +1,74 @@
+id: chaos-readiness
+name: Chaos Readiness
+version: 1.0.0
+category: quality-reliability
+description: |
+  Inject failures (timeouts, retries, partial outages) to test system resilience.
+  This plan helps build resilient systems by introducing controlled chaos experiments,
+  testing failure scenarios, and ensuring graceful degradation.
+
+focus_areas:
+  - Test timeout handling and retry logic
+  - Simulate partial service outages
+  - Validate circuit breaker implementations
+  - Test fallback mechanisms
+  - Verify graceful degradation
+  - Validate error handling paths
+
+scopes:
+  - reliability
+  - resilience
+  - testing
+
+planners:
+  - chaos-scenario-generator
+  - failure-point-analyzer
+  - resilience-validator
+
+planters:
+  - chaos-test-creator
+  - resilience-improver
+
+policies:
+  execution_mode: propose
+  risk_level: high
+  max_concurrent_plants: 3
+  require_review: true
+  require_production_like_env: true
+
+metrics:
+  - name: untested_failure_scenarios
+    description: Number of failure scenarios without tests
+    target: 0
+  - name: missing_timeouts
+    description: Number of operations without timeout handling
+    target: 0
+  - name: missing_retries
+    description: Number of operations without retry logic
+    target: 0
+  - name: circuit_breaker_coverage
+    description: Percentage of external calls with circuit breakers
+    target: 100
+  - name: graceful_degradation_score
+    description: Percentage of services with graceful degradation
+    target: 90
+
+plant_templates:
+  - name: add-timeout-handling
+    title_template: "Add timeout handling for {operation_name}"
+    priority: high
+  - name: implement-retry-logic
+    title_template: "Implement retry logic for {service_call}"
+    priority: high
+  - name: add-circuit-breaker
+    title_template: "Add circuit breaker for {external_service}"
+    priority: high
+  - name: test-partial-outage
+    title_template: "Add test for partial outage: {scenario_name}"
+    priority: medium
+  - name: implement-fallback
+    title_template: "Implement fallback for {feature_name}"
+    priority: medium
+  - name: improve-error-handling
+    title_template: "Improve error handling in {component_name}"
+    priority: medium

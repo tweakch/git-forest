@@ -1,0 +1,72 @@
+id: allocation-pressure-reduction
+name: Allocation Pressure Reduction
+version: 1.0.0
+category: performance-scalability
+description: |
+  Target GC hotspots, pooling, spans, and struct usage.
+  This plan identifies memory allocation hotspots and proposes optimizations to reduce
+  garbage collection pressure through object pooling, span usage, and value type optimization.
+
+focus_areas:
+  - Identify allocation hotspots
+  - Implement object pooling for frequently allocated objects
+  - Convert to Span<T> and Memory<T> where appropriate
+  - Use value types (structs) for small, short-lived data
+  - Reduce boxing allocations
+  - Optimize string allocations
+
+scopes:
+  - performance
+  - memory
+  - optimization
+
+planners:
+  - allocation-profiler
+  - gc-pressure-analyzer
+  - memory-hotspot-detector
+
+planters:
+  - allocation-optimizer
+  - pooling-implementer
+  - span-converter
+
+policies:
+  execution_mode: propose
+  risk_level: medium
+  max_concurrent_plants: 5
+  require_review: true
+  require_benchmarks: true
+
+metrics:
+  - name: allocation_hotspots
+    description: Number of identified allocation hotspots
+    target: 0
+  - name: gc_pressure
+    description: GC pressure score (allocations per second)
+    target: reduce_by_50_percent
+  - name: gen2_collections
+    description: Number of Gen2 GC collections
+    target: reduce_by_30_percent
+  - name: poolable_objects
+    description: Number of frequently allocated objects without pooling
+    target: 0
+  - name: boxing_allocations
+    description: Number of boxing allocations detected
+    target: 0
+
+plant_templates:
+  - name: implement-object-pooling
+    title_template: "Implement pooling for {object_type}"
+    priority: high
+  - name: convert-to-span
+    title_template: "Convert {method_name} to use Span<T>"
+    priority: medium
+  - name: reduce-string-allocations
+    title_template: "Reduce string allocations in {component_name}"
+    priority: medium
+  - name: fix-boxing-allocation
+    title_template: "Fix boxing allocation in {method_name}"
+    priority: low
+  - name: use-value-type
+    title_template: "Convert {class_name} to struct for efficiency"
+    priority: medium

@@ -1,0 +1,69 @@
+id: orleans-readiness
+name: Orleans Readiness
+version: 1.0.0
+category: performance-scalability
+description: |
+  Actor-friendly refactors, stateless services, grain boundaries.
+  This plan prepares codebases for Orleans (virtual actor framework) by identifying
+  opportunities for actor-based design, establishing grain boundaries, and refactoring
+  toward stateless services.
+
+focus_areas:
+  - Identify actor model candidates
+  - Define grain boundaries and interfaces
+  - Refactor toward stateless services
+  - Implement idempotent operations
+  - Design for single-activation concurrency
+  - Plan state management strategies
+
+scopes:
+  - architecture
+  - scalability
+  - orleans
+
+planners:
+  - actor-candidate-detector
+  - grain-boundary-analyzer
+  - stateless-refactor-planner
+
+planters:
+  - orleans-refactor-agent
+  - grain-implementer
+
+policies:
+  execution_mode: propose
+  risk_level: high
+  max_concurrent_plants: 3
+  require_review: true
+  require_architecture_review: true
+
+metrics:
+  - name: actor_candidates
+    description: Number of components suitable for actor pattern
+    target: identified
+  - name: stateful_services
+    description: Number of stateful services requiring refactoring
+    target: 0
+  - name: non_idempotent_operations
+    description: Number of non-idempotent operations
+    target: 0
+  - name: shared_state_access
+    description: Number of components with shared mutable state
+    target: 0
+
+plant_templates:
+  - name: define-grain-interface
+    title_template: "Define grain interface for {component_name}"
+    priority: high
+  - name: refactor-to-stateless
+    title_template: "Refactor {service_name} to stateless pattern"
+    priority: high
+  - name: implement-idempotency
+    title_template: "Make {operation_name} idempotent"
+    priority: high
+  - name: extract-grain
+    title_template: "Extract grain from {component_name}"
+    priority: medium
+  - name: design-state-management
+    title_template: "Design state management for {grain_name}"
+    priority: medium

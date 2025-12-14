@@ -1,0 +1,67 @@
+id: legacy-extraction
+name: Legacy Extraction
+version: 1.0.0
+category: evolution-migration
+description: |
+  Isolate legacy zones behind interfaces.
+  This plan identifies legacy code and systematically isolates it behind clean
+  interfaces, enabling gradual replacement without disrupting the entire system.
+
+focus_areas:
+  - Identify legacy code zones
+  - Define anti-corruption layers
+  - Create facade interfaces
+  - Isolate legacy dependencies
+  - Enable incremental replacement
+  - Test legacy behavior preservation
+
+scopes:
+  - legacy
+  - refactoring
+  - isolation
+
+planners:
+  - legacy-zone-detector
+  - interface-designer
+  - dependency-analyzer
+
+planters:
+  - legacy-isolator
+  - facade-creator
+
+policies:
+  execution_mode: propose
+  risk_level: medium
+  max_concurrent_plants: 4
+  require_review: true
+
+metrics:
+  - name: identified_legacy_zones
+    description: Number of identified legacy code zones
+    target: documented
+  - name: isolated_legacy_zones
+    description: Number of legacy zones behind clean interfaces
+    target: 100_percent
+  - name: direct_legacy_dependencies
+    description: Number of components directly depending on legacy code
+    target: 0
+  - name: legacy_code_percentage
+    description: Percentage of codebase classified as legacy
+    target: reduce_by_50_percent
+
+plant_templates:
+  - name: identify-legacy-zone
+    title_template: "Identify legacy zone: {zone_name}"
+    priority: high
+  - name: create-facade-interface
+    title_template: "Create facade interface for {legacy_component}"
+    priority: high
+  - name: implement-anti-corruption-layer
+    title_template: "Implement anti-corruption layer for {legacy_system}"
+    priority: high
+  - name: isolate-legacy-dependency
+    title_template: "Isolate dependency on {legacy_library}"
+    priority: medium
+  - name: test-legacy-behavior
+    title_template: "Add characterization tests for {legacy_component}"
+    priority: high

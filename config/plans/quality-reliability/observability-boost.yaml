@@ -1,0 +1,74 @@
+id: observability-boost
+name: Observability Boost
+version: 1.0.0
+category: quality-reliability
+description: |
+  Improve logs, metrics, and traces completeness.
+  This plan enhances system observability by ensuring comprehensive logging, meaningful
+  metrics, and distributed tracing coverage across all critical paths.
+
+focus_areas:
+  - Add structured logging to critical paths
+  - Implement meaningful business metrics
+  - Add distributed tracing spans
+  - Improve log message quality
+  - Add performance counters
+  - Ensure correlation ID propagation
+
+scopes:
+  - observability
+  - monitoring
+  - operations
+
+planners:
+  - observability-gap-analyzer
+  - logging-coverage-scanner
+  - metrics-validator
+
+planters:
+  - logging-improver
+  - metrics-adder
+  - tracing-enhancer
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 7
+  require_review: true
+
+metrics:
+  - name: critical_paths_without_logging
+    description: Number of critical code paths without adequate logging
+    target: 0
+  - name: business_metrics_coverage
+    description: Percentage of business operations with metrics
+    target: 90
+  - name: distributed_tracing_coverage
+    description: Percentage of service calls with tracing
+    target: 100
+  - name: log_quality_score
+    description: Percentage of logs with structured format
+    target: 95
+  - name: missing_correlation_ids
+    description: Number of operations missing correlation ID
+    target: 0
+
+plant_templates:
+  - name: add-structured-logging
+    title_template: "Add structured logging to {component_name}"
+    priority: medium
+  - name: add-business-metric
+    title_template: "Add metric for {business_operation}"
+    priority: medium
+  - name: add-tracing-span
+    title_template: "Add tracing span for {service_call}"
+    priority: low
+  - name: improve-log-message
+    title_template: "Improve log messages in {file_path}"
+    priority: low
+  - name: add-performance-counter
+    title_template: "Add performance counter for {operation_name}"
+    priority: low
+  - name: add-correlation-id
+    title_template: "Add correlation ID propagation in {component_name}"
+    priority: high

@@ -1,0 +1,68 @@
+id: semantic-code-map
+name: Semantic Code Map
+version: 1.0.0
+category: ai-native
+description: |
+  Build a knowledge graph of the repo.
+  This plan creates a semantic understanding of the codebase by building a
+  knowledge graph that captures relationships, concepts, and patterns for
+  AI-assisted development.
+
+focus_areas:
+  - Extract semantic relationships from code
+  - Build component dependency graph
+  - Map business concepts to code
+  - Identify design patterns and idioms
+  - Create searchable code knowledge base
+  - Enable semantic code navigation
+
+scopes:
+  - ai
+  - knowledge-graph
+  - code-understanding
+
+planners:
+  - semantic-analyzer
+  - relationship-extractor
+  - concept-mapper
+
+planters:
+  - knowledge-graph-builder
+  - semantic-indexer
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 5
+  require_review: false
+
+metrics:
+  - name: mapped_components
+    description: Number of components in knowledge graph
+    target: 100_percent
+  - name: extracted_relationships
+    description: Number of semantic relationships extracted
+    target: comprehensive
+  - name: concept_coverage
+    description: Percentage of business concepts mapped to code
+    target: 90
+  - name: graph_completeness
+    description: Completeness score of the knowledge graph
+    target: 85
+
+plant_templates:
+  - name: extract-relationships
+    title_template: "Extract semantic relationships from {module_name}"
+    priority: medium
+  - name: map-business-concept
+    title_template: "Map business concept: {concept_name} to code"
+    priority: high
+  - name: identify-design-pattern
+    title_template: "Identify and document {pattern_name} usage"
+    priority: low
+  - name: build-dependency-graph
+    title_template: "Build dependency graph for {component_name}"
+    priority: medium
+  - name: create-semantic-index
+    title_template: "Create semantic index for {code_area}"
+    priority: low

@@ -1,0 +1,70 @@
+id: public-api-docs
+name: Public API Documentation
+version: 1.0.0
+category: documentation-knowledge
+description: |
+  Consumer-oriented docs and examples.
+  This plan ensures public APIs have comprehensive, consumer-focused documentation
+  with clear examples, use cases, and integration guides.
+
+focus_areas:
+  - Document all public API endpoints
+  - Provide usage examples for each API
+  - Create integration guides
+  - Document authentication and authorization
+  - Include error handling examples
+  - Maintain API reference documentation
+
+scopes:
+  - api
+  - documentation
+  - developer-experience
+
+planners:
+  - api-doc-coverage-checker
+  - example-validator
+  - integration-guide-analyzer
+
+planters:
+  - api-documenter
+  - example-writer
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 8
+  require_review: true
+
+metrics:
+  - name: undocumented_endpoints
+    description: Number of public endpoints without documentation
+    target: 0
+  - name: endpoints_without_examples
+    description: Number of endpoints lacking usage examples
+    target: 0
+  - name: missing_integration_guides
+    description: Number of common integrations without guides
+    target: 0
+  - name: api_doc_completeness
+    description: Percentage of API surface with complete documentation
+    target: 100
+
+plant_templates:
+  - name: document-endpoint
+    title_template: "Document API endpoint: {endpoint_path}"
+    priority: high
+  - name: add-api-example
+    title_template: "Add usage example for {endpoint_name}"
+    priority: high
+  - name: create-integration-guide
+    title_template: "Create integration guide for {integration_scenario}"
+    priority: medium
+  - name: document-authentication
+    title_template: "Document authentication for {api_group}"
+    priority: high
+  - name: document-error-responses
+    title_template: "Document error responses for {endpoint_name}"
+    priority: medium
+  - name: update-api-reference
+    title_template: "Update API reference for {api_version}"
+    priority: high

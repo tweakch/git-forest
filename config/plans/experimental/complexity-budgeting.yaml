@@ -1,0 +1,68 @@
+id: complexity-budgeting
+name: Complexity Budgeting
+version: 1.0.0
+category: experimental
+description: |
+  Enforce global complexity limits.
+  This plan establishes and enforces complexity budgets at various levels
+  (method, class, module, system) to prevent complexity creep and maintain
+  long-term maintainability.
+
+focus_areas:
+  - Define complexity budgets per level
+  - Monitor complexity metrics continuously
+  - Alert on budget violations
+  - Prevent complexity creep
+  - Refactor to stay within budget
+  - Track complexity trends over time
+
+scopes:
+  - quality
+  - complexity
+  - maintainability
+
+planners:
+  - complexity-budget-calculator
+  - budget-monitor
+  - trend-analyzer
+
+planters:
+  - complexity-enforcer
+  - budget-maintainer
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 7
+  require_review: true
+
+metrics:
+  - name: budget_violations
+    description: Number of components exceeding complexity budget
+    target: 0
+  - name: average_complexity
+    description: Average complexity across the system
+    target: within_budget
+  - name: complexity_trend
+    description: Trend of complexity over time
+    target: stable_or_decreasing
+  - name: budget_utilization
+    description: Percentage of complexity budget utilized
+    target: 70_to_85_percent
+
+plant_templates:
+  - name: define-complexity-budget
+    title_template: "Define complexity budget for {level}: {target_value}"
+    priority: high
+  - name: fix-budget-violation
+    title_template: "Fix complexity violation in {component_name} ({over_budget})"
+    priority: high
+  - name: prevent-complexity-creep
+    title_template: "Prevent complexity creep in {module_name}"
+    priority: medium
+  - name: refactor-for-budget
+    title_template: "Refactor {component_name} to meet complexity budget"
+    priority: high
+  - name: adjust-budget
+    title_template: "Adjust complexity budget for {scope}: {justification}"
+    priority: medium

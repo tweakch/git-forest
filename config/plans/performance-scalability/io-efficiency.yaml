@@ -1,0 +1,74 @@
+id: io-efficiency
+name: I/O Efficiency
+version: 1.0.0
+category: performance-scalability
+description: |
+  Optimize file, database, and HTTP usage patterns.
+  This plan analyzes and optimizes I/O operations including file access, database queries,
+  and HTTP calls to reduce latency and improve efficiency.
+
+focus_areas:
+  - Optimize database query patterns (N+1 queries)
+  - Implement connection pooling
+  - Add caching for frequently accessed data
+  - Optimize file I/O operations
+  - Reduce unnecessary HTTP calls
+  - Implement read-through and write-through patterns
+
+scopes:
+  - performance
+  - io
+  - optimization
+
+planners:
+  - io-pattern-analyzer
+  - query-optimizer
+  - caching-opportunity-detector
+
+planters:
+  - io-optimizer
+  - cache-implementer
+  - query-improver
+
+policies:
+  execution_mode: propose
+  risk_level: medium
+  max_concurrent_plants: 5
+  require_review: true
+
+metrics:
+  - name: n_plus_1_queries
+    description: Number of N+1 query patterns detected
+    target: 0
+  - name: uncached_frequent_queries
+    description: Frequently executed queries without caching
+    target: 0
+  - name: synchronous_io
+    description: Number of synchronous I/O operations
+    target: 0
+  - name: redundant_http_calls
+    description: Number of redundant HTTP calls
+    target: 0
+  - name: unbuffered_io
+    description: Number of unbuffered I/O operations
+    target: 0
+
+plant_templates:
+  - name: fix-n-plus-1
+    title_template: "Fix N+1 query pattern in {query_location}"
+    priority: critical
+  - name: add-query-caching
+    title_template: "Add caching for {query_name}"
+    priority: high
+  - name: implement-connection-pooling
+    title_template: "Implement connection pooling for {database_name}"
+    priority: high
+  - name: optimize-file-io
+    title_template: "Optimize file I/O in {component_name}"
+    priority: medium
+  - name: reduce-http-calls
+    title_template: "Reduce HTTP calls in {service_name}"
+    priority: medium
+  - name: add-read-through-cache
+    title_template: "Add read-through cache for {data_source}"
+    priority: medium

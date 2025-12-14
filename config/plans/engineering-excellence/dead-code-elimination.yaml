@@ -1,0 +1,75 @@
+id: dead-code-elimination
+name: Dead Code Elimination
+version: 1.0.0
+category: engineering-excellence
+description: |
+  Find unreachable, unused, or legacy code paths.
+  This plan identifies and safely removes dead code, including unused functions, unreachable
+  code blocks, obsolete classes, and legacy code paths that are no longer executed.
+
+focus_areas:
+  - Detect unused functions and methods
+  - Identify unreachable code blocks
+  - Find obsolete classes and interfaces
+  - Locate unused imports and dependencies
+  - Detect feature flags for removed features
+  - Remove commented-out code
+  - Clean up legacy migration code
+
+scopes:
+  - code-quality
+  - maintenance
+  - cleanup
+
+planners:
+  - dead-code-detector
+  - usage-analyzer
+  - reachability-analyzer
+
+planters:
+  - dead-code-remover
+  - cleanup-agent
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 8
+  require_review: true
+  require_usage_analysis: true
+
+metrics:
+  - name: unused_functions
+    description: Number of unused functions and methods
+    target: 0
+  - name: unreachable_blocks
+    description: Number of unreachable code blocks
+    target: 0
+  - name: obsolete_classes
+    description: Number of obsolete classes and interfaces
+    target: 0
+  - name: unused_imports
+    description: Number of unused imports across the codebase
+    target: 0
+  - name: commented_code_lines
+    description: Lines of commented-out code
+    target: 0
+
+plant_templates:
+  - name: remove-unused-function
+    title_template: "Remove unused function: {function_name}"
+    priority: low
+  - name: remove-unreachable-code
+    title_template: "Remove unreachable code in {file_path}"
+    priority: medium
+  - name: remove-obsolete-class
+    title_template: "Remove obsolete class: {class_name}"
+    priority: medium
+  - name: cleanup-unused-imports
+    title_template: "Clean up unused imports in {file_path}"
+    priority: low
+  - name: remove-feature-flag
+    title_template: "Remove obsolete feature flag: {flag_name}"
+    priority: low
+  - name: remove-commented-code
+    title_template: "Remove commented code in {file_path}"
+    priority: low

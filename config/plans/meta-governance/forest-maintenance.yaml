@@ -1,0 +1,268 @@
+id: forest-maintenance
+name: Forest Maintenance
+version: 1.0.0
+category: meta-governance
+description: |
+  Self-inspection plan for git-forest to validate its own implementation.
+  This plan enables git-forest to dogfood itself in CI by analyzing its
+  own codebase, detecting inconsistencies, and generating improvement plants.
+  
+  SAFETY: Read-only and advisory operations only. No auto-commits, no force-push.
+  All generated plants require explicit human review and approval.
+
+focus_areas:
+  - Verify implementation matches CLI specification
+  - Validate forest structure consistency
+  - Assess code health and quality metrics
+  - Audit plan catalog integrity
+  - Identify test coverage gaps
+  - Detect documentation drift
+  - Ensure deterministic behavior
+
+scopes:
+  - self-inspection
+  - meta-validation
+  - quality-assurance
+  - ci-validation
+
+planners:
+  - impl-consistency
+  - code-health
+  - forest-validator
+  - plan-catalog-auditor
+  - test-coverage
+
+planters:
+  - forest-maintainer
+  - doc-synchronizer
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 5
+  require_review: true
+  auto_apply: false
+  allowed_operations:
+    - read_code
+    - read_config
+    - read_documentation
+    - analyze_metrics
+    - validate_schema
+    - generate_plants
+  forbidden_operations:
+    - auto_commit
+    - force_push
+    - branch_modification
+    - file_write
+    - external_network
+    - destructive_operations
+    - policy_override
+
+safety_rules:
+  determinism: required
+  idempotency: required
+  read_only: true
+  advisory_only: true
+  ci_safe: true
+
+metrics:
+  - name: implementation_consistency_score
+    description: Percentage match between spec and implementation
+    target: 95
+  - name: documentation_drift_count
+    description: Number of documentation inconsistencies detected
+    target: 0
+  - name: code_health_issues
+    description: Number of code quality issues detected
+    target: monitored
+  - name: plan_catalog_errors
+    description: Number of plan catalog validation errors
+    target: 0
+  - name: test_coverage_gaps
+    description: Number of untested critical paths
+    target: 0
+
+plant_templates:
+  - name: impl-spec-mismatch
+    title_template: "Implementation mismatch: {command} does not match CLI spec"
+    priority: high
+    category: impl-consistency
+    
+  - name: doc-code-drift
+    title_template: "Documentation drift: {file} is inconsistent with {source}"
+    priority: medium
+    category: impl-consistency
+    
+  - name: missing-cli-command
+    title_template: "Missing CLI command: {command} specified but not implemented"
+    priority: high
+    category: impl-consistency
+    
+  - name: exit-code-inconsistency
+    title_template: "Exit code mismatch: {command} uses {actual} instead of {expected}"
+    priority: high
+    category: impl-consistency
+    
+  - name: complex-method-refactor
+    title_template: "Refactor complex method: {method} in {file}"
+    priority: medium
+    category: code-health
+    
+  - name: duplicated-code
+    title_template: "Remove code duplication in {location}"
+    priority: low
+    category: code-health
+    
+  - name: missing-error-handling
+    title_template: "Add error handling for {operation} in {file}"
+    priority: high
+    category: code-health
+    
+  - name: forest-structure-violation
+    title_template: "Fix forest structure: {issue} in {path}"
+    priority: medium
+    category: forest-validator
+    
+  - name: schema-validation-failure
+    title_template: "Fix schema validation: {file} fails {schema}"
+    priority: high
+    category: forest-validator
+    
+  - name: plan-metadata-missing
+    title_template: "Add missing metadata to plan: {plan_id}"
+    priority: medium
+    category: plan-catalog-auditor
+    
+  - name: plan-duplicate-id
+    title_template: "Resolve duplicate plan ID: {plan_id}"
+    priority: high
+    category: plan-catalog-auditor
+    
+  - name: plan-undocumented
+    title_template: "Document plan {plan_id} in catalog"
+    priority: low
+    category: plan-catalog-auditor
+    
+  - name: test-coverage-gap
+    title_template: "Add tests for {component}: {scenario}"
+    priority: medium
+    category: test-coverage
+    
+  - name: untested-cli-command
+    title_template: "Add integration test for command: {command}"
+    priority: high
+    category: test-coverage
+    
+  - name: uncovered-error-path
+    title_template: "Test error path: {scenario} in {component}"
+    priority: medium
+    category: test-coverage
+
+planner_definitions:
+  impl-consistency:
+    name: Implementation Consistency Planner
+    description: Verifies implementation matches CLI specification and documentation
+    type: analyzer
+    inputs:
+      - CLI.md
+      - docs/cli/
+      - src/GitForest.Cli/
+      - src/GitForest.Core/
+    outputs:
+      - plants for spec/implementation mismatches
+      - plants for documentation drift
+    
+  code-health:
+    name: Code Health Planner
+    description: Assesses code quality and identifies improvement opportunities
+    type: analyzer
+    inputs:
+      - src/**/*.cs
+    outputs:
+      - plants for refactoring
+      - plants for code cleanup
+    
+  forest-validator:
+    name: Forest Structure Validator
+    description: Validates forest structure follows organizational principles
+    type: validator
+    inputs:
+      - .git-forest/ structure
+      - config/ structure
+    outputs:
+      - plants for structural fixes
+    
+  plan-catalog-auditor:
+    name: Plan Catalog Auditor
+    description: Validates plan catalog integrity and completeness
+    type: auditor
+    inputs:
+      - config/plans/**/*.yaml
+      - config/plans/README.md
+    outputs:
+      - plants for plan improvements
+      - plants for catalog consistency
+    
+  test-coverage:
+    name: Test Coverage Analyzer
+    description: Identifies gaps in test coverage
+    type: analyzer
+    inputs:
+      - test results
+      - coverage reports
+      - src/
+    outputs:
+      - plants for missing tests
+
+planter_definitions:
+  forest-maintainer:
+    name: Forest Maintainer
+    description: General-purpose planter for forest maintenance tasks
+    capabilities:
+      - code_refactoring
+      - documentation_updates
+      - test_creation
+    constraints:
+      mode: propose_only
+      requires_review: true
+      
+  doc-synchronizer:
+    name: Documentation Synchronizer
+    description: Specialized planter for keeping docs in sync with code
+    capabilities:
+      - documentation_analysis
+      - doc_generation
+      - consistency_validation
+    constraints:
+      mode: propose_only
+      requires_review: true
+
+ci_integration:
+  workflow: forest-self-inspection
+  triggers:
+    - push
+    - pull_request
+    - schedule
+  steps:
+    - init_forest
+    - install_plan
+    - reconcile_plan
+    - list_plants
+    - report_metrics
+  outputs:
+    - plants_report: .git-forest/plants/
+    - metrics_report: forest-maintenance-metrics.json
+    - summary: console
+
+determinism_contract:
+  stable_keys: true
+  idempotent_reconcile: true
+  reproducible_analysis: true
+  no_side_effects: true
+  same_input_same_output: true
+
+resource_limits:
+  max_execution_time_seconds: 300
+  max_memory_mb: 512
+  max_plants_per_run: 50
+  max_files_analyzed: 1000

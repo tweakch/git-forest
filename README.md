@@ -32,7 +32,7 @@ git-forest includes a comprehensive catalog of pre-defined plans organized by ca
 - **Meta/Governance** - Plan management and resource governance
 - **Experimental** - Innovative approaches to code quality
 
-See [config/plans/README.md](config/plans/README.md) for the complete catalog with 48 pre-defined plans.
+See [config/plans/README.md](config/plans/README.md) for the complete catalog with 49 pre-defined plans.
 
 ### 🌱 Plant
 **Plants** are concrete work items with stable keys and lifecycle facts. Each plant has:
@@ -112,7 +112,7 @@ git-forest planner code-analyzer run --plan sample
 
 ## Plans Catalog
 
-git-forest includes 48 pre-defined plans across 10 categories to help you improve your codebase systematically:
+git-forest includes 49 pre-defined plans across 10 categories to help you improve your codebase systematically:
 
 ### Using Pre-defined Plans
 
@@ -140,7 +140,7 @@ git-forest plants list --plan dependency-hygiene
 6. **Documentation & Knowledge** (4 plans) - living-architecture, decision-recording, public-api-docs, internal-playbooks
 7. **Evolution & Migration** (5 plans) - monolith-modularization, legacy-extraction, cloud-readiness, framework-upgrade, orleans-adoption
 8. **AI-Native** (5 plans) - semantic-code-map, intent-preservation, regression-scout, memory-guard, self-healing-forest
-9. **Meta/Governance** (4 plans) - forest-governance, plan-composition, risk-aware-planning, harvest-discipline
+9. **Meta/Governance** (5 plans) - forest-governance, plan-composition, risk-aware-planning, harvest-discipline, forest-maintenance
 10. **Experimental** (4 plans) - code-archeology, intent-drift-detection, complexity-budgeting, entropy-reduction
 
 For detailed descriptions of each plan, see [config/plans/README.md](config/plans/README.md).

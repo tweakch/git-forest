@@ -1,4 +1,6 @@
 ﻿using System.CommandLine;
+using System.CommandLine.Builder;
+using System.CommandLine.Parsing;
 using GitForest.Core;
 
 var rootCommand = new RootCommand("git-forest (gf) - CLI for managing repository forests");
@@ -270,4 +272,9 @@ plannerCommand.AddCommand(plannerRunCommand);
 
 rootCommand.AddCommand(plannerCommand);
 
-return await rootCommand.InvokeAsync(args);
+var parser = new CommandLineBuilder(rootCommand)
+    .UseDefaults()
+    .UseVersionOption()
+    .Build();
+
+return await parser.InvokeAsync(args);

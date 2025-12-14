@@ -61,16 +61,32 @@ The CLI can be invoked as `git-forest` (default) or `gf` (alias).
 
 ## Installation
 
+Install as a .NET Global Tool:
+
 ```bash
-# Clone the repository
-git clone https://github.com/tweakch/git-forest.git
-cd git-forest
+dotnet tool install --global git-forest
+```
 
-# Build the solution
-dotnet build
+Verify:
 
-# Run the CLI
-dotnet run --project src/GitForest.Cli
+```bash
+git-forest --version
+```
+
+### `gf` alias (optional)
+
+`.NET tools` expose a single command name (`git-forest`). If you want `gf`, add a shell alias:
+
+**PowerShell (current session):**
+
+```powershell
+Set-Alias gf git-forest
+```
+
+**bash/zsh:**
+
+```bash
+alias gf='git-forest'
 ```
 
 ## Quick Start

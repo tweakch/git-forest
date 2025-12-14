@@ -52,3 +52,6 @@ publish/
 *.pidb
 *.svclog
 *.scc
+
+.gemini/
+gha-creds-*.json

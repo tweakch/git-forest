@@ -1,0 +1,57 @@
+id: architecture-hardening
+name: Architecture Hardening
+version: 1.0.0
+category: engineering-excellence
+description: |
+  Enforce architectural boundaries, detect layering violations, and stabilize core domains.
+  This plan helps maintain clean architecture by identifying and preventing violations of
+  architectural boundaries, ensuring proper dependency flows, and strengthening core domain models.
+
+focus_areas:
+  - Enforce module boundaries and prevent circular dependencies
+  - Detect and fix layering violations (e.g., UI depending on infrastructure)
+  - Stabilize core domain models and business logic
+  - Prevent inappropriate cross-layer access
+  - Maintain hexagonal/clean architecture patterns
+
+scopes:
+  - architecture
+  - design
+  - refactoring
+
+planners:
+  - architecture-analyzer
+  - dependency-graph-builder
+  - layer-violation-detector
+
+planters:
+  - boundary-enforcer
+  - architecture-refactor-agent
+
+policies:
+  execution_mode: propose
+  risk_level: medium
+  max_concurrent_plants: 3
+  require_review: true
+
+metrics:
+  - name: boundary_violations
+    description: Number of architectural boundary violations detected
+    target: 0
+  - name: circular_dependencies
+    description: Number of circular dependencies between modules
+    target: 0
+  - name: layer_violations
+    description: Number of inappropriate cross-layer dependencies
+    target: 0
+
+plant_templates:
+  - name: fix-layer-violation
+    title_template: "Fix {layer} violation: {violating_component}"
+    priority: high
+  - name: enforce-boundary
+    title_template: "Enforce boundary between {module_a} and {module_b}"
+    priority: medium
+  - name: stabilize-domain
+    title_template: "Stabilize {domain} core model"
+    priority: high

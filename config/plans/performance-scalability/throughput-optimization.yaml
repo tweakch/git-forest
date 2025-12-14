@@ -1,0 +1,72 @@
+id: throughput-optimization
+name: Throughput Optimization
+version: 1.0.0
+category: performance-scalability
+description: |
+  Optimize async pipelines, batching, and parallelism.
+  This plan identifies opportunities to improve system throughput through better use of
+  async/await patterns, request batching, and parallel processing.
+
+focus_areas:
+  - Identify synchronous blocking in async contexts
+  - Implement batching for bulk operations
+  - Add parallelism for independent operations
+  - Optimize async/await patterns
+  - Implement pipeline processing
+  - Reduce lock contention
+
+scopes:
+  - performance
+  - concurrency
+  - optimization
+
+planners:
+  - throughput-analyzer
+  - async-pattern-validator
+  - parallelization-detector
+
+planters:
+  - async-optimizer
+  - batching-implementer
+  - parallelization-agent
+
+policies:
+  execution_mode: propose
+  risk_level: medium
+  max_concurrent_plants: 4
+  require_review: true
+  require_load_tests: true
+
+metrics:
+  - name: blocking_async_calls
+    description: Number of blocking calls in async contexts
+    target: 0
+  - name: requests_per_second
+    description: System throughput (requests per second)
+    target: increase_by_50_percent
+  - name: batchable_operations
+    description: Number of operations that could benefit from batching
+    target: 0
+  - name: sequential_independent_ops
+    description: Number of independent operations running sequentially
+    target: 0
+  - name: lock_contention_points
+    description: Number of high-contention lock points
+    target: 0
+
+plant_templates:
+  - name: fix-blocking-async
+    title_template: "Fix blocking call in async {method_name}"
+    priority: high
+  - name: implement-batching
+    title_template: "Implement batching for {operation_name}"
+    priority: high
+  - name: add-parallelism
+    title_template: "Add parallel processing to {component_name}"
+    priority: medium
+  - name: implement-pipeline
+    title_template: "Implement pipeline for {process_name}"
+    priority: medium
+  - name: reduce-lock-contention
+    title_template: "Reduce lock contention in {component_name}"
+    priority: high

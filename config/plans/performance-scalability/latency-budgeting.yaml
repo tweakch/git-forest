@@ -1,0 +1,64 @@
+id: latency-budgeting
+name: Latency Budgeting
+version: 1.0.0
+category: performance-scalability
+description: |
+  Enforce response time SLOs per boundary.
+  This plan establishes and enforces latency budgets for different service boundaries,
+  ensuring predictable performance and identifying operations that exceed their budgets.
+
+focus_areas:
+  - Define latency budgets for service boundaries
+  - Monitor operation latency against budgets
+  - Identify operations exceeding budgets
+  - Add performance tests with latency assertions
+  - Track latency distributions (p50, p95, p99)
+  - Alert on budget violations
+
+scopes:
+  - performance
+  - monitoring
+  - slo
+
+planners:
+  - latency-analyzer
+  - budget-violation-detector
+  - performance-profiler
+
+planters:
+  - budget-enforcer
+  - performance-optimizer
+
+policies:
+  execution_mode: propose
+  risk_level: medium
+  max_concurrent_plants: 4
+  require_review: true
+
+metrics:
+  - name: operations_without_budget
+    description: Number of operations without defined latency budget
+    target: 0
+  - name: budget_violations
+    description: Number of operations exceeding latency budget
+    target: 0
+  - name: p95_latency
+    description: 95th percentile latency across all operations
+    target: within_budget
+  - name: p99_latency
+    description: 99th percentile latency across all operations
+    target: within_budget
+
+plant_templates:
+  - name: define-latency-budget
+    title_template: "Define latency budget for {boundary_name}"
+    priority: high
+  - name: fix-budget-violation
+    title_template: "Fix latency violation in {operation_name} (p95: {current_latency})"
+    priority: high
+  - name: add-latency-test
+    title_template: "Add latency test for {operation_name}"
+    priority: medium
+  - name: optimize-slow-path
+    title_template: "Optimize slow code path in {component_name}"
+    priority: high

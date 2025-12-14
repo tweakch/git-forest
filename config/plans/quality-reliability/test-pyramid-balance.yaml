@@ -1,0 +1,70 @@
+id: test-pyramid-balance
+name: Test Pyramid Balance
+version: 1.0.0
+category: quality-reliability
+description: |
+  Shift tests toward unit and slice tests where appropriate.
+  This plan analyzes your test suite distribution and suggests improvements to achieve
+  a balanced test pyramid with more unit tests, appropriate integration tests, and
+  minimal end-to-end tests.
+
+focus_areas:
+  - Analyze test distribution (unit, integration, e2e)
+  - Identify over-reliance on slow integration/e2e tests
+  - Convert integration tests to unit tests where possible
+  - Add missing unit test coverage
+  - Optimize test execution time
+  - Improve test isolation and reliability
+
+scopes:
+  - testing
+  - quality
+  - performance
+
+planners:
+  - test-distribution-analyzer
+  - test-pyramid-validator
+  - test-speed-profiler
+
+planters:
+  - test-converter
+  - unit-test-generator
+  - test-optimizer
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 5
+  require_review: true
+  target_ratio: "70:20:10"  # unit:integration:e2e
+
+metrics:
+  - name: unit_test_percentage
+    description: Percentage of tests that are unit tests
+    target: 70
+  - name: integration_test_percentage
+    description: Percentage of tests that are integration tests
+    target: 20
+  - name: e2e_test_percentage
+    description: Percentage of tests that are end-to-end tests
+    target: 10
+  - name: average_test_execution_time
+    description: Average execution time per test
+    target: 100ms
+  - name: slow_tests
+    description: Number of tests taking longer than 1 second
+    target: reduce_by_50_percent
+
+plant_templates:
+  - name: convert-to-unit-test
+    title_template: "Convert {test_name} from integration to unit test"
+    priority: medium
+  - name: add-unit-tests
+    title_template: "Add unit tests for {component_name}"
+    priority: high
+  - name: optimize-slow-test
+    title_template: "Optimize slow test: {test_name} ({duration})"
+    priority: medium
+  - name: improve-test-isolation
+    title_template: "Improve isolation for {test_suite}"
+    priority: low

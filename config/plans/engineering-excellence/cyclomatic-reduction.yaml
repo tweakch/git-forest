@@ -1,0 +1,66 @@
+id: cyclomatic-reduction
+name: Cyclomatic Complexity Reduction
+version: 1.0.0
+category: engineering-excellence
+description: |
+  Target complex methods and split responsibilities.
+  This plan identifies methods and functions with high cyclomatic complexity and
+  proposes refactorings to simplify logic, improve readability, and reduce maintenance burden.
+
+focus_areas:
+  - Identify high-complexity methods (cyclomatic complexity > 10)
+  - Split complex methods into smaller, focused functions
+  - Reduce nested conditionals and loops
+  - Extract business logic into separate methods
+  - Improve code readability and testability
+  - Apply single responsibility principle
+
+scopes:
+  - code-quality
+  - refactoring
+  - maintainability
+
+planners:
+  - complexity-analyzer
+  - method-complexity-scanner
+  - cognitive-load-detector
+
+planters:
+  - complexity-reducer
+  - method-splitter
+  - logic-extractor
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 6
+  require_review: true
+  complexity_threshold: 10
+
+metrics:
+  - name: high_complexity_methods
+    description: Number of methods with cyclomatic complexity > 10
+    target: 0
+  - name: average_complexity
+    description: Average cyclomatic complexity across codebase
+    target: 5
+  - name: max_complexity
+    description: Maximum cyclomatic complexity in any method
+    target: 10
+  - name: deeply_nested_blocks
+    description: Number of deeply nested code blocks (> 4 levels)
+    target: 0
+
+plant_templates:
+  - name: reduce-method-complexity
+    title_template: "Reduce complexity of {method_name} (complexity: {complexity_score})"
+    priority: high
+  - name: extract-method
+    title_template: "Extract method from {source_method}: {extracted_logic}"
+    priority: medium
+  - name: simplify-conditionals
+    title_template: "Simplify conditionals in {method_name}"
+    priority: medium
+  - name: reduce-nesting
+    title_template: "Reduce nesting depth in {method_name}"
+    priority: low

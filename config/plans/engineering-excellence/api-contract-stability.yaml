@@ -1,0 +1,69 @@
+id: api-contract-stability
+name: API Contract Stability
+version: 1.0.0
+category: engineering-excellence
+description: |
+  Validate public APIs, enforce semantic versioning discipline, and detect breaking changes.
+  This plan helps maintain API stability and backward compatibility by identifying breaking
+  changes, enforcing versioning policies, and ensuring proper API evolution.
+
+focus_areas:
+  - Detect breaking changes in public APIs
+  - Enforce semantic versioning discipline
+  - Document API changes and deprecations
+  - Validate API contracts against specifications
+  - Track API surface area growth
+  - Ensure backward compatibility
+
+scopes:
+  - api
+  - contracts
+  - versioning
+
+planners:
+  - api-change-detector
+  - breaking-change-analyzer
+  - semver-validator
+
+planters:
+  - api-deprecation-handler
+  - version-bumper
+  - compatibility-fixer
+
+policies:
+  execution_mode: propose
+  risk_level: high
+  max_concurrent_plants: 2
+  require_review: true
+  block_breaking_changes: true
+
+metrics:
+  - name: breaking_changes
+    description: Number of detected breaking changes
+    target: 0
+  - name: deprecated_apis
+    description: Number of deprecated but not removed APIs
+    target: max_5
+  - name: undocumented_changes
+    description: Number of API changes without documentation
+    target: 0
+  - name: version_violations
+    description: Number of semver violations detected
+    target: 0
+
+plant_templates:
+  - name: fix-breaking-change
+    title_template: "Fix breaking change in {api_name}: {change_description}"
+    priority: critical
+  - name: add-deprecation-notice
+    title_template: "Add deprecation notice for {api_name}"
+    priority: high
+  - name: document-api-change
+    title_template: "Document API change: {change_summary}"
+    priority: medium
+  - name: version-bump
+    title_template: "Bump version to {new_version} for {reason}"
+    priority: high
+  - name: add-compatibility-layer
+    title_template: "Add compatibility layer for {api_name}"
+    priority: medium

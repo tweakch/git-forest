@@ -1,0 +1,62 @@
+id: refactor-hotspots
+name: Refactor Hotspots
+version: 1.0.0
+category: engineering-excellence
+description: |
+  Identify churn-heavy files and concentrate refactors there.
+  This plan uses code churn analysis to identify files that change frequently,
+  indicating potential design issues, and prioritizes refactoring efforts on these hotspots.
+
+focus_areas:
+  - Identify high-churn files and modules
+  - Analyze change patterns and frequency
+  - Detect coupling issues causing frequent changes
+  - Prioritize refactoring based on churn metrics
+  - Stabilize frequently changing components
+  - Reduce change cascades
+
+scopes:
+  - refactoring
+  - code-quality
+  - maintenance
+
+planners:
+  - churn-analyzer
+  - hotspot-detector
+  - change-pattern-analyzer
+
+planters:
+  - hotspot-refactor-agent
+  - stabilization-agent
+
+policies:
+  execution_mode: propose
+  risk_level: medium
+  max_concurrent_plants: 4
+  require_review: true
+  focus_on_top_n: 10
+
+metrics:
+  - name: high_churn_files
+    description: Number of files with excessive change frequency
+    target: 5
+  - name: average_churn_rate
+    description: Average change frequency across hotspot files
+    target: reduce_by_50_percent
+  - name: cascading_changes
+    description: Number of changes that trigger changes in other files
+    target: reduce_by_30_percent
+
+plant_templates:
+  - name: refactor-hotspot-file
+    title_template: "Refactor high-churn file: {file_path} ({churn_count} changes)"
+    priority: high
+  - name: decouple-hotspot
+    title_template: "Decouple {file_name} from {coupled_components}"
+    priority: high
+  - name: stabilize-interface
+    title_template: "Stabilize interface for {component_name}"
+    priority: medium
+  - name: extract-volatile-logic
+    title_template: "Extract volatile logic from {file_name}"
+    priority: medium

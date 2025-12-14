@@ -1,0 +1,66 @@
+id: mutation-testing
+name: Mutation Testing
+version: 1.0.0
+category: quality-reliability
+description: |
+  Strengthen weak tests by introducing mutations.
+  This plan uses mutation testing to identify weaknesses in your test suite by introducing
+  small changes (mutations) to your code and checking if tests catch them. Surviving
+  mutations indicate areas where tests need improvement.
+
+focus_areas:
+  - Run mutation testing on critical code paths
+  - Identify surviving mutations (weak tests)
+  - Add tests to kill surviving mutations
+  - Improve assertion quality
+  - Increase mutation score
+  - Focus on business-critical components
+
+scopes:
+  - testing
+  - quality
+  - coverage
+
+planners:
+  - mutation-test-runner
+  - mutation-analyzer
+  - weak-test-detector
+
+planters:
+  - test-strengthener
+  - assertion-improver
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 4
+  require_review: true
+  target_mutation_score: 80
+
+metrics:
+  - name: mutation_score
+    description: Percentage of mutations killed by tests
+    target: 80
+  - name: surviving_mutations
+    description: Number of mutations that survive test suite
+    target: 0
+  - name: weak_test_areas
+    description: Number of modules with mutation score < 70%
+    target: 0
+  - name: uncaught_mutations
+    description: Number of critical mutations not caught
+    target: 0
+
+plant_templates:
+  - name: kill-surviving-mutation
+    title_template: "Add test to catch mutation in {method_name}: {mutation_type}"
+    priority: high
+  - name: strengthen-assertions
+    title_template: "Strengthen assertions in {test_name}"
+    priority: medium
+  - name: add-boundary-tests
+    title_template: "Add boundary condition tests for {component_name}"
+    priority: medium
+  - name: improve-mutation-coverage
+    title_template: "Improve mutation coverage for {module_name}"
+    priority: low

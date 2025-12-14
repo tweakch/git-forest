@@ -27,7 +27,7 @@ jobs:
         run: dotnet restore
 
       - name: Pack
-        run: dotnet pack src/GitForest.Cli/GitForest.Cli.csproj --no-restore --configuration Release -p:Version=${GITHUB_REF_NAME#v} --output ./artifacts/packages
+        run: dotnet pack src/GitForest.Cli/GitForest.Cli.csproj --no-restore --configuration Release --output ./artifacts/packages
 
       - name: NuGet login (OIDC → temp API key)
         uses: NuGet/login@v1

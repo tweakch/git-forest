@@ -1,1 +1,199 @@
 # git-forest
+
+A .NET Aspire-based CLI for managing collections of git repositories as a unified forest.
+
+## Overview
+
+git-forest is a powerful command-line tool that helps you manage multiple git repositories as a cohesive unit called a "forest". It provides an intuitive way to organize, track, and coordinate work across multiple related repositories.
+
+Design goals: **idempotent**, **deterministic IDs**, **reconcile desired state**, **automation-friendly output**, **clear ownership**, **safe concurrency**.
+
+## Core Concepts
+
+### 📦 Plan
+**Plans** are versioned packages that define the desired forest intent. A plan includes:
+- Planners (generators)
+- Planters (executors)
+- Plant templates
+- Scopes and policies
+
+Plans can be sourced from GitHub, URLs, or local paths.
+
+### 🌱 Plant
+**Plants** are concrete work items with stable keys and lifecycle facts. Each plant has:
+- Stable key format: `planId:plantSlug` (e.g., `sample:backend-memory-hygiene`)
+- Status lifecycle: planned → planted → growing → harvestable → harvested
+- Assignments to planters
+- Branch tracking
+- Candidate diffs and harvest results
+
+### 🤖 Planter
+**Planters** are executor personas (agents) that propose diffs/PRs for plants under policies. They can be:
+- Built-in planters (provided by plans)
+- Custom planters (user-defined)
+
+Planters operate with capacity limits and follow execution modes (propose vs apply).
+
+### 🧠 Planner
+**Planners** are deterministic generators that produce a **desired set** of Plants from a Plan + repo context. Same plan + repo context always produces the same plant keys.
+
+### 🌲 Forest
+The **Forest** is the repo-local state stored under `.git-forest/` with optional user config.
+
+## Command Alias
+
+The CLI can be invoked as `git-forest` (default) or `gf` (alias).
+
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/tweakch/git-forest.git
+cd git-forest
+
+# Build the solution
+dotnet build
+
+# Run the CLI
+dotnet run --project src/GitForest.Cli
+```
+
+## Quick Start
+
+```bash
+# Initialize a forest in current git repo
+git-forest init
+
+# Check forest status
+git-forest status
+
+# Get status in JSON format
+git-forest status --json
+
+# Install a plan
+git-forest plans install tweakch/git-forest-plans/sample
+
+# List installed plans
+git-forest plans list
+
+# Reconcile a plan (create plants from plan)
+git-forest plan sample reconcile
+
+# List all plants
+git-forest plants list
+
+# Show specific plant details
+git-forest plant sample:backend-hygiene show
+
+# List planters
+git-forest planters list
+
+# Assign planter to plant
+git-forest plant sample:backend-hygiene assign backend-planter
+
+# Run a planner
+git-forest planner code-analyzer run --plan sample
+```
+
+## Command Structure
+
+The CLI follows this layout:
+
+```text
+git-forest init                    # Initialize forest
+git-forest status                  # Show status
+git-forest config show             # Configuration
+
+git-forest plans list              # List plans
+git-forest plans install <source>  # Install plan
+git-forest plan <id> reconcile     # Reconcile plan
+
+git-forest plants list             # List plants
+git-forest plant <selector> show   # Show plant
+
+git-forest planters list           # List planters
+git-forest planter <id> show       # Show planter
+
+git-forest planners list           # List planners
+git-forest planner <id> run        # Run planner
+```
+
+### Global Options
+
+All commands support:
+- `--json` - Output in JSON format for automation
+
+For detailed documentation on each command, see the [CLI specification](./CLI.md).
+
+## Project Structure
+
+```
+git-forest/
+├── src/
+│   ├── GitForest.Core/      # Core domain models and services
+│   └── GitForest.Cli/        # Command-line interface
+├── config/                   # Configuration files
+├── docs/
+│   └── cli/                  # CLI command documentation (legacy)
+├── .github/
+│   ├── copilot-instructions.md  # GitHub Copilot instructions
+│   └── workflows/            # GitHub Actions CI/CD
+├── CLI.md                    # CLI specification (v0.2)
+└── GitForest.sln            # Solution file
+```
+
+## On-Disk Layout
+
+When initialized, git-forest creates a `.git-forest/` directory:
+
+```text
+.git-forest/
+  forest.yaml              # Forest metadata
+  config.yaml              # Configuration
+  lock                     # Concurrency lock
+  plans/<plan-id>/         # Installed plans
+  plants/<planId__slug>/   # Plant state and history
+  planters/<planter-id>/   # Planter state
+  planners/<planner-id>/   # Planner definitions
+  logs/                    # Activity logs
+```
+
+## Technology Stack
+
+- **.NET 10.0** - Latest .NET runtime
+- **.NET Aspire** - Cloud-native application framework (via NuGet)
+- **System.CommandLine** - Modern CLI framework
+- **C#** - Primary language
+
+## Exit Codes
+
+For automation, the CLI provides stable exit codes:
+
+- `0` - Success
+- `2` - Invalid arguments / parse error
+- `10` - Forest not initialized
+- `11` - Plan not found
+- `12` - Plant not found / ambiguous selector
+- `13` - Planter not found
+- `20` - Schema validation failed
+- `23` - Lock timeout / busy
+- `30` - Git operation failed
+- `40` - Execution not permitted by policy
+
+## Contributing
+
+Please follow the guidelines in [.github/copilot-instructions.md](.github/copilot-instructions.md) when contributing.
+
+1. Review existing code patterns
+2. Keep changes minimal and focused
+3. Follow the CLI specification in CLI.md
+4. Update documentation for functional changes
+5. Submit a pull request
+
+## License
+
+[Your License Here]
+
+## Support
+
+For issues and questions, please use the GitHub issue tracker.

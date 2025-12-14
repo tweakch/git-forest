@@ -1,0 +1,11 @@
+{
+  "forest": {
+    "name": "my-forest",
+    "defaultPath": "./",
+    "autoDiscovery": true
+  },
+  "git": {
+    "defaultBranch": "main",
+    "autoFetch": false
+  }
+}

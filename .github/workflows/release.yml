@@ -17,6 +17,9 @@ jobs:
       id-token: write # required for nuget.org Trusted Publishing (OIDC)
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # MinVer needs full history + tags to compute version correctly
+          fetch-tags: true
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -27,7 +30,7 @@ jobs:
         run: dotnet restore
 
       - name: Pack
-        run: dotnet pack src/GitForest.Cli/GitForest.Cli.csproj --no-restore --configuration Release -p:Version=${GITHUB_REF_NAME#v} --output ./artifacts/packages
+        run: dotnet pack src/GitForest.Cli/GitForest.Cli.csproj --no-restore --configuration Release --output ./artifacts/packages
 
       - name: NuGet login (OIDC → temp API key)
         uses: NuGet/login@v1

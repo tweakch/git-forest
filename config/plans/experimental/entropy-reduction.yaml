@@ -1,0 +1,72 @@
+id: entropy-reduction
+name: Entropy Reduction
+version: 1.0.0
+category: experimental
+description: |
+  Fight gradual degradation.
+  This plan combats software entropy by continuously identifying and fixing
+  small degradations before they accumulate into major technical debt,
+  maintaining system health over time.
+
+focus_areas:
+  - Detect early signs of degradation
+  - Identify entropy patterns
+  - Fix small issues before they grow
+  - Maintain consistent code quality
+  - Prevent technical debt accumulation
+  - Monitor system health trends
+
+scopes:
+  - quality
+  - maintenance
+  - prevention
+
+planners:
+  - entropy-detector
+  - degradation-monitor
+  - health-tracker
+
+planters:
+  - entropy-fighter
+  - quality-maintainer
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 8
+  require_review: false
+  continuous_monitoring: true
+
+metrics:
+  - name: entropy_score
+    description: Overall system entropy/degradation score
+    target: less_than_20
+  - name: degradation_rate
+    description: Rate of quality degradation over time
+    target: near_zero
+  - name: small_issues_fixed
+    description: Number of small issues fixed before escalation
+    target: maximized
+  - name: technical_debt_accumulation
+    description: Rate of technical debt accumulation
+    target: zero_or_negative
+
+plant_templates:
+  - name: fix-early-degradation
+    title_template: "Fix early degradation in {component_name}"
+    priority: medium
+  - name: prevent-entropy-pattern
+    title_template: "Prevent entropy pattern: {pattern_name}"
+    priority: high
+  - name: maintain-quality-standard
+    title_template: "Maintain quality standard in {module_name}"
+    priority: low
+  - name: address-small-issue
+    title_template: "Address small issue before escalation: {issue_description}"
+    priority: medium
+  - name: reduce-system-entropy
+    title_template: "Reduce entropy in {subsystem_name}"
+    priority: high
+  - name: monitor-health-trend
+    title_template: "Monitor health trend for {component_name}"
+    priority: low

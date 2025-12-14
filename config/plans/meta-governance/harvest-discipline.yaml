@@ -1,0 +1,68 @@
+id: harvest-discipline
+name: Harvest Discipline
+version: 1.0.0
+category: meta-governance
+description: |
+  Define when "done" actually means done.
+  This plan establishes clear completion criteria for plants, validates that
+  plants meet quality standards before harvest, and prevents premature closure
+  of incomplete work.
+
+focus_areas:
+  - Define completion criteria per plant type
+  - Validate plant completeness before harvest
+  - Ensure quality standards are met
+  - Verify documentation and tests
+  - Prevent premature harvest
+  - Track harvest quality metrics
+
+scopes:
+  - governance
+  - quality
+  - completion
+
+planners:
+  - completion-validator
+  - quality-checker
+  - harvest-readiness-assessor
+
+planters:
+  - harvest-enforcer
+  - quality-validator
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 4
+  require_review: true
+
+metrics:
+  - name: premature_harvests
+    description: Number of plants harvested before completion
+    target: 0
+  - name: harvest_quality_score
+    description: Average quality score of harvested plants
+    target: 90
+  - name: incomplete_harvests
+    description: Number of harvested plants missing criteria
+    target: 0
+  - name: harvest_rejection_rate
+    description: Percentage of harvest attempts rejected for incompleteness
+    target: less_than_10_percent
+
+plant_templates:
+  - name: define-completion-criteria
+    title_template: "Define completion criteria for {plant_type}"
+    priority: high
+  - name: validate-harvest-readiness
+    title_template: "Validate harvest readiness for {plant_key}"
+    priority: high
+  - name: prevent-premature-harvest
+    title_template: "Prevent premature harvest of {plant_key}"
+    priority: critical
+  - name: improve-harvest-quality
+    title_template: "Improve harvest quality for {plant_category}"
+    priority: medium
+  - name: complete-missing-criteria
+    title_template: "Complete missing criteria for {plant_key}: {criteria}"
+    priority: high

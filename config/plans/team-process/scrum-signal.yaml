@@ -1,0 +1,67 @@
+id: scrum-signal
+name: Scrum Signal
+version: 1.0.0
+category: team-process
+description: |
+  Align backlog, PRs, and commits with Scrum goals.
+  This plan ensures development work is properly aligned with sprint goals,
+  user stories are well-defined, and progress is clearly tracked.
+
+focus_areas:
+  - Link commits to user stories
+  - Validate PR alignment with sprint goals
+  - Track work breakdown and estimation accuracy
+  - Ensure acceptance criteria are met
+  - Monitor sprint progress and velocity
+  - Identify blockers and dependencies
+
+scopes:
+  - agile
+  - scrum
+  - project-management
+
+planners:
+  - sprint-alignment-checker
+  - story-tracker
+  - velocity-analyzer
+
+planters:
+  - scrum-aligner
+  - story-validator
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 5
+  require_review: false
+
+metrics:
+  - name: unlinked_commits
+    description: Number of commits not linked to user stories
+    target: 0
+  - name: misaligned_prs
+    description: Number of PRs not aligned with sprint goals
+    target: 0
+  - name: incomplete_acceptance_criteria
+    description: Number of stories with incomplete criteria
+    target: 0
+  - name: estimation_accuracy
+    description: Percentage accuracy of story point estimates
+    target: 85
+
+plant_templates:
+  - name: link-commit-to-story
+    title_template: "Link commits to user story: {story_id}"
+    priority: low
+  - name: align-pr-with-goal
+    title_template: "Align PR #{pr_number} with sprint goal"
+    priority: medium
+  - name: complete-acceptance-criteria
+    title_template: "Complete acceptance criteria for {story_id}"
+    priority: high
+  - name: update-story-progress
+    title_template: "Update progress tracking for {story_id}"
+    priority: low
+  - name: document-blocker
+    title_template: "Document blocker for {story_id}: {blocker_description}"
+    priority: high

@@ -1,0 +1,69 @@
+id: self-healing-forest
+name: Self-Healing Forest
+version: 1.0.0
+category: ai-native
+description: |
+  Auto-detect issues and plant new work.
+  This plan enables the forest to automatically detect issues, code smells,
+  and improvement opportunities, then create new plants to address them
+  without manual intervention.
+
+focus_areas:
+  - Continuously scan for code issues
+  - Auto-detect technical debt
+  - Identify optimization opportunities
+  - Create plants for detected issues
+  - Prioritize auto-generated work
+  - Learn from resolved plants
+
+scopes:
+  - ai
+  - automation
+  - self-improvement
+
+planners:
+  - issue-auto-detector
+  - opportunity-finder
+  - priority-calculator
+
+planters:
+  - auto-planter
+  - self-healer
+
+policies:
+  execution_mode: propose
+  risk_level: medium
+  max_concurrent_plants: 10
+  require_review: true
+  auto_plant_creation: true
+
+metrics:
+  - name: auto_detected_issues
+    description: Number of issues automatically detected
+    target: comprehensive
+  - name: auto_created_plants
+    description: Number of plants automatically created
+    target: as_needed
+  - name: auto_plant_success_rate
+    description: Percentage of auto-created plants successfully resolved
+    target: 70
+  - name: false_positive_plants
+    description: Number of auto-created plants that were invalid
+    target: less_than_15_percent
+
+plant_templates:
+  - name: auto-detect-issue
+    title_template: "Auto-detected: {issue_type} in {location}"
+    priority: medium
+  - name: auto-suggest-optimization
+    title_template: "Optimization opportunity: {optimization_description}"
+    priority: low
+  - name: auto-debt-tracking
+    title_template: "Technical debt detected: {debt_description}"
+    priority: medium
+  - name: auto-pattern-violation
+    title_template: "Pattern violation detected: {pattern_name} in {file_path}"
+    priority: high
+  - name: learn-from-resolution
+    title_template: "Learn from resolved plant: {plant_key}"
+    priority: low

@@ -1,0 +1,68 @@
+id: risk-aware-planning
+name: Risk-Aware Planning
+version: 1.0.0
+category: meta-governance
+description: |
+  Rank plants by blast radius.
+  This plan assesses and prioritizes plants based on their potential impact
+  and risk, ensuring high-risk changes receive appropriate scrutiny and
+  low-risk changes can proceed quickly.
+
+focus_areas:
+  - Calculate blast radius for each plant
+  - Assess change risk and impact
+  - Prioritize based on risk/value ratio
+  - Require appropriate reviews for high-risk changes
+  - Enable fast-track for low-risk changes
+  - Monitor risk distribution across plants
+
+scopes:
+  - governance
+  - risk-management
+  - prioritization
+
+planners:
+  - risk-assessor
+  - blast-radius-calculator
+  - impact-analyzer
+
+planters:
+  - risk-manager
+  - priority-optimizer
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 5
+  require_review: true
+
+metrics:
+  - name: unassessed_plants
+    description: Number of plants without risk assessment
+    target: 0
+  - name: high_risk_plants
+    description: Number of high-risk plants in progress
+    target: monitored
+  - name: risk_distribution_balance
+    description: Balance of risk across active plants
+    target: optimal
+  - name: blast_radius_awareness
+    description: Percentage of plants with documented blast radius
+    target: 100
+
+plant_templates:
+  - name: assess-plant-risk
+    title_template: "Assess risk for plant: {plant_key}"
+    priority: high
+  - name: calculate-blast-radius
+    title_template: "Calculate blast radius for {plant_key}"
+    priority: high
+  - name: adjust-priority-by-risk
+    title_template: "Adjust priority for {plant_key} based on risk"
+    priority: medium
+  - name: add-risk-mitigation
+    title_template: "Add risk mitigation for {plant_key}"
+    priority: high
+  - name: fast-track-low-risk
+    title_template: "Fast-track low-risk plant: {plant_key}"
+    priority: low

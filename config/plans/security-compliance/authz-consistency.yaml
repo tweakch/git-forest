@@ -1,0 +1,68 @@
+id: authz-consistency
+name: Authorization Consistency
+version: 1.0.0
+category: security-compliance
+description: |
+  Ensure authorization is enforced uniformly.
+  This plan validates that authorization checks are consistently applied across all
+  protected resources and operations, preventing authorization bypass vulnerabilities.
+
+focus_areas:
+  - Identify protected resources and operations
+  - Validate authorization check presence
+  - Ensure consistent authorization patterns
+  - Detect authorization bypass vulnerabilities
+  - Verify permission granularity
+  - Audit authorization decisions
+
+scopes:
+  - security
+  - authorization
+  - access-control
+
+planners:
+  - authz-coverage-analyzer
+  - permission-checker
+  - bypass-detector
+
+planters:
+  - authz-enforcer
+  - permission-fixer
+
+policies:
+  execution_mode: propose
+  risk_level: critical
+  max_concurrent_plants: 5
+  require_review: true
+  require_security_review: true
+
+metrics:
+  - name: unprotected_endpoints
+    description: Number of endpoints without authorization checks
+    target: 0
+  - name: inconsistent_checks
+    description: Number of inconsistent authorization patterns
+    target: 0
+  - name: bypass_vulnerabilities
+    description: Number of potential authorization bypass points
+    target: 0
+  - name: missing_permission_checks
+    description: Number of operations missing permission validation
+    target: 0
+
+plant_templates:
+  - name: add-authz-check
+    title_template: "Add authorization check to {endpoint_name}"
+    priority: critical
+  - name: fix-authz-bypass
+    title_template: "Fix authorization bypass in {component_name}"
+    priority: critical
+  - name: standardize-authz-pattern
+    title_template: "Standardize authorization pattern in {module_name}"
+    priority: high
+  - name: add-permission-check
+    title_template: "Add permission check for {operation_name}"
+    priority: critical
+  - name: audit-authz-decision
+    title_template: "Add audit logging for {resource_name} authorization"
+    priority: medium

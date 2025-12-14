@@ -1,0 +1,69 @@
+id: framework-upgrade
+name: Framework Upgrade
+version: 1.0.0
+category: evolution-migration
+description: |
+  .NET LTS migrations, breaking change handling.
+  This plan manages framework upgrades including .NET version migrations,
+  identifying breaking changes, and coordinating the upgrade process across
+  the entire application.
+
+focus_areas:
+  - Analyze upgrade impact and breaking changes
+  - Update project files and dependencies
+  - Address API changes and deprecations
+  - Migrate to new framework patterns
+  - Validate functionality post-upgrade
+  - Update documentation and build scripts
+
+scopes:
+  - framework
+  - migration
+  - upgrade
+
+planners:
+  - upgrade-impact-analyzer
+  - breaking-change-detector
+  - dependency-compatibility-checker
+
+planters:
+  - framework-upgrader
+  - breaking-change-fixer
+
+policies:
+  execution_mode: propose
+  risk_level: high
+  max_concurrent_plants: 4
+  require_review: true
+  require_testing: true
+
+metrics:
+  - name: breaking_changes
+    description: Number of breaking changes requiring fixes
+    target: 0
+  - name: deprecated_api_usage
+    description: Number of deprecated APIs still in use
+    target: 0
+  - name: incompatible_dependencies
+    description: Number of dependencies incompatible with target framework
+    target: 0
+  - name: test_failures_post_upgrade
+    description: Number of test failures after framework upgrade
+    target: 0
+
+plant_templates:
+  - name: analyze-upgrade-impact
+    title_template: "Analyze impact of upgrading to {target_framework}"
+    priority: critical
+  - name: update-project-files
+    title_template: "Update project files for {framework_version}"
+    priority: high
+  - name: fix-breaking-change
+    title_template: "Fix breaking change: {change_description}"
+    priority: critical
+  - name: replace-deprecated-api
+    title_template: "Replace deprecated API: {old_api} → {new_api}"
+    priority: high
+  - name: update-dependency-for-framework
+    title_template: "Update {package_name} for {framework_version} compatibility"
+    priority: high

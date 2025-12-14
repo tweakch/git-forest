@@ -1,0 +1,69 @@
+id: audit-trail-enforcement
+name: Audit Trail Enforcement
+version: 1.0.0
+category: security-compliance
+description: |
+  Ensure critical actions are traceable.
+  This plan validates that all critical operations have proper audit logging,
+  including user actions, data changes, and security-relevant events for
+  compliance and forensic analysis.
+
+focus_areas:
+  - Identify critical operations requiring audit trails
+  - Ensure audit logging for sensitive actions
+  - Validate audit log completeness
+  - Implement tamper-proof audit storage
+  - Add correlation for audit event chains
+  - Ensure compliance with audit requirements
+
+scopes:
+  - security
+  - compliance
+  - audit
+
+planners:
+  - audit-coverage-analyzer
+  - critical-action-detector
+  - compliance-validator
+
+planters:
+  - audit-logger
+  - compliance-enforcer
+
+policies:
+  execution_mode: propose
+  risk_level: high
+  max_concurrent_plants: 6
+  require_review: true
+  require_compliance_review: true
+
+metrics:
+  - name: unaudited_critical_actions
+    description: Number of critical actions without audit logging
+    target: 0
+  - name: incomplete_audit_events
+    description: Number of audit events missing required fields
+    target: 0
+  - name: audit_coverage_percentage
+    description: Percentage of critical operations with audit trails
+    target: 100
+  - name: missing_correlation_ids
+    description: Number of audit events without correlation
+    target: 0
+
+plant_templates:
+  - name: add-audit-logging
+    title_template: "Add audit logging for {action_name}"
+    priority: critical
+  - name: complete-audit-event
+    title_template: "Complete audit event for {operation_name}"
+    priority: high
+  - name: add-audit-correlation
+    title_template: "Add correlation to audit events in {component_name}"
+    priority: medium
+  - name: implement-tamper-proof-storage
+    title_template: "Implement tamper-proof audit storage for {audit_category}"
+    priority: high
+  - name: validate-compliance
+    title_template: "Validate audit compliance for {requirement_name}"
+    priority: high

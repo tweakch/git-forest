@@ -1,0 +1,70 @@
+id: knowledge-radiation
+name: Knowledge Radiation
+version: 1.0.0
+category: team-process
+description: |
+  Turn tribal knowledge into docs, tests, and diagrams.
+  This plan captures implicit team knowledge and makes it explicit through
+  documentation, executable tests, and visual diagrams to reduce knowledge silos.
+
+focus_areas:
+  - Document undocumented system behavior
+  - Capture design decisions and rationale
+  - Create system diagrams and visualizations
+  - Write tests that document behavior
+  - Record common troubleshooting solutions
+  - Share lessons learned
+
+scopes:
+  - knowledge-management
+  - documentation
+  - team-learning
+
+planners:
+  - knowledge-gap-detector
+  - tribal-knowledge-extractor
+  - documentation-prioritizer
+
+planters:
+  - knowledge-documenter
+  - diagram-creator
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 6
+  require_review: true
+
+metrics:
+  - name: single_point_of_knowledge
+    description: Number of critical areas with only one expert
+    target: 0
+  - name: undocumented_behaviors
+    description: Number of important behaviors without documentation
+    target: 0
+  - name: missing_diagrams
+    description: Number of complex systems without diagrams
+    target: 0
+  - name: implicit_knowledge_items
+    description: Number of identified tribal knowledge items
+    target: 0
+
+plant_templates:
+  - name: document-behavior
+    title_template: "Document {system_behavior}"
+    priority: high
+  - name: create-system-diagram
+    title_template: "Create diagram for {system_name}"
+    priority: medium
+  - name: capture-decision-rationale
+    title_template: "Capture rationale for {decision_name}"
+    priority: medium
+  - name: write-behavioral-test
+    title_template: "Write test documenting {behavior_name}"
+    priority: high
+  - name: document-troubleshooting
+    title_template: "Document troubleshooting for {problem_type}"
+    priority: medium
+  - name: share-lesson-learned
+    title_template: "Document lesson learned: {lesson_summary}"
+    priority: low

@@ -1,0 +1,68 @@
+id: monolith-modularization
+name: Monolith Modularization
+version: 1.0.0
+category: evolution-migration
+description: |
+  Gradual slicing without big-bang rewrites.
+  This plan guides incremental extraction of bounded contexts from monolithic
+  applications into well-defined modules, avoiding risky big-bang rewrites.
+
+focus_areas:
+  - Identify bounded contexts in monolith
+  - Define module boundaries
+  - Extract modules incrementally
+  - Establish module interfaces
+  - Manage inter-module dependencies
+  - Validate module isolation
+
+scopes:
+  - architecture
+  - refactoring
+  - modularization
+
+planners:
+  - bounded-context-detector
+  - module-boundary-analyzer
+  - dependency-mapper
+
+planters:
+  - module-extractor
+  - boundary-enforcer
+
+policies:
+  execution_mode: propose
+  risk_level: high
+  max_concurrent_plants: 3
+  require_review: true
+  require_architecture_review: true
+
+metrics:
+  - name: identified_bounded_contexts
+    description: Number of bounded contexts identified in monolith
+    target: documented
+  - name: extracted_modules
+    description: Number of successfully extracted modules
+    target: progress
+  - name: cross_boundary_violations
+    description: Number of inappropriate cross-boundary dependencies
+    target: 0
+  - name: monolith_size_loc
+    description: Lines of code remaining in monolith
+    target: reduce_by_30_percent
+
+plant_templates:
+  - name: identify-bounded-context
+    title_template: "Identify bounded context: {context_name}"
+    priority: high
+  - name: define-module-boundary
+    title_template: "Define module boundary for {module_name}"
+    priority: high
+  - name: extract-module
+    title_template: "Extract {module_name} from monolith"
+    priority: critical
+  - name: establish-module-interface
+    title_template: "Establish interface for {module_name}"
+    priority: high
+  - name: refactor-dependency
+    title_template: "Refactor dependency between {module_a} and {module_b}"
+    priority: medium

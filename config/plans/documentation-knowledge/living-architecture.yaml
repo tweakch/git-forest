@@ -1,0 +1,67 @@
+id: living-architecture
+name: Living Architecture
+version: 1.0.0
+category: documentation-knowledge
+description: |
+  Keep diagrams, ADRs, and code aligned.
+  This plan ensures architectural documentation stays synchronized with the
+  actual codebase through automated validation and continuous updates.
+
+focus_areas:
+  - Validate architecture diagrams against code
+  - Keep ADRs (Architecture Decision Records) current
+  - Ensure code reflects documented architecture
+  - Detect architecture drift
+  - Update diagrams when code changes
+  - Maintain architecture documentation
+
+scopes:
+  - architecture
+  - documentation
+  - alignment
+
+planners:
+  - architecture-drift-detector
+  - adr-validator
+  - diagram-sync-checker
+
+planters:
+  - architecture-updater
+  - diagram-maintainer
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 5
+  require_review: true
+
+metrics:
+  - name: outdated_diagrams
+    description: Number of diagrams not reflecting current architecture
+    target: 0
+  - name: obsolete_adrs
+    description: Number of ADRs describing superseded decisions
+    target: 0
+  - name: architecture_drift_score
+    description: Degree of divergence between docs and code
+    target: 0
+  - name: undocumented_arch_changes
+    description: Number of significant architecture changes without docs
+    target: 0
+
+plant_templates:
+  - name: update-architecture-diagram
+    title_template: "Update {diagram_name} to reflect {change_description}"
+    priority: high
+  - name: update-adr
+    title_template: "Update ADR-{adr_number}: {adr_title}"
+    priority: medium
+  - name: create-adr
+    title_template: "Create ADR for {decision_topic}"
+    priority: high
+  - name: fix-architecture-drift
+    title_template: "Fix architecture drift in {component_name}"
+    priority: high
+  - name: document-arch-change
+    title_template: "Document architecture change: {change_summary}"
+    priority: high

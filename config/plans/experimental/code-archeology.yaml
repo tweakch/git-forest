@@ -1,0 +1,68 @@
+id: code-archeology
+name: Code Archeology
+version: 1.0.0
+category: experimental
+description: |
+  Discover why things exist.
+  This plan excavates the history of code to understand the original context,
+  decisions, and constraints that led to the current implementation, revealing
+  valuable insights often lost in time.
+
+focus_areas:
+  - Analyze git history for context
+  - Extract original requirements from commits
+  - Identify historical constraints
+  - Discover forgotten design decisions
+  - Link code to original issues/discussions
+  - Understand evolution of components
+
+scopes:
+  - history
+  - understanding
+  - documentation
+
+planners:
+  - history-analyzer
+  - context-extractor
+  - evolution-tracker
+
+planters:
+  - archeologist
+  - context-documenter
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 6
+  require_review: false
+
+metrics:
+  - name: components_with_history
+    description: Number of components with documented history
+    target: 80_percent
+  - name: discovered_constraints
+    description: Number of historical constraints discovered
+    target: documented
+  - name: lost_context_recovered
+    description: Number of lost context pieces recovered
+    target: maximized
+  - name: linked_decisions
+    description: Number of code sections linked to original decisions
+    target: high
+
+plant_templates:
+  - name: excavate-component-history
+    title_template: "Excavate history of {component_name}"
+    priority: medium
+  - name: document-historical-context
+    title_template: "Document historical context for {code_section}"
+    priority: medium
+  - name: link-to-original-issue
+    title_template: "Link {component_name} to original issue #{issue_number}"
+    priority: low
+  - name: discover-constraint
+    title_template: "Document discovered constraint: {constraint_description}"
+    priority: high
+  - name: trace-evolution
+    title_template: "Trace evolution of {feature_name}"
+    priority: low

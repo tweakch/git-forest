@@ -1,0 +1,67 @@
+id: plan-composition
+name: Plan Composition
+version: 1.0.0
+category: meta-governance
+description: |
+  Detect conflicting or overlapping plans.
+  This plan analyzes installed plans to identify conflicts, overlaps, and
+  synergies, helping maintain a coherent set of active plans.
+
+focus_areas:
+  - Detect conflicting plan objectives
+  - Identify overlapping plant generation
+  - Find synergistic plan combinations
+  - Validate plan compatibility
+  - Prevent duplicate work across plans
+  - Optimize plan orchestration
+
+scopes:
+  - governance
+  - plan-management
+  - coordination
+
+planners:
+  - plan-conflict-detector
+  - overlap-analyzer
+  - synergy-finder
+
+planters:
+  - plan-coordinator
+  - conflict-resolver
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 4
+  require_review: true
+
+metrics:
+  - name: conflicting_plans
+    description: Number of plans with conflicting objectives
+    target: 0
+  - name: overlapping_plants
+    description: Number of duplicate plants from different plans
+    target: 0
+  - name: plan_synergies
+    description: Number of identified synergistic plan combinations
+    target: maximized
+  - name: coordination_efficiency
+    description: Efficiency score for multi-plan coordination
+    target: 90
+
+plant_templates:
+  - name: detect-plan-conflict
+    title_template: "Detect conflict between {plan_a} and {plan_b}"
+    priority: high
+  - name: resolve-plant-overlap
+    title_template: "Resolve overlap: {plant_a} and {plant_b}"
+    priority: medium
+  - name: identify-synergy
+    title_template: "Identify synergy between {plan_a} and {plan_b}"
+    priority: low
+  - name: coordinate-plans
+    title_template: "Coordinate execution of {plan_list}"
+    priority: medium
+  - name: prevent-duplicate-work
+    title_template: "Prevent duplicate work in {scope_name}"
+    priority: high

@@ -1,0 +1,71 @@
+id: cloud-readiness
+name: Cloud Readiness
+version: 1.0.0
+category: evolution-migration
+description: |
+  Config, scaling, resilience for cloud targets.
+  This plan prepares applications for cloud deployment by implementing
+  cloud-native patterns including externalized configuration, horizontal
+  scaling, and resilience patterns.
+
+focus_areas:
+  - Externalize configuration
+  - Implement health checks and readiness probes
+  - Enable horizontal scaling
+  - Add cloud-native logging and monitoring
+  - Implement graceful shutdown
+  - Use cloud storage services
+
+scopes:
+  - cloud
+  - migration
+  - infrastructure
+
+planners:
+  - cloud-readiness-assessor
+  - twelve-factor-validator
+  - scaling-analyzer
+
+planters:
+  - cloud-migrator
+  - config-externalizer
+
+policies:
+  execution_mode: propose
+  risk_level: medium
+  max_concurrent_plants: 5
+  require_review: true
+
+metrics:
+  - name: hardcoded_config
+    description: Number of hardcoded configuration values
+    target: 0
+  - name: missing_health_checks
+    description: Number of services without health checks
+    target: 0
+  - name: stateful_components
+    description: Number of components with local state preventing scaling
+    target: 0
+  - name: cloud_readiness_score
+    description: Overall cloud readiness score (0-100)
+    target: 90
+
+plant_templates:
+  - name: externalize-config
+    title_template: "Externalize configuration for {component_name}"
+    priority: high
+  - name: add-health-check
+    title_template: "Add health check endpoint to {service_name}"
+    priority: high
+  - name: enable-horizontal-scaling
+    title_template: "Enable horizontal scaling for {service_name}"
+    priority: high
+  - name: implement-graceful-shutdown
+    title_template: "Implement graceful shutdown for {service_name}"
+    priority: medium
+  - name: migrate-to-cloud-storage
+    title_template: "Migrate {storage_type} to cloud storage"
+    priority: medium
+  - name: add-readiness-probe
+    title_template: "Add readiness probe to {service_name}"
+    priority: high

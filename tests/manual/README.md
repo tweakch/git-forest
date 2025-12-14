@@ -37,6 +37,21 @@ This directory contains manual test scripts for git-forest CLI functionality.
 cat tests/manual/PLAN_INSTALLATION_TEST_REPORT.md
 ```
 
+### Environment Variables
+
+The test scripts automatically detect the repository root and use relative paths. You can override the defaults:
+
+```bash
+# Use custom CLI path
+CLI_PATH=/custom/path/to/GitForest.Cli ./tests/manual/test-plan-installation.sh
+
+# Use custom plans directory
+PLANS_DIR=/custom/plans ./tests/manual/test-plan-installation.sh
+
+# Combine multiple overrides
+CLI_PATH=/custom/cli PLANS_DIR=/custom/plans ./tests/manual/test-plan-installation.sh
+```
+
 ### Prerequisites
 
 - git-forest must be built: `dotnet build`

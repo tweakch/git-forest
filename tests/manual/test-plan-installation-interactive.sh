@@ -5,8 +5,12 @@
 
 set -e
 
-CLI_PATH="/home/runner/work/git-forest/git-forest/src/GitForest.Cli/bin/Debug/net10.0/GitForest.Cli"
-PLANS_DIR="/home/runner/work/git-forest/git-forest/config/plans"
+# Detect script directory and repository root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+CLI_PATH="${CLI_PATH:-$REPO_ROOT/src/GitForest.Cli/bin/Debug/net10.0/GitForest.Cli}"
+PLANS_DIR="${PLANS_DIR:-$REPO_ROOT/config/plans}"
 TEST_DIR="/tmp/test-forest-interactive-$$"
 
 # Colors

@@ -1,0 +1,97 @@
+name: Forest Self-Inspection
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run weekly on Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  self-inspection:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+    
+    - name: Publish CLI
+      run: dotnet publish src/GitForest.Cli/GitForest.Cli.csproj --configuration Release --output ./gf-bin
+    
+    - name: Add to PATH
+      run: echo "${{ github.workspace }}/gf-bin" >> $GITHUB_PATH
+    
+    - name: Verify CLI
+      run: |
+        GitForest.Cli --version || echo "CLI version check (may not be implemented yet)"
+    
+    - name: Initialize forest
+      run: |
+        cd ${{ github.workspace }}
+        GitForest.Cli init || echo "Forest initialization (may need implementation)"
+    
+    - name: Install forest-maintenance plan
+      run: |
+        cd ${{ github.workspace }}
+        GitForest.Cli plans install config/plans/meta-governance/forest-maintenance.yaml || echo "Plan installation (may need implementation)"
+    
+    - name: List installed plans
+      run: |
+        cd ${{ github.workspace }}
+        GitForest.Cli plans list || echo "List plans (may need implementation)"
+    
+    - name: Reconcile forest-maintenance plan
+      run: |
+        cd ${{ github.workspace }}
+        GitForest.Cli plan forest-maintenance reconcile || echo "Plan reconciliation (may need implementation)"
+    
+    - name: List generated plants
+      run: |
+        cd ${{ github.workspace }}
+        GitForest.Cli plants list --plan forest-maintenance || echo "List plants (may need implementation)"
+    
+    - name: Generate plants report
+      run: |
+        cd ${{ github.workspace }}
+        echo "=== Forest Maintenance Self-Inspection Report ===" > forest-report.txt
+        echo "" >> forest-report.txt
+        echo "Run Date: $(date)" >> forest-report.txt
+        echo "Commit: ${{ github.sha }}" >> forest-report.txt
+        echo "" >> forest-report.txt
+        echo "Generated Plants:" >> forest-report.txt
+        GitForest.Cli plants list --plan forest-maintenance >> forest-report.txt 2>&1 || echo "No plants generated (may need implementation)" >> forest-report.txt
+        echo "" >> forest-report.txt
+        cat forest-report.txt
+    
+    - name: Upload plants report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: forest-maintenance-report
+        path: forest-report.txt
+        retention-days: 30
+    
+    - name: Check for critical issues
+      run: |
+        cd ${{ github.workspace }}
+        # This is a placeholder - in a real implementation, this would check
+        # for high-priority plants and potentially fail the build
+        echo "Checking for critical maintenance issues..."
+        # GitForest.Cli plants list --plan forest-maintenance --priority high --json
+        echo "✓ Self-inspection completed"

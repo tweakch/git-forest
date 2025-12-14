@@ -83,6 +83,7 @@ Plans that manage plans.
 - **plan-composition** - Detect conflicting or overlapping plans
 - **risk-aware-planning** - Rank plants by blast radius
 - **harvest-discipline** - Define when "done" actually means done
+- **forest-maintenance** - Self-inspection plan for git-forest to dogfood itself in CI
 
 ### 10. Experimental Plans
 Fun but useful experimental plans.

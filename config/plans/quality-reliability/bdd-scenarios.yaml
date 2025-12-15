@@ -1,0 +1,67 @@
+id: bdd-scenarios
+name: BDD Scenarios
+version: 1.0.0
+category: quality-reliability
+description: |
+  Capture critical behaviors as scenarios and (optionally) automate them.
+  This plan emphasizes clear, shared language, executable specifications, and
+  end-to-end behavioral coverage for high-value user and system workflows.
+
+focus_areas:
+  - Define scenarios for key user journeys and system behaviors
+  - Align domain language and acceptance criteria across team and code
+  - Identify gaps where behavior is undocumented or ambiguous
+  - Automate scenarios that guard critical workflows
+  - Ensure scenarios remain stable, readable, and maintainable
+  - Improve traceability from scenario to implementation and tests
+
+scopes:
+  - bdd
+  - specifications
+  - acceptance
+  - documentation
+  - test-automation
+
+planners:
+  - bdd-scenario-extractor
+  - scenario-coverage-analyzer
+
+planters:
+  - spec-author
+  - bdd-automation-author
+  - domain-language-curator
+
+policies:
+  execution_mode: propose
+  risk_level: medium
+  max_concurrent_plants: 3
+  require_review: true
+
+metrics:
+  - name: undocumented_behaviors
+    description: Number of high-value behaviors without scenarios
+    target: 0
+  - name: unautomated_critical_scenarios
+    description: Number of critical scenarios without automation
+    target: max_5
+  - name: stale_scenarios
+    description: Number of scenarios out of date with current behavior
+    target: 0
+  - name: scenario_failures
+    description: Number of failing automated scenarios
+    target: 0
+
+plant_templates:
+  - name: write-scenarios
+    title_template: "Write BDD scenarios for {feature}: {scope}"
+    priority: high
+  - name: automate-scenario
+    title_template: "Automate BDD scenario: {scenario_title}"
+    priority: high
+  - name: align-domain-language
+    title_template: "Align domain language in scenarios for {domain_area}"
+    priority: medium
+  - name: refresh-scenarios
+    title_template: "Refresh stale BDD scenarios for {feature}"
+    priority: medium
+

@@ -1,0 +1,68 @@
+id: tdd-enablement
+name: TDD Enablement
+version: 1.0.0
+category: quality-reliability
+description: |
+  Make test-driven development practical by reducing feedback-loop friction.
+  This plan focuses on speeding up the red/green/refactor cycle, improving determinism,
+  and encouraging design-for-testability via small, safe refactors.
+
+focus_areas:
+  - Reduce test runtime for fast feedback
+  - Improve determinism and remove sources of flakiness
+  - Standardize test naming and structure for readability
+  - Reduce fixture/setup complexity
+  - Introduce seams for hard-to-test code paths
+  - Improve developer ergonomics (filters, categories, targeted runs)
+  - Encourage small, incremental refactoring guided by tests
+
+scopes:
+  - tdd
+  - test-runner
+  - determinism
+  - refactoring
+
+planners:
+  - tdd-loop-friction-audit
+  - test-runner-optimizer
+  - fixture-complexity-detector
+
+planters:
+  - fast-feedback-engineer
+  - testability-refactorer
+  - naming-convention-enforcer
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 4
+  require_review: true
+
+metrics:
+  - name: test_runtime_seconds
+    description: Total runtime (seconds) for the fast test suite
+    target: reduce
+  - name: flaky_tests
+    description: Number of flaky tests detected in the fast suite
+    target: 0
+  - name: complex_fixtures
+    description: Number of fixtures with high setup complexity
+    target: max_5
+  - name: slow_feedback_loops
+    description: Number of test runs exceeding the fast-feedback budget
+    target: max_3
+
+plant_templates:
+  - name: speed-up-tests
+    title_template: "Reduce test runtime in {suite}: {reason}"
+    priority: high
+  - name: stabilize-tests
+    title_template: "Stabilize flaky tests in {suite}"
+    priority: high
+  - name: simplify-fixtures
+    title_template: "Simplify test fixtures for {component}"
+    priority: medium
+  - name: refactor-for-testability
+    title_template: "Refactor {component} for testability (TDD enablement)"
+    priority: medium
+

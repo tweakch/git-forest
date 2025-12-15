@@ -1,0 +1,67 @@
+id: integration-testing-harness
+name: Integration Testing Harness
+version: 1.0.0
+category: quality-reliability
+description: |
+  Build and maintain stable integration testing infrastructure and coverage.
+  This plan focuses on identifying important integration boundaries, creating a
+  repeatable harness for dependencies, and reducing flakiness in integration tests.
+
+focus_areas:
+  - Map integration boundaries and critical cross-component flows
+  - Create repeatable local/CI harness for dependencies (files, processes, services)
+  - Ensure integration tests are deterministic and diagnosable
+  - Reduce flakiness caused by timing, IO, and shared state
+  - Standardize fixtures, cleanup, and isolation strategies
+  - Improve reporting for integration failures (logs, artifacts, repro steps)
+
+scopes:
+  - integration-tests
+  - harness
+  - stability
+  - diagnostics
+
+planners:
+  - integration-surface-mapper
+  - dependency-harness-planner
+  - flaky-integration-detector
+
+planters:
+  - harness-builder
+  - integration-test-author
+  - stability-engineer
+
+policies:
+  execution_mode: propose
+  risk_level: medium
+  max_concurrent_plants: 3
+  require_review: true
+
+metrics:
+  - name: uncovered_integration_boundaries
+    description: Number of critical boundaries without integration tests
+    target: 0
+  - name: flaky_integration_tests
+    description: Number of flaky integration tests
+    target: 0
+  - name: harness_setup_failures
+    description: Number of harness setup failures in CI
+    target: 0
+  - name: mean_time_to_repro
+    description: Average time to reproduce integration failures locally
+    target: reduce
+
+plant_templates:
+  - name: add-integration-tests
+    title_template: "Add integration tests for {boundary}: {behavior}"
+    priority: high
+  - name: build-harness
+    title_template: "Build integration test harness for {dependency}"
+    priority: high
+  - name: stabilize-integration-tests
+    title_template: "Stabilize flaky integration tests in {suite}"
+    priority: high
+  - name: improve-integration-diagnostics
+    title_template: "Improve integration test diagnostics for {suite}"
+    priority: medium
+

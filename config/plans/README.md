@@ -22,6 +22,10 @@ Focused on correctness, confidence, and operability.
 - **flaky-test-eradication** - Detect and stabilize nondeterministic tests
 - **chaos-readiness** - Inject failures (timeouts, retries, partial outages)
 - **observability-boost** - Logs, metrics, traces completeness
+- **unit-testing-discipline** - Raise unit test coverage and quality; identify gaps; strengthen assertions
+- **tdd-enablement** - Reduce red/green/refactor loop friction (speed, determinism, ergonomics)
+- **bdd-scenarios** - Define and automate behavior scenarios with shared domain language
+- **integration-testing-harness** - Build stable integration harnesses and cover critical boundaries
 
 ### 3. Performance & Scalability Plans
 Beyond raw speed — also predictability.

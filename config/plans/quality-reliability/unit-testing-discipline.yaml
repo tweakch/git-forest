@@ -1,0 +1,68 @@
+id: unit-testing-discipline
+name: Unit Testing Discipline
+version: 1.0.0
+category: quality-reliability
+description: |
+  Strengthen unit testing as the primary fast-feedback safety net.
+  This plan focuses on identifying unit test gaps, improving assertion quality,
+  and introducing small seams that make code easier to test without over-mocking.
+
+focus_areas:
+  - Detect untested public methods and critical domain logic
+  - Improve assertion quality (avoid tests that only “run”)
+  - Reduce test fragility by avoiding excessive mocking
+  - Introduce seams to isolate pure logic from IO and time
+  - Standardize unit test structure and naming
+  - Ensure deterministic, fast-running unit tests
+  - Reduce duplicated test setup via builders/factories
+
+scopes:
+  - unit-tests
+  - test-quality
+  - testability
+  - refactoring
+
+planners:
+  - unit-test-gap-scanner
+  - assertion-quality-analyzer
+  - seam-detector
+
+planters:
+  - unit-test-author
+  - seam-refactorer
+  - test-data-builder
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 5
+  require_review: true
+
+metrics:
+  - name: untested_public_members
+    description: Number of public members without unit test coverage signals
+    target: 0
+  - name: weak_assertions
+    description: Number of tests with no/weak assertions (smoke-only tests)
+    target: 0
+  - name: slow_unit_tests
+    description: Number of unit tests exceeding the unit-test time budget
+    target: max_5
+  - name: duplicated_test_setup
+    description: Number of repeated setup patterns that should be abstracted
+    target: max_10
+
+plant_templates:
+  - name: add-unit-tests
+    title_template: "Add unit tests for {component}: {behavior}"
+    priority: high
+  - name: strengthen-assertions
+    title_template: "Strengthen assertions in {test_suite}"
+    priority: medium
+  - name: introduce-seam
+    title_template: "Introduce seam in {component} to enable unit testing"
+    priority: high
+  - name: add-test-data-builder
+    title_template: "Add test data builders for {domain_area}"
+    priority: medium
+

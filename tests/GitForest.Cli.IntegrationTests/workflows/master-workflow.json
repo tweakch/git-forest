@@ -1,0 +1,115 @@
+{
+  "steps": [
+    {
+      "name": "root --help (smoke)",
+      "args": ["--help"],
+      "exitCode": 0
+    },
+    {
+      "name": "version",
+      "args": ["--version"],
+      "exitCode": 0
+    },
+    {
+      "name": "init",
+      "args": ["init", "--json"],
+      "exitCode": 0,
+      "jsonEquals": {
+        "status": "initialized"
+      },
+      "jsonPaths": ["directory"]
+    },
+    {
+      "name": "status",
+      "args": ["status", "--json"],
+      "exitCode": 0,
+      "jsonEquals": {
+        "forest": "initialized",
+        "repo": "origin/main",
+        "plans": 0,
+        "plants": 0,
+        "planters": 0,
+        "lock": "free"
+      }
+    },
+    {
+      "name": "config show",
+      "args": ["config", "show", "--json"],
+      "exitCode": 0,
+      "jsonPaths": ["config"]
+    },
+    {
+      "name": "plans list",
+      "args": ["plans", "list", "--json"],
+      "exitCode": 0,
+      "jsonPaths": ["plans"]
+    },
+    {
+      "name": "plans install",
+      "args": ["plans", "install", "config/plans/engineering-excellence/dependency-hygiene.yaml", "--json"],
+      "exitCode": 0,
+      "jsonEquals": {
+        "status": "installed",
+        "source": "config/plans/engineering-excellence/dependency-hygiene.yaml"
+      }
+    },
+    {
+      "name": "plan reconcile dry-run",
+      "args": ["plan", "dependency-hygiene", "reconcile", "--dry-run", "--json"],
+      "exitCode": 0,
+      "jsonEquals": {
+        "planId": "dependency-hygiene",
+        "status": "reconciled",
+        "dryRun": true
+      }
+    },
+    {
+      "name": "plants list",
+      "args": ["plants", "list", "--json"],
+      "exitCode": 0,
+      "jsonPaths": ["plants"]
+    },
+    {
+      "name": "plant show (expected missing)",
+      "args": ["plant", "sample:missing", "show", "--json"],
+      "exitCode": 12,
+      "jsonEquals": {
+        "error.code": "plant_not_found",
+        "error.message": "Plant not found",
+        "error.details.selector": "sample:missing"
+      }
+    },
+    {
+      "name": "planters list",
+      "args": ["planters", "list", "--json"],
+      "exitCode": 0,
+      "jsonPaths": ["planters"]
+    },
+    {
+      "name": "planter show (expected missing)",
+      "args": ["planter", "missing-planter", "show", "--json"],
+      "exitCode": 13,
+      "jsonEquals": {
+        "error.code": "planter_not_found",
+        "error.message": "Planter not found",
+        "error.details.planterId": "missing-planter"
+      }
+    },
+    {
+      "name": "planners list",
+      "args": ["planners", "list", "--json"],
+      "exitCode": 0,
+      "jsonPaths": ["planners"]
+    },
+    {
+      "name": "planner run",
+      "args": ["planner", "sample-planner", "run", "--plan", "dependency-hygiene", "--json"],
+      "exitCode": 0,
+      "jsonEquals": {
+        "plannerId": "sample-planner",
+        "plan": "dependency-hygiene",
+        "status": "completed"
+      }
+    }
+  ]
+}

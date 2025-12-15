@@ -24,22 +24,60 @@ public static class PlanCommand
             var update = context.ParseResult.GetValueForOption(updateOption);
             var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
 
-            _ = update; // TODO: implement
+            _ = update; // not implemented yet
 
-            if (output.Json)
+            var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
+            try
             {
-                output.WriteJson(new { planId, status = "reconciled", dryRun });
-            }
-            else
-            {
-                output.WriteLine($"Reconciling plan '{planId}'...");
-                output.WriteLine("Planners: +0 ~0 -0");
-                output.WriteLine("Planters: +0 ~0 -0");
-                output.WriteLine("Plants:   +0 ~0 -0 (archived 0)");
-                output.WriteLine(dryRun ? "done (dry-run)" : "done");
-            }
+                var result = ForestStore.ReconcilePlan(forestDir, planId, dryRun);
 
-            context.ExitCode = ExitCodes.Success;
+                if (output.Json)
+                {
+                    output.WriteJson(new
+                    {
+                        planId,
+                        status = "reconciled",
+                        dryRun,
+                        plants = new { created = result.PlantsCreated, updated = result.PlantsUpdated }
+                    });
+                }
+                else
+                {
+                    output.WriteLine($"Reconciling plan '{planId}'...");
+                    output.WriteLine("Planners: +0 ~0 -0");
+                    output.WriteLine("Planters: +0 ~0 -0");
+                    output.WriteLine($"Plants:   +{result.PlantsCreated} ~{result.PlantsUpdated} -0 (archived 0)");
+                    output.WriteLine(dryRun ? "done (dry-run)" : "done");
+                }
+
+                context.ExitCode = ExitCodes.Success;
+            }
+            catch (ForestStore.ForestNotInitializedException)
+            {
+                if (output.Json)
+                {
+                    output.WriteJsonError(code: "forest_not_initialized", message: "Forest not initialized");
+                }
+                else
+                {
+                    output.WriteErrorLine("Error: forest not initialized");
+                }
+
+                context.ExitCode = ExitCodes.ForestNotInitialized;
+            }
+            catch (ForestStore.PlanNotInstalledException)
+            {
+                if (output.Json)
+                {
+                    output.WriteJsonError(code: "plan_not_found", message: "Plan not found", details: new { planId });
+                }
+                else
+                {
+                    output.WriteErrorLine($"Error: plan not found: {planId}");
+                }
+
+                context.ExitCode = ExitCodes.PlanNotFound;
+            }
         });
 
         planCommand.AddCommand(reconcileCommand);

@@ -21,11 +21,14 @@ public static class InitCommand
             var force = context.ParseResult.GetValueForOption(forceOption);
             var dir = context.ParseResult.GetValueForOption(dirOption);
 
-            _ = force; // TODO: implement
+            _ = force; // currently a no-op; init is idempotent
+
+            var forestDir = ForestStore.GetForestDir(dir);
+            ForestStore.Initialize(forestDir);
 
             if (output.Json)
             {
-                output.WriteJson(new { status = "initialized", directory = dir });
+                output.WriteJson(new { status = "initialized", directory = dir, path = forestDir });
             }
             else
             {

@@ -21,24 +21,75 @@ public static class PlantsCommand
             var status = context.ParseResult.GetValueForOption(statusFilterOption);
             var plan = context.ParseResult.GetValueForOption(planFilterOption);
 
-            _ = status; // TODO: implement filtering
-            _ = plan;   // TODO: implement filtering
+            var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
 
-            if (output.Json)
+            try
             {
-                output.WriteJson(new { plants = Array.Empty<object>() });
-            }
-            else
-            {
-                output.WriteLine("Key                             Status   Title                         Plan   Planter");
-                output.WriteLine("No plants found");
-            }
+                var plants = ForestStore.ListPlants(forestDir, status, plan);
 
-            context.ExitCode = ExitCodes.Success;
+                if (output.Json)
+                {
+                    output.WriteJson(new
+                    {
+                        plants = plants.Select(p => new
+                        {
+                            key = p.Key,
+                            status = p.Status,
+                            title = p.Title,
+                            planId = p.PlanId,
+                            plannerId = p.PlannerId,
+                            planters = p.AssignedPlanters.ToArray()
+                        }).ToArray()
+                    });
+                }
+                else
+                {
+                    output.WriteLine("Key                             Status   Title                         Plan   Planter");
+                    if (plants.Count == 0)
+                    {
+                        output.WriteLine("No plants found");
+                    }
+                    else
+                    {
+                        foreach (var p in plants)
+                        {
+                            var planter = p.AssignedPlanters.Count > 0 ? p.AssignedPlanters[0] : "-";
+                            output.WriteLine($"{PadRight(p.Key, 31)} {PadRight(p.Status, 8)} {PadRight(Truncate(p.Title, 28), 28)} {PadRight(p.PlanId, 6)} {planter}");
+                        }
+                    }
+                }
+
+                context.ExitCode = ExitCodes.Success;
+            }
+            catch (ForestStore.ForestNotInitializedException)
+            {
+                if (output.Json)
+                {
+                    output.WriteJsonError(code: "forest_not_initialized", message: "Forest not initialized");
+                }
+                else
+                {
+                    output.WriteErrorLine("Error: forest not initialized");
+                }
+
+                context.ExitCode = ExitCodes.ForestNotInitialized;
+            }
         });
 
         plantsCommand.AddCommand(listCommand);
         return plantsCommand;
+    }
+
+    private static string PadRight(string value, int width)
+    {
+        value ??= string.Empty;
+        return value.Length >= width ? value : value.PadRight(width);
+    }
+
+    private static string Truncate(string value, int max)
+    {
+        value ??= string.Empty;
+        return value.Length <= max ? value : value[..Math.Max(0, max - 3)] + "...";
     }
 }
 

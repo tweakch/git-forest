@@ -73,6 +73,17 @@ Verify:
 git-forest --version
 ```
 
+### Web UI (Optional)
+
+For a browser-based interface, you can run the Blazor Web App:
+
+```bash
+cd src/GitForest.Web
+dotnet run
+```
+
+Then open `http://localhost:5000` in your browser. The web UI provides a visual interface for browsing plans, installing them, and managing your forest. See [src/GitForest.Web/README.md](src/GitForest.Web/README.md) for more details.
+
 ### `gf` alias (optional)
 
 `.NET tools` expose a single command name (`git-forest`). If you want `gf`, add a shell alias:

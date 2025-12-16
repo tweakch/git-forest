@@ -44,7 +44,13 @@ builder.Services.AddSingleton<IReconciliationForum>(_ => new FileSystemReconcili
 builder.Services.AddSingleton<IPlanReconciler, ForumPlanReconciler>();
 
 // Catalog plan reader for config/plans directory
+// Look for config/plans relative to repository root
 var repoRoot = Directory.GetCurrentDirectory();
+// If running from src/GitForest.Web, go up two levels to repo root
+if (repoRoot.EndsWith("GitForest.Web"))
+{
+    repoRoot = Path.GetFullPath(Path.Combine(repoRoot, "..", ".."));
+}
 var catalogPath = Path.Combine(repoRoot, "config", "plans");
 builder.Services.AddSingleton<ICatalogPlanReader>(_ => new FileSystemCatalogPlanReader(catalogPath));
 

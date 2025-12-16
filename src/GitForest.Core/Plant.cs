@@ -19,6 +19,11 @@ public class Plant
     /// Plan ID this plant belongs to
     /// </summary>
     public string PlanId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Planner ID that created/owns this plant (if known).
+    /// </summary>
+    public string PlannerId { get; set; } = string.Empty;
     
     /// <summary>
     /// Status: planned, planted, growing, harvestable, harvested, archived

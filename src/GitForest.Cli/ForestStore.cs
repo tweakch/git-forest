@@ -8,6 +8,7 @@ namespace GitForest.Cli;
 internal static class ForestStore
 {
     internal const string DefaultForestDirName = ".git-forest";
+    private const string DefaultStatus = "planned";
 
     public static string GetForestDir(string? dirOptionValue, string? workingDirectory = null)
     {
@@ -264,13 +265,17 @@ internal static class ForestStore
             var plannerId = planners[i % planners.Count];
             var assignedPlanters = planters.Count > 0 ? new[] { planters[i % planters.Count] } : Array.Empty<string>();
 
+            var now = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
             var plant = new PlantRecord(
                 Key: key,
                 Status: "planned",
                 Title: $"{plan.Name}".Trim() == string.Empty ? slug : $"{plan.Name}: {slug}",
                 PlanId: planId,
                 PlannerId: plannerId,
-                AssignedPlanters: assignedPlanters);
+                AssignedPlanters: assignedPlanters,
+                Branches: Array.Empty<string>(),
+                CreatedAt: now,
+                UpdatedAt: null);
 
             if (!Directory.Exists(plantDir) || !File.Exists(plantYamlPath))
             {
@@ -335,6 +340,171 @@ internal static class ForestStore
             .ToArray();
     }
 
+    public static PlantRecord ResolvePlant(string forestDir, string selector)
+    {
+        if (!IsInitialized(forestDir))
+        {
+            throw new ForestNotInitializedException(forestDir);
+        }
+
+        var plants = ListPlants(forestDir, statusFilter: null, planFilter: null);
+        var matches = FindMatches(plants, selector);
+        if (matches.Count == 1)
+        {
+            return matches[0];
+        }
+
+        if (matches.Count == 0)
+        {
+            throw new PlantNotFoundException(selector);
+        }
+
+        throw new PlantAmbiguousSelectorException(selector, matches.Select(p => p.Key).ToArray());
+    }
+
+    public static PlantRecord UpdatePlant(string forestDir, string selector, Func<PlantRecord, PlantRecord> update, bool dryRun)
+    {
+        if (update is null)
+        {
+            throw new ArgumentNullException(nameof(update));
+        }
+
+        var plant = ResolvePlant(forestDir, selector);
+        var updated = update(plant);
+        if (!dryRun)
+        {
+            WritePlant(forestDir, updated with { UpdatedAt = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture) });
+        }
+
+        return updated;
+    }
+
+    public static void WritePlant(string forestDir, PlantRecord plant)
+    {
+        if (!IsInitialized(forestDir))
+        {
+            throw new ForestNotInitializedException(forestDir);
+        }
+
+        var (planId, slug) = SplitPlantKey(plant.Key);
+        var plantsDir = Path.Combine(forestDir, "plants");
+        Directory.CreateDirectory(plantsDir);
+        var plantDir = Path.Combine(plantsDir, $"{planId}__{slug}");
+        Directory.CreateDirectory(plantDir);
+        var plantYamlPath = Path.Combine(plantDir, "plant.yaml");
+
+        var createdAt = plant.CreatedAt;
+        if (string.IsNullOrWhiteSpace(createdAt))
+        {
+            createdAt = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+        }
+
+        File.WriteAllText(
+            plantYamlPath,
+            PlantYamlLite.Serialize(plant with { CreatedAt = createdAt }),
+            Encoding.UTF8);
+    }
+
+    public static (string PlanId, string Slug) SplitPlantKey(string key)
+    {
+        var k = (key ?? string.Empty).Trim();
+        var idx = k.IndexOf(':', StringComparison.Ordinal);
+        if (idx <= 0 || idx == k.Length - 1)
+        {
+            throw new InvalidDataException($"Invalid plant key '{key}'. Expected format: <plan-id>:<plant-slug>.");
+        }
+
+        var planId = k[..idx].Trim();
+        var slug = k[(idx + 1)..].Trim();
+        if (planId.Length == 0 || slug.Length == 0)
+        {
+            throw new InvalidDataException($"Invalid plant key '{key}'. Expected format: <plan-id>:<plant-slug>.");
+        }
+
+        return (planId, slug);
+    }
+
+    private static IReadOnlyList<PlantRecord> FindMatches(IReadOnlyList<PlantRecord> plants, string selector)
+    {
+        var sel = (selector ?? string.Empty).Trim();
+        if (sel.Length == 0 || plants.Count == 0)
+        {
+            return Array.Empty<PlantRecord>();
+        }
+
+        // 1) Exact key match: <plan-id>:<slug>
+        var exact = plants.Where(p => string.Equals(p.Key, sel, StringComparison.OrdinalIgnoreCase)).ToArray();
+        if (exact.Length > 0)
+        {
+            return exact;
+        }
+
+        // 2) Pxx style stable index into ordered list (best-effort; deterministic ordering).
+        if (TryParsePIndex(sel, out var index))
+        {
+            var ordered = plants.OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase).ToArray();
+            if (index >= 0 && index < ordered.Length)
+            {
+                return new[] { ordered[index] };
+            }
+
+            return Array.Empty<PlantRecord>();
+        }
+
+        // 3) Slug match: match any plant whose key right-side equals selector.
+        var slugMatches = plants.Where(p =>
+        {
+            var key = p.Key ?? string.Empty;
+            var idx = key.IndexOf(':', StringComparison.Ordinal);
+            if (idx < 0 || idx == key.Length - 1)
+            {
+                return false;
+            }
+
+            var slug = key[(idx + 1)..];
+            return string.Equals(slug, sel, StringComparison.OrdinalIgnoreCase);
+        }).ToArray();
+
+        return slugMatches;
+    }
+
+    private static bool TryParsePIndex(string selector, out int index)
+    {
+        // Accept P01, p1, P0003 → 1-based ordinal; convert to 0-based index.
+        index = -1;
+        if (selector.Length < 2)
+        {
+            return false;
+        }
+
+        if (selector[0] != 'p' && selector[0] != 'P')
+        {
+            return false;
+        }
+
+        var digits = selector[1..].Trim();
+        if (digits.Length == 0)
+        {
+            return false;
+        }
+
+        foreach (var ch in digits)
+        {
+            if (!char.IsDigit(ch))
+            {
+                return false;
+            }
+        }
+
+        if (!int.TryParse(digits, out var oneBased) || oneBased <= 0)
+        {
+            return false;
+        }
+
+        index = oneBased - 1;
+        return true;
+    }
+
     private static string NormalizeSlug(string input)
     {
         var trimmed = (input ?? string.Empty).Trim();
@@ -382,7 +552,16 @@ internal static class ForestStore
         string InstalledAt,
         string Sha256);
     public sealed record ReconcileResult(string PlanId, int PlantsCreated, int PlantsUpdated);
-    public sealed record PlantRecord(string Key, string Status, string Title, string PlanId, string? PlannerId, IReadOnlyList<string> AssignedPlanters);
+    public sealed record PlantRecord(
+        string Key,
+        string Status,
+        string Title,
+        string PlanId,
+        string? PlannerId,
+        IReadOnlyList<string> AssignedPlanters,
+        IReadOnlyList<string> Branches,
+        string CreatedAt,
+        string? UpdatedAt);
 
     private static string ComputeSha256Hex(ReadOnlySpan<byte> bytes)
     {
@@ -403,6 +582,24 @@ internal static class ForestStore
     public sealed class PlanNotInstalledException : Exception
     {
         public PlanNotInstalledException(string planId) : base($"Plan not installed: '{planId}'.") { }
+    }
+
+    public sealed class PlantNotFoundException : Exception
+    {
+        public PlantNotFoundException(string selector) : base($"Plant not found: '{selector}'.") { }
+    }
+
+    public sealed class PlantAmbiguousSelectorException : Exception
+    {
+        public string Selector { get; }
+        public string[] Matches { get; }
+
+        public PlantAmbiguousSelectorException(string selector, string[] matches)
+            : base($"Plant selector is ambiguous: '{selector}'.")
+        {
+            Selector = selector;
+            Matches = matches ?? Array.Empty<string>();
+        }
     }
 }
 
@@ -562,12 +759,14 @@ internal static class PlanYamlLite
 
 internal static class PlantYamlLite
 {
+    private const string DefaultStatus = "planned";
+
     public static string Serialize(ForestStore.PlantRecord plant)
     {
         // Minimal plant.yaml aligned with docs/forest-maintenance-contract.md
         var sb = new StringBuilder();
         sb.Append("key: ").Append(plant.Key).AppendLine();
-        sb.Append("status: ").Append(string.IsNullOrWhiteSpace(plant.Status) ? "planned" : plant.Status).AppendLine();
+        sb.Append("status: ").Append(string.IsNullOrWhiteSpace(plant.Status) ? DefaultStatus : plant.Status).AppendLine();
         sb.Append("title: ").Append(EscapeScalar(plant.Title)).AppendLine();
         sb.Append("plan_id: ").Append(plant.PlanId).AppendLine();
 
@@ -586,19 +785,44 @@ internal static class PlantYamlLite
             }
         }
 
-        sb.AppendLine("branches: []");
-        sb.Append("created_at: ").Append(DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture)).AppendLine();
+        if (plant.Branches is null || plant.Branches.Count == 0)
+        {
+            sb.AppendLine("branches: []");
+        }
+        else
+        {
+            sb.AppendLine("branches:");
+            foreach (var br in plant.Branches)
+            {
+                if (!string.IsNullOrWhiteSpace(br))
+                {
+                    sb.Append("  - ").Append(br.Trim()).AppendLine();
+                }
+            }
+        }
+
+        var createdAt = string.IsNullOrWhiteSpace(plant.CreatedAt)
+            ? DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture)
+            : plant.CreatedAt.Trim();
+        sb.Append("created_at: ").Append(createdAt).AppendLine();
+        if (!string.IsNullOrWhiteSpace(plant.UpdatedAt))
+        {
+            sb.Append("updated_at: ").Append(plant.UpdatedAt.Trim()).AppendLine();
+        }
         return sb.ToString();
     }
 
     public static ForestStore.PlantRecord Parse(string yaml)
     {
         var key = string.Empty;
-        var status = "planned";
+        var status = DefaultStatus;
         var title = string.Empty;
         var planId = string.Empty;
         string? plannerId = null;
         var assignedPlanters = new List<string>();
+        var branches = new List<string>();
+        var createdAt = string.Empty;
+        string? updatedAt = null;
 
         var lines = yaml.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n').Split('\n');
 
@@ -622,7 +846,20 @@ internal static class PlantYamlLite
                 if (TryParseScalar(line, "status", out v)) { status = v; continue; }
                 if (TryParseScalar(line, "title", out v)) { title = v; continue; }
                 if (TryParseScalar(line, "plan_id", out v)) { planId = v; continue; }
+                if (TryParseScalar(line, "created_at", out v)) { createdAt = v; continue; }
+                if (TryParseScalar(line, "updated_at", out v)) { updatedAt = v; continue; }
                 if (line.StartsWith("assigned_planters:", StringComparison.Ordinal)) { currentList = "assigned_planters"; continue; }
+                if (line.StartsWith("branches:", StringComparison.Ordinal))
+                {
+                    // Support inline empty list: branches: []
+                    if (line.TrimEnd().EndsWith("[]", StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    currentList = "branches";
+                    continue;
+                }
                 if (line.StartsWith("context:", StringComparison.Ordinal)) { inContext = true; continue; }
                 continue;
             }
@@ -650,6 +887,19 @@ internal static class PlantYamlLite
                     }
                 }
             }
+
+            if (currentList == "branches")
+            {
+                var trimmed = line.TrimStart();
+                if (trimmed.StartsWith("- ", StringComparison.Ordinal))
+                {
+                    var item = trimmed[2..].Trim();
+                    if (item.Length > 0)
+                    {
+                        branches.Add(Unquote(item));
+                    }
+                }
+            }
         }
 
         // Best-effort fallbacks
@@ -662,13 +912,21 @@ internal static class PlantYamlLite
             }
         }
 
+        if (string.IsNullOrWhiteSpace(createdAt))
+        {
+            createdAt = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+        }
+
         return new ForestStore.PlantRecord(
             Key: key,
-            Status: status,
+            Status: string.IsNullOrWhiteSpace(status) ? DefaultStatus : status,
             Title: title,
             PlanId: planId,
             PlannerId: plannerId,
-            AssignedPlanters: assignedPlanters);
+            AssignedPlanters: assignedPlanters,
+            Branches: branches,
+            CreatedAt: createdAt,
+            UpdatedAt: updatedAt);
     }
 
     private static bool TryParseScalar(string line, string key, out string value)

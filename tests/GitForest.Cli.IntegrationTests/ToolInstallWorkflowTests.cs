@@ -284,6 +284,8 @@ public sealed class ToolInstallWorkflowTests
             await EnsureSuccessAsync(await ProcessRunner.RunAsync("git", ["init"], directory, environmentVariables, TimeSpan.FromMinutes(1)));
             await EnsureSuccessAsync(await ProcessRunner.RunAsync("git", ["config", "user.email", "test@example.com"], directory, environmentVariables, TimeSpan.FromMinutes(1)));
             await EnsureSuccessAsync(await ProcessRunner.RunAsync("git", ["config", "user.name", "Test User"], directory, environmentVariables, TimeSpan.FromMinutes(1)));
+            // Ensure tests are not coupled to developer machine commit signing (e.g. 1Password SSH/GPG signing).
+            await EnsureSuccessAsync(await ProcessRunner.RunAsync("git", ["config", "commit.gpgsign", "false"], directory, environmentVariables, TimeSpan.FromMinutes(1)));
 
             var readme = Path.Combine(directory, "README.md");
             await File.WriteAllTextAsync(readme, "# Test Repo\n", Encoding.UTF8);

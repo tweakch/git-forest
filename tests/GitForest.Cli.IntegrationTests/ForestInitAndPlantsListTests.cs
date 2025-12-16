@@ -67,6 +67,15 @@ public sealed class ForestInitAndPlantsListTests
             Assert.That(list.StdOut, Does.Contain("integration-testing-harness"));
             Assert.That(list.StdOut, Does.Contain("harness-builder"), "Expected plants list to include the assigned planter");
 
+            // 4b) plant <key> show should resolve the plant and show details (regression for stub implementation)
+            var show = await DotNetCli.RunGitForestAsync(
+                cliProject,
+                workingRepoDir,
+                ["plant", "integration-testing-harness:add-integration-tests", "show"]);
+            Assert.That(show.ExitCode, Is.EqualTo(0), () => $"git-forest plant <key> show failed.\nSTDOUT:\n{show.StdOut}\nSTDERR:\n{show.StdErr}");
+            Assert.That(show.StdOut, Does.Contain("Key: integration-testing-harness:add-integration-tests"));
+            Assert.That(show.StdOut, Does.Contain("Plan: integration-testing-harness"));
+
             // 4a) planters list should reflect planters available via installed plan.yaml
             var plantersList = await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["planters", "list"]);
             Assert.That(plantersList.ExitCode, Is.EqualTo(0), () => $"git-forest planters list failed.\nSTDOUT:\n{plantersList.StdOut}\nSTDERR:\n{plantersList.StdErr}");
@@ -208,6 +217,8 @@ public sealed class ForestInitAndPlantsListTests
 
             await EnsureSuccessAsync(await ProcessRunner.RunAsync("git", ["config", "user.email", "test@example.com"], directory, environmentVariables: null, timeout: TimeSpan.FromMinutes(1)));
             await EnsureSuccessAsync(await ProcessRunner.RunAsync("git", ["config", "user.name", "Test User"], directory, environmentVariables: null, timeout: TimeSpan.FromMinutes(1)));
+            // Ensure tests are not coupled to developer machine commit signing (e.g. 1Password SSH/GPG signing).
+            await EnsureSuccessAsync(await ProcessRunner.RunAsync("git", ["config", "commit.gpgsign", "false"], directory, environmentVariables: null, timeout: TimeSpan.FromMinutes(1)));
 
             var readme = Path.Combine(directory, "README.md");
             await File.WriteAllTextAsync(readme, "# Test Repo\n", Encoding.UTF8);

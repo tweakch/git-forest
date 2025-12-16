@@ -29,7 +29,7 @@ jobs:
       run: dotnet build --no-restore --configuration Release
     
     - name: Test
-      run: dotnet test --no-build --configuration Release --verbosity normal
+      run: dotnet test --no-build --configuration Release --verbosity normal --logger "console;verbosity=detailed"
 
     - name: Pack (NuGet / .NET tool)
       run: dotnet pack src/GitForest.Cli/GitForest.Cli.csproj --no-build --configuration Release --output ./artifacts/packages

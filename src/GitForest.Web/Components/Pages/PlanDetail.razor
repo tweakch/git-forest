@@ -1,0 +1,266 @@
+@page "/plans/{PlanId}"
+@using GitForest.Core
+@using GitForest.Core.Services
+@using GitForest.Application.Features.Plans
+@using MediatR
+@inject ICatalogPlanReader CatalogReader
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+
+<PageTitle>@(plan?.Name ?? "Plan") - git-forest</PageTitle>
+
+@if (isLoading)
+{
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+}
+else if (plan == null)
+{
+    <div class="alert alert-danger" role="alert">
+        Plan not found.
+    </div>
+    <a href="/plans" class="btn btn-secondary">Back to Plans</a>
+}
+else
+{
+    <div class="mb-3">
+        <a href="/plans" class="btn btn-sm btn-secondary">← Back to Plans</a>
+    </div>
+
+    <h1>@plan.Name</h1>
+    <p class="lead">@plan.Id v@plan.Version</p>
+
+    @if (!string.IsNullOrWhiteSpace(plan.Category))
+    {
+        <span class="badge bg-primary mb-3">@plan.Category</span>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @successMessage
+            <button type="button" class="btn-close" @onclick="() => successMessage = null"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error:</strong> @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+        </div>
+    }
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Description</h5>
+            <p class="card-text" style="white-space: pre-wrap;">@plan.Description</p>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Planners</h5>
+                    @if (plan.Planners.Any())
+                    {
+                        <ul class="list-unstyled">
+                            @foreach (var planner in plan.Planners)
+                            {
+                                <li><span class="badge bg-info">@planner</span></li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted">None</p>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Planters</h5>
+                    @if (plan.Planters.Any())
+                    {
+                        <ul class="list-unstyled">
+                            @foreach (var planter in plan.Planters)
+                            {
+                                <li><span class="badge bg-success">@planter</span></li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted">None</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (plan.Scopes.Any())
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Scopes</h5>
+                <p>
+                    @foreach (var scope in plan.Scopes)
+                    {
+                        <span class="badge bg-secondary me-1">@scope</span>
+                    }
+                </p>
+            </div>
+        </div>
+    }
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Metadata</h5>
+            <table class="table table-sm">
+                <tbody>
+                    @if (!string.IsNullOrWhiteSpace(plan.Author))
+                    {
+                        <tr>
+                            <th scope="row">Author</th>
+                            <td>@plan.Author</td>
+                        </tr>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(plan.License))
+                    {
+                        <tr>
+                            <th scope="row">License</th>
+                            <td>@plan.License</td>
+                        </tr>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(plan.Repository))
+                    {
+                        <tr>
+                            <th scope="row">Repository</th>
+                            <td><a href="@plan.Repository" target="_blank">@plan.Repository</a></td>
+                        </tr>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(plan.Homepage))
+                    {
+                        <tr>
+                            <th scope="row">Homepage</th>
+                            <td><a href="@plan.Homepage" target="_blank">@plan.Homepage</a></td>
+                        </tr>
+                    }
+                    <tr>
+                        <th scope="row">File Path</th>
+                        <td><small class="text-muted">@plan.FilePath</small></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="d-grid gap-2 d-md-flex">
+        <button class="btn btn-primary" @onclick="InstallPlan" disabled="@isInstalling">
+            @if (isInstalling)
+            {
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <span>Installing...</span>
+            }
+            else
+            {
+                <span>Install Plan</span>
+            }
+        </button>
+        <button class="btn btn-success" @onclick="ReconcilePlan" disabled="@isReconciling">
+            @if (isReconciling)
+            {
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <span>Reconciling...</span>
+            }
+            else
+            {
+                <span>Reconcile Plan</span>
+            }
+        </button>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string PlanId { get; set; } = string.Empty;
+
+    private CatalogPlan? plan;
+    private bool isLoading = true;
+    private bool isInstalling = false;
+    private bool isReconciling = false;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            plan = await CatalogReader.GetCatalogPlanByIdAsync(PlanId);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task InstallPlan()
+    {
+        if (plan == null) return;
+
+        isInstalling = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var command = new InstallPlanCommand(plan.FilePath);
+            var result = await Mediator.Send(command);
+            successMessage = $"Plan '{result.Id}' version {result.Version} installed successfully!";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isInstalling = false;
+        }
+    }
+
+    private async Task ReconcilePlan()
+    {
+        if (plan == null) return;
+
+        isReconciling = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var command = new ReconcilePlanCommand(plan.Id, DryRun: false);
+            var result = await Mediator.Send(command);
+            successMessage = $"Reconcile completed! Created: {result.PlantsCreated}, Updated: {result.PlantsUpdated}";
+        }
+        catch (PlanNotInstalledException)
+        {
+            errorMessage = "Plan is not installed. Please install it first.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isReconciling = false;
+        }
+    }
+}

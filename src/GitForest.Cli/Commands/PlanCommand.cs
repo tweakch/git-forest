@@ -1,5 +1,5 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
+using GitForest.Cli;
 using AppPlans = GitForest.Application.Features.Plans;
 using MediatR;
 
@@ -10,21 +10,30 @@ public static class PlanCommand
     public static Command Build(CliOptions cliOptions, IMediator mediator)
     {
         var planCommand = new Command("plan", "Manage a specific plan");
-        var planIdArg = new Argument<string>("plan-id", "Plan identifier");
-        planCommand.AddArgument(planIdArg);
+        var planIdArg = new Argument<string>("plan-id")
+        {
+            Description = "Plan identifier"
+        };
+        planCommand.Arguments.Add(planIdArg);
 
         var reconcileCommand = new Command("reconcile", "Reconcile plan to desired state");
-        var updateOption = new Option<bool>("--update", "Update plan before reconciling");
-        var dryRunOption = new Option<bool>("--dry-run", "Show what would be done without applying");
-        reconcileCommand.AddOption(updateOption);
-        reconcileCommand.AddOption(dryRunOption);
-
-        reconcileCommand.SetHandler(async (InvocationContext context) =>
+        var updateOption = new Option<bool>("--update")
         {
-            var output = context.GetOutput(cliOptions);
-            var planId = context.ParseResult.GetValueForArgument(planIdArg);
-            var update = context.ParseResult.GetValueForOption(updateOption);
-            var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
+            Description = "Update plan before reconciling"
+        };
+        var dryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Show what would be done without applying"
+        };
+        reconcileCommand.Options.Add(updateOption);
+        reconcileCommand.Options.Add(dryRunOption);
+
+        reconcileCommand.SetAction(async (parseResult, token) =>
+        {
+            var output = parseResult.GetOutput(cliOptions);
+            var planId = parseResult.GetValue(planIdArg);
+            var update = parseResult.GetValue(updateOption);
+            var dryRun = parseResult.GetValue(dryRunOption);
 
             _ = update; // not implemented yet
 
@@ -36,7 +45,7 @@ public static class PlanCommand
                     throw new ForestStore.ForestNotInitializedException(forestDir);
                 }
 
-                var result = await mediator.Send(new AppPlans.ReconcilePlanCommand(PlanId: planId, DryRun: dryRun));
+                var result = await mediator.Send(new AppPlans.ReconcilePlanCommand(PlanId: planId, DryRun: dryRun), token);
 
                 if (output.Json)
                 {
@@ -57,7 +66,7 @@ public static class PlanCommand
                     output.WriteLine(dryRun ? "done (dry-run)" : "done");
                 }
 
-                context.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (ForestStore.ForestNotInitializedException)
             {
@@ -70,7 +79,7 @@ public static class PlanCommand
                     output.WriteErrorLine("Error: forest not initialized");
                 }
 
-                context.ExitCode = ExitCodes.ForestNotInitialized;
+                return ExitCodes.ForestNotInitialized;
             }
             catch (AppPlans.PlanNotInstalledException)
             {
@@ -83,11 +92,11 @@ public static class PlanCommand
                     output.WriteErrorLine($"Error: plan not found: {planId}");
                 }
 
-                context.ExitCode = ExitCodes.PlanNotFound;
+                return ExitCodes.PlanNotFound;
             }
         });
 
-        planCommand.AddCommand(reconcileCommand);
+        planCommand.Subcommands.Add(reconcileCommand);
         return planCommand;
     }
 }

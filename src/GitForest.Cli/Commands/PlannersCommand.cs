@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
 using GitForest.Cli;
 using GitForest.Application.Features.Planners;
 using MediatR;
@@ -13,13 +12,16 @@ public static class PlannersCommand
         var plannersCommand = new Command("planners", "Manage planners");
 
         var listCommand = new Command("list", "List planners");
-        var planFilterOption = new Option<string?>("--plan", "Filter by plan ID");
-        listCommand.AddOption(planFilterOption);
-
-        listCommand.SetHandler(async (InvocationContext context) =>
+        var planFilterOption = new Option<string?>("--plan")
         {
-            var output = context.GetOutput(cliOptions);
-            var plan = context.ParseResult.GetValueForOption(planFilterOption);
+            Description = "Filter by plan ID"
+        };
+        listCommand.Options.Add(planFilterOption);
+
+        listCommand.SetAction(async (parseResult, token) =>
+        {
+            var output = parseResult.GetOutput(cliOptions);
+            var plan = parseResult.GetValue(planFilterOption);
 
             try
             {
@@ -29,7 +31,7 @@ public static class PlannersCommand
                     throw new ForestStore.ForestNotInitializedException(forestDir);
                 }
 
-                var rows = (await mediator.Send(new ListPlannersQuery(PlanFilter: plan))).ToArray();
+                var rows = (await mediator.Send(new ListPlannersQuery(PlanFilter: plan), token)).ToArray();
 
                 if (output.Json)
                 {
@@ -55,7 +57,7 @@ public static class PlannersCommand
                     }
                 }
 
-                context.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (ForestStore.ForestNotInitializedException)
             {
@@ -68,11 +70,11 @@ public static class PlannersCommand
                     output.WriteErrorLine("Error: forest not initialized");
                 }
 
-                context.ExitCode = ExitCodes.ForestNotInitialized;
+                return ExitCodes.ForestNotInitialized;
             }
         });
 
-        plannersCommand.AddCommand(listCommand);
+        plannersCommand.Subcommands.Add(listCommand);
         return plannersCommand;
     }
 

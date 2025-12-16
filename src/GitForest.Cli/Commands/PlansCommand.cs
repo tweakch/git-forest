@@ -1,5 +1,5 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
+using GitForest.Cli;
 using AppPlans = GitForest.Application.Features.Plans;
 using MediatR;
 
@@ -12,9 +12,9 @@ public static class PlansCommand
         var plansCommand = new Command("plans", "Manage plans");
 
         var listCommand = new Command("list", "List installed plans");
-        listCommand.SetHandler(async (InvocationContext context) =>
+        listCommand.SetAction(async (parseResult, token) =>
         {
-            var output = context.GetOutput(cliOptions);
+            var output = parseResult.GetOutput(cliOptions);
 
             try
             {
@@ -24,7 +24,7 @@ public static class PlansCommand
                     throw new ForestStore.ForestNotInitializedException(forestDir);
                 }
 
-                var plans = await mediator.Send(new AppPlans.ListPlansQuery());
+                var plans = await mediator.Send(new AppPlans.ListPlansQuery(), token);
                 if (output.Json)
                 {
                     output.WriteJson(new
@@ -73,7 +73,7 @@ public static class PlansCommand
                     }
                 }
 
-                context.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (ForestStore.ForestNotInitializedException)
             {
@@ -86,18 +86,21 @@ public static class PlansCommand
                     output.WriteErrorLine("Error: forest not initialized");
                 }
 
-                context.ExitCode = ExitCodes.ForestNotInitialized;
+                return ExitCodes.ForestNotInitialized;
             }
         });
-        plansCommand.AddCommand(listCommand);
+        plansCommand.Subcommands.Add(listCommand);
 
         var installCommand = new Command("install", "Install a plan");
-        var sourceArg = new Argument<string>("source", "Plan source (GitHub slug, URL, or local path)");
-        installCommand.AddArgument(sourceArg);
-        installCommand.SetHandler(async (InvocationContext context) =>
+        var sourceArg = new Argument<string>("source")
         {
-            var output = context.GetOutput(cliOptions);
-            var source = context.ParseResult.GetValueForArgument(sourceArg);
+            Description = "Plan source (GitHub slug, URL, or local path)"
+        };
+        installCommand.Arguments.Add(sourceArg);
+        installCommand.SetAction(async (parseResult, token) =>
+        {
+            var output = parseResult.GetOutput(cliOptions);
+            var source = parseResult.GetValue(sourceArg);
 
             try
             {
@@ -107,7 +110,7 @@ public static class PlansCommand
                     throw new ForestStore.ForestNotInitializedException(forestDir);
                 }
 
-                var installed = await mediator.Send(new AppPlans.InstallPlanCommand(Source: source));
+                var installed = await mediator.Send(new AppPlans.InstallPlanCommand(Source: source), token);
                 if (output.Json)
                 {
                     output.WriteJson(new { status = "installed", source, planId = installed.Id, version = installed.Version });
@@ -117,7 +120,7 @@ public static class PlansCommand
                     output.WriteLine($"Installed plan from: {source}");
                 }
 
-                context.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (ForestStore.ForestNotInitializedException)
             {
@@ -130,7 +133,7 @@ public static class PlansCommand
                     output.WriteErrorLine("Error: forest not initialized");
                 }
 
-                context.ExitCode = ExitCodes.ForestNotInitialized;
+                return ExitCodes.ForestNotInitialized;
             }
             catch (FileNotFoundException)
             {
@@ -143,7 +146,7 @@ public static class PlansCommand
                     output.WriteErrorLine("Error: plan file not found");
                 }
 
-                context.ExitCode = ExitCodes.PlanNotFound;
+                return ExitCodes.PlanNotFound;
             }
             catch (InvalidDataException ex)
             {
@@ -156,10 +159,10 @@ public static class PlansCommand
                     output.WriteErrorLine("Error: invalid plan YAML");
                 }
 
-                context.ExitCode = ExitCodes.SchemaValidationFailed;
+                return ExitCodes.SchemaValidationFailed;
             }
         });
-        plansCommand.AddCommand(installCommand);
+        plansCommand.Subcommands.Add(installCommand);
 
         return plansCommand;
     }

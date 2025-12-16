@@ -1,5 +1,5 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
+using GitForest.Cli;
 using GitForest.Cli.Features.Planner;
 using MediatR;
 
@@ -10,20 +10,27 @@ public static class PlannerCommand
     public static Command Build(CliOptions cliOptions, IMediator mediator)
     {
         var plannerCommand = new Command("planner", "Manage a specific planner");
-        var plannerIdArg = new Argument<string>("planner-id", "Planner identifier");
-        plannerCommand.AddArgument(plannerIdArg);
+        var plannerIdArg = new Argument<string>("planner-id")
+        {
+            Description = "Planner identifier"
+        };
+        plannerCommand.Arguments.Add(plannerIdArg);
 
         var runCommand = new Command("run", "Run planner");
-        var planOption = new Option<string>("--plan", "Plan ID to run against") { IsRequired = true };
-        runCommand.AddOption(planOption);
-
-        runCommand.SetHandler(async (InvocationContext context) =>
+        var planOption = new Option<string>("--plan")
         {
-            var output = context.GetOutput(cliOptions);
-            var plannerId = context.ParseResult.GetValueForArgument(plannerIdArg);
-            var plan = context.ParseResult.GetValueForOption(planOption) ?? string.Empty;
+            Description = "Plan ID to run against",
+            Required = true
+        };
+        runCommand.Options.Add(planOption);
 
-            var result = await mediator.Send(new RunPlannerCommand(PlannerId: plannerId, PlanId: plan));
+        runCommand.SetAction(async (parseResult, token) =>
+        {
+            var output = parseResult.GetOutput(cliOptions);
+            var plannerId = parseResult.GetValue(plannerIdArg);
+            var plan = parseResult.GetValue(planOption) ?? string.Empty;
+
+            var result = await mediator.Send(new RunPlannerCommand(PlannerId: plannerId, PlanId: plan), token);
 
             if (output.Json)
             {
@@ -35,10 +42,10 @@ public static class PlannerCommand
                 output.WriteLine("done");
             }
 
-            context.ExitCode = ExitCodes.Success;
+            return ExitCodes.Success;
         });
 
-        plannerCommand.AddCommand(runCommand);
+        plannerCommand.Subcommands.Add(runCommand);
         return plannerCommand;
     }
 }

@@ -61,10 +61,6 @@ The repository-overview plan provides:
 - Technical debt inventory
 
 For a complete guide, see [docs/REPOSITORY_OVERVIEW_GUIDE.md](docs/REPOSITORY_OVERVIEW_GUIDE.md).
-- CI/CD pipeline health
-- Test coverage overview
-- Dependency health summary
-- Technical debt inventory
 
 ### 🌱 Plant
 **Plants** are concrete work items with stable keys and lifecycle facts. Each plant has:

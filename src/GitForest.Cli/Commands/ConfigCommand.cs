@@ -1,5 +1,5 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
+using GitForest.Cli;
 using GitForest.Cli.Features.Config;
 using MediatR;
 
@@ -12,14 +12,17 @@ public static class ConfigCommand
         var configCommand = new Command("config", "Manage configuration");
 
         var showCommand = new Command("show", "Show configuration");
-        var effectiveOption = new Option<bool>("--effective", "Show effective configuration");
-        showCommand.AddOption(effectiveOption);
-
-        showCommand.SetHandler(async (InvocationContext context) =>
+        var effectiveOption = new Option<bool>("--effective")
         {
-            var output = context.GetOutput(cliOptions);
-            var effective = context.ParseResult.GetValueForOption(effectiveOption);
-            var result = await mediator.Send(new ShowConfigQuery(Effective: effective));
+            Description = "Show effective configuration"
+        };
+        showCommand.Options.Add(effectiveOption);
+
+        showCommand.SetAction(async (parseResult, token) =>
+        {
+            var output = parseResult.GetOutput(cliOptions);
+            var effective = parseResult.GetValue(effectiveOption);
+            var result = await mediator.Send(new ShowConfigQuery(Effective: effective), token);
 
             if (output.Json)
             {
@@ -52,10 +55,10 @@ public static class ConfigCommand
                 output.WriteLine($"llm.temperature: {result.Config.Llm.Temperature}");
             }
 
-            context.ExitCode = ExitCodes.Success;
+            return ExitCodes.Success;
         });
 
-        configCommand.AddCommand(showCommand);
+        configCommand.Subcommands.Add(showCommand);
         return configCommand;
     }
 }

@@ -1,5 +1,4 @@
-using System.CommandLine;
-using System.CommandLine.IO;
+using System.Text;
 using System.Text.Json;
 
 namespace GitForest.Cli;
@@ -11,21 +10,21 @@ public sealed class Output
         WriteIndented = false
     };
 
-    private readonly IStandardStreamWriter _out;
-    private readonly IStandardStreamWriter _error;
+    private readonly TextWriter _out;
+    private readonly TextWriter _error;
 
     public bool Json { get; }
 
-    private Output(IStandardStreamWriter @out, IStandardStreamWriter error, bool json)
+    private Output(TextWriter @out, TextWriter error, bool json)
     {
         _out = @out;
         _error = error;
         Json = json;
     }
 
-    public static Output From(IConsole console, bool json)
+    public static Output From(bool json)
     {
-        return new Output(console.Out, console.Error, json);
+        return new Output(Console.Out, Console.Error, json);
     }
 
     public void WriteLine(string message)

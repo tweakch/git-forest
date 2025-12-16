@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
 using GitForest.Cli;
 using GitForest.Application.Features.Planters;
 using MediatR;
@@ -13,16 +12,22 @@ public static class PlantersCommand
         var plantersCommand = new Command("planters", "Manage planters");
 
         var listCommand = new Command("list", "List planters");
-        var builtinOption = new Option<bool>("--builtin", "Show only built-in planters");
-        var customOption = new Option<bool>("--custom", "Show only custom planters");
-        listCommand.AddOption(builtinOption);
-        listCommand.AddOption(customOption);
-
-        listCommand.SetHandler(async (InvocationContext context) =>
+        var builtinOption = new Option<bool>("--builtin")
         {
-            var output = context.GetOutput(cliOptions);
-            var builtin = context.ParseResult.GetValueForOption(builtinOption);
-            var custom = context.ParseResult.GetValueForOption(customOption);
+            Description = "Show only built-in planters"
+        };
+        var customOption = new Option<bool>("--custom")
+        {
+            Description = "Show only custom planters"
+        };
+        listCommand.Options.Add(builtinOption);
+        listCommand.Options.Add(customOption);
+
+        listCommand.SetAction(async (parseResult, token) =>
+        {
+            var output = parseResult.GetOutput(cliOptions);
+            var builtin = parseResult.GetValue(builtinOption);
+            var custom = parseResult.GetValue(customOption);
 
             try
             {
@@ -35,7 +40,7 @@ public static class PlantersCommand
                 // By default (no flags), show both.
                 var includeBuiltin = !builtin && !custom || builtin;
                 var includeCustom = !builtin && !custom || custom;
-                var merged = (await mediator.Send(new ListPlantersQuery(IncludeBuiltin: includeBuiltin, IncludeCustom: includeCustom))).ToArray();
+                var merged = (await mediator.Send(new ListPlantersQuery(IncludeBuiltin: includeBuiltin, IncludeCustom: includeCustom), token)).ToArray();
 
                 if (output.Json)
                 {
@@ -61,7 +66,7 @@ public static class PlantersCommand
                     }
                 }
 
-                context.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (ForestStore.ForestNotInitializedException)
             {
@@ -74,11 +79,11 @@ public static class PlantersCommand
                     output.WriteErrorLine("Error: forest not initialized");
                 }
 
-                context.ExitCode = ExitCodes.ForestNotInitialized;
+                return ExitCodes.ForestNotInitialized;
             }
         });
 
-        plantersCommand.AddCommand(listCommand);
+        plantersCommand.Subcommands.Add(listCommand);
         return plantersCommand;
     }
 

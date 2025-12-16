@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
 using GitForest.Cli.Features.Planters;
 using MediatR;
 
@@ -10,18 +9,21 @@ public static class PlanterCommand
     public static Command Build(CliOptions cliOptions, IMediator mediator)
     {
         var planterCommand = new Command("planter", "Manage a specific planter");
-        var planterIdArg = new Argument<string>("planter-id", "Planter identifier");
-        planterCommand.AddArgument(planterIdArg);
+        var planterIdArg = new Argument<string>("planter-id")
+        {
+            Description = "Planter identifier"
+        };
+        planterCommand.Arguments.Add(planterIdArg);
 
         var showCommand = new Command("show", "Show planter details");
-        showCommand.SetHandler(async (InvocationContext context) =>
+        showCommand.SetAction(async (parseResult, token) =>
         {
-            var output = context.GetOutput(cliOptions);
-            var planterId = context.ParseResult.GetValueForArgument(planterIdArg);
+            var output = parseResult.GetOutput(cliOptions);
+            var planterId = parseResult.GetRequiredValue(planterIdArg);
 
             try
             {
-                var info = await mediator.Send(new GetPlanterQuery(PlanterId: planterId));
+                var info = await mediator.Send(new GetPlanterQuery(PlanterId: planterId), token);
                 if (!info.Exists)
                 {
                     if (output.Json)
@@ -33,8 +35,7 @@ public static class PlanterCommand
                         output.WriteErrorLine($"Planter '{planterId}': not found");
                     }
 
-                    context.ExitCode = ExitCodes.PlanterNotFound;
-                    return;
+                    return ExitCodes.PlanterNotFound;
                 }
 
                 if (output.Json)
@@ -49,7 +50,7 @@ public static class PlanterCommand
                     output.WriteLine($"Plans: {plansText}");
                 }
 
-                context.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (ForestStore.ForestNotInitializedException)
             {
@@ -64,27 +65,40 @@ public static class PlanterCommand
                     output.WriteErrorLine($"Planter '{planterId}': not found");
                 }
 
-                context.ExitCode = ExitCodes.PlanterNotFound;
+                return ExitCodes.PlanterNotFound;
             }
         });
 
         var plantCommand = new Command("plant", "Assign + create branch for a plant");
-        var selectorArg = new Argument<string>("selector", "Plant selector (key, slug, or P01)");
-        var branchOption = new Option<string>("--branch", () => "auto", "Branch name to use ('auto' uses a deterministic default)");
-        var yesOption = new Option<bool>("--yes", "Proceed without prompting");
-        var dryRunOption = new Option<bool>("--dry-run", "Show what would be done without applying");
-        plantCommand.AddArgument(selectorArg);
-        plantCommand.AddOption(branchOption);
-        plantCommand.AddOption(yesOption);
-        plantCommand.AddOption(dryRunOption);
-        plantCommand.SetHandler(async (InvocationContext context) =>
+        var selectorArg = new Argument<string>("selector")
         {
-            var output = context.GetOutput(cliOptions);
-            var planterId = context.ParseResult.GetValueForArgument(planterIdArg);
-            var selector = context.ParseResult.GetValueForArgument(selectorArg);
-            var branch = context.ParseResult.GetValueForOption(branchOption) ?? "auto";
-            var yes = context.ParseResult.GetValueForOption(yesOption);
-            var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
+            Description = "Plant selector (key, slug, or P01)"
+        };
+        var branchOption = new Option<string>("--branch")
+        {
+            Description = "Branch name to use ('auto' uses a deterministic default)",
+            DefaultValueFactory = _ => "auto"
+        };
+        var yesOption = new Option<bool>("--yes")
+        {
+            Description = "Proceed without prompting"
+        };
+        var dryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Show what would be done without applying"
+        };
+        plantCommand.Arguments.Add(selectorArg);
+        plantCommand.Options.Add(branchOption);
+        plantCommand.Options.Add(yesOption);
+        plantCommand.Options.Add(dryRunOption);
+        plantCommand.SetAction(async (parseResult, token) =>
+        {
+            var output = parseResult.GetOutput(cliOptions);
+            var planterId = parseResult.GetRequiredValue(planterIdArg);
+            var selector = parseResult.GetRequiredValue(selectorArg);
+            var branch = (parseResult.GetValue(branchOption) ?? "auto").Trim();
+            var yes = parseResult.GetValue(yesOption);
+            var dryRun = parseResult.GetValue(dryRunOption);
 
             try
             {
@@ -106,7 +120,7 @@ public static class PlanterCommand
                         : $"Planted '{result.PlantKey}' with planter '{planterId}' on branch '{result.BranchName}'");
                 }
 
-                context.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (PlanterNotFoundException)
             {
@@ -119,7 +133,7 @@ public static class PlanterCommand
                     output.WriteErrorLine($"Planter '{planterId}': not found");
                 }
 
-                context.ExitCode = ExitCodes.PlanterNotFound;
+                return ExitCodes.PlanterNotFound;
             }
             catch (ConfirmationRequiredException ex)
             {
@@ -132,7 +146,7 @@ public static class PlanterCommand
                     output.WriteErrorLine("Error: confirmation required. Re-run with --yes.");
                 }
 
-                context.ExitCode = ExitCodes.InvalidArguments;
+                return ExitCodes.InvalidArguments;
             }
             catch (ForestStore.ForestNotInitializedException)
             {
@@ -145,7 +159,7 @@ public static class PlanterCommand
                     output.WriteErrorLine("Error: forest not initialized");
                 }
 
-                context.ExitCode = ExitCodes.ForestNotInitialized;
+                return ExitCodes.ForestNotInitialized;
             }
             catch (ForestStore.PlantNotFoundException)
             {
@@ -158,7 +172,7 @@ public static class PlanterCommand
                     output.WriteErrorLine($"Plant '{selector}': not found");
                 }
 
-                context.ExitCode = ExitCodes.PlantNotFoundOrAmbiguous;
+                return ExitCodes.PlantNotFoundOrAmbiguous;
             }
             catch (ForestStore.PlantAmbiguousSelectorException ex)
             {
@@ -171,7 +185,7 @@ public static class PlanterCommand
                     output.WriteErrorLine($"Plant '{ex.Selector}': ambiguous; matched {ex.Matches.Length} plants");
                 }
 
-                context.ExitCode = ExitCodes.PlantNotFoundOrAmbiguous;
+                return ExitCodes.PlantNotFoundOrAmbiguous;
             }
             catch (GitRunner.GitRunnerException ex)
             {
@@ -188,22 +202,26 @@ public static class PlanterCommand
                     }
                 }
 
-                context.ExitCode = ExitCodes.GitOperationFailed;
+                return ExitCodes.GitOperationFailed;
             }
         });
 
         var growCommand = new Command("grow", "Grow a plant (propose or apply changes)");
-        var modeOption = new Option<string>("--mode", () => "apply", "Mode: propose|apply");
-        growCommand.AddArgument(selectorArg);
-        growCommand.AddOption(modeOption);
-        growCommand.AddOption(dryRunOption);
-        growCommand.SetHandler(async (InvocationContext context) =>
+        var modeOption = new Option<string>("--mode")
         {
-            var output = context.GetOutput(cliOptions);
-            var planterId = context.ParseResult.GetValueForArgument(planterIdArg);
-            var selector = context.ParseResult.GetValueForArgument(selectorArg);
-            var mode = (context.ParseResult.GetValueForOption(modeOption) ?? "apply").Trim();
-            var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
+            Description = "Mode: propose|apply",
+            DefaultValueFactory = _ => "apply"
+        };
+        growCommand.Arguments.Add(selectorArg);
+        growCommand.Options.Add(modeOption);
+        growCommand.Options.Add(dryRunOption);
+        growCommand.SetAction(async (parseResult, token) =>
+        {
+            var output = parseResult.GetOutput(cliOptions);
+            var planterId = parseResult.GetRequiredValue(planterIdArg);
+            var selector = parseResult.GetRequiredValue(selectorArg);
+            var mode = (parseResult.GetValue(modeOption) ?? "apply").Trim();
+            var dryRun = parseResult.GetValue(dryRunOption);
 
             try
             {
@@ -224,7 +242,7 @@ public static class PlanterCommand
                         : $"Grew '{result.PlantKey}' (mode={result.Mode}) → harvestable");
                 }
 
-                context.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (PlanterNotFoundException)
             {
@@ -237,7 +255,7 @@ public static class PlanterCommand
                     output.WriteErrorLine($"Planter '{planterId}': not found");
                 }
 
-                context.ExitCode = ExitCodes.PlanterNotFound;
+                return ExitCodes.PlanterNotFound;
             }
             catch (InvalidModeException ex)
             {
@@ -250,7 +268,7 @@ public static class PlanterCommand
                     output.WriteErrorLine("Error: invalid --mode. Expected: propose|apply");
                 }
 
-                context.ExitCode = ExitCodes.InvalidArguments;
+                return ExitCodes.InvalidArguments;
             }
             catch (ForestStore.ForestNotInitializedException)
             {
@@ -263,7 +281,7 @@ public static class PlanterCommand
                     output.WriteErrorLine("Error: forest not initialized");
                 }
 
-                context.ExitCode = ExitCodes.ForestNotInitialized;
+                return ExitCodes.ForestNotInitialized;
             }
             catch (ForestStore.PlantNotFoundException)
             {
@@ -276,7 +294,7 @@ public static class PlanterCommand
                     output.WriteErrorLine($"Plant '{selector}': not found");
                 }
 
-                context.ExitCode = ExitCodes.PlantNotFoundOrAmbiguous;
+                return ExitCodes.PlantNotFoundOrAmbiguous;
             }
             catch (ForestStore.PlantAmbiguousSelectorException ex)
             {
@@ -289,7 +307,7 @@ public static class PlanterCommand
                     output.WriteErrorLine($"Plant '{ex.Selector}': ambiguous; matched {ex.Matches.Length} plants");
                 }
 
-                context.ExitCode = ExitCodes.PlantNotFoundOrAmbiguous;
+                return ExitCodes.PlantNotFoundOrAmbiguous;
             }
             catch (GitRunner.GitRunnerException ex)
             {
@@ -306,13 +324,13 @@ public static class PlanterCommand
                     }
                 }
 
-                context.ExitCode = ExitCodes.GitOperationFailed;
+                return ExitCodes.GitOperationFailed;
             }
         });
 
-        planterCommand.AddCommand(showCommand);
-        planterCommand.AddCommand(plantCommand);
-        planterCommand.AddCommand(growCommand);
+        planterCommand.Subcommands.Add(showCommand);
+        planterCommand.Subcommands.Add(plantCommand);
+        planterCommand.Subcommands.Add(growCommand);
         return planterCommand;
     }
 }

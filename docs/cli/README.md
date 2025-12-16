@@ -4,14 +4,21 @@ This directory contains documentation for all git-forest CLI commands.
 
 ## Available Commands
 
-- [init](./init.md) - Initialize a new forest
-- [status](./status.md) - Show forest status
-- [plant](./plant.md) - Add a new plant (repository)
-- [plants](./plants.md) - List all plants
-- [planter](./planter.md) - Manage planters (contributors)
-- [planters](./planters.md) - List all planters
-- [planner](./planner.md) - Manage planners (organizers)
-- [planners](./planners.md) - List all planners
+- **Global options**
+  - `--json`: output in JSON format (available on all commands)
+
+- **Commands**
+  - [init](./init.md) - Initialize forest state
+  - [status](./status.md) - Show forest status
+  - [config](./config.md) - Manage configuration (`config show`)
+  - [plans](./plans.md) - Manage plans (`plans list`, `plans install`)
+  - [plan](./plan.md) - Manage a specific plan (`plan <id> reconcile`)
+  - [plants](./plants.md) - Manage plants (`plants list`)
+  - [plant](./plant.md) - Manage a specific plant (`plant <selector> show`)
+  - [planters](./planters.md) - Manage planters (`planters list`)
+  - [planter](./planter.md) - Manage a specific planter (`planter <id> show`)
+  - [planners](./planners.md) - Manage planners (`planners list`)
+  - [planner](./planner.md) - Manage a specific planner (`planner <id> run`)
 
 ## Getting Started
 
@@ -19,9 +26,12 @@ This directory contains documentation for all git-forest CLI commands.
 # Initialize a new forest
 git-forest init
 
-# Add a repository as a plant
-git-forest plant --name my-repo --path ./my-repo
-
 # Check status
 git-forest status
+
+# List plants
+git-forest plants list
+
+# List installed plans
+git-forest plans list
 ```

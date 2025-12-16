@@ -8,6 +8,10 @@ public class Plan
     public string Id { get; set; } = string.Empty;
     public string Version { get; set; } = string.Empty;
     public string Source { get; set; } = string.Empty;
+    public string Author { get; set; } = string.Empty;
+    public string License { get; set; } = string.Empty;
+    public string Repository { get; set; } = string.Empty;
+    public string Homepage { get; set; } = string.Empty;
     public List<string> Planners { get; set; } = new();
     public List<string> Planters { get; set; } = new();
     public DateTime InstalledDate { get; set; }

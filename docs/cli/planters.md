@@ -1,27 +1,28 @@
 # planters
 
-List all planters in the forest.
+Manage planters.
 
 ## Usage
 
 ```bash
-git-forest planters
+git-forest planters list [--builtin] [--custom] [--json]
 ```
 
-## Description
+## Subcommands
 
-The `planters` command displays all registered planters (contributors) in the forest, including:
-- Planter name
-- Email address
-- Number of plants they've added
-- Activity status
+### `planters list`
+
+List planters aggregated from installed plans (built-in) and from `.git-forest/planters` (custom).
+
+## Options
+
+- `--builtin` - Show only built-in planters (from installed plans)
+- `--custom` - Show only custom planters (from `.git-forest/planters`)
+- `--json` - Output in JSON format (global option)
 
 ## Example
 
 ```bash
-$ git-forest planters
-Planters in the forest:
-1. John Doe (john@example.com) - 3 plants
-2. Jane Smith (jane@example.com) - 2 plants
-3. Bob Wilson (bob@example.com) - 1 plant
+$ git-forest planters list
+No planters configured
 ```

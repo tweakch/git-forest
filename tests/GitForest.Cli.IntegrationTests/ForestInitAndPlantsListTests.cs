@@ -67,6 +67,61 @@ public sealed class ForestInitAndPlantsListTests
             Assert.That(list.StdOut, Does.Contain("integration-testing-harness"));
             Assert.That(list.StdOut, Does.Contain("harness-builder"), "Expected plants list to include the assigned planter");
 
+            // 4b) plant <key> show should resolve the plant and show details (regression for stub implementation)
+            var show = await DotNetCli.RunGitForestAsync(
+                cliProject,
+                workingRepoDir,
+                ["plant", "integration-testing-harness:add-integration-tests", "show"]);
+            Assert.That(show.ExitCode, Is.EqualTo(0), () => $"git-forest plant <key> show failed.\nSTDOUT:\n{show.StdOut}\nSTDERR:\n{show.StdErr}");
+            Assert.That(show.StdOut, Does.Contain("Key: integration-testing-harness:add-integration-tests"));
+            Assert.That(show.StdOut, Does.Contain("Plan: integration-testing-harness"));
+
+            // 4a) planters list should reflect planters available via installed plan.yaml
+            var plantersList = await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["planters", "list"]);
+            Assert.That(plantersList.ExitCode, Is.EqualTo(0), () => $"git-forest planters list failed.\nSTDOUT:\n{plantersList.StdOut}\nSTDERR:\n{plantersList.StdErr}");
+            Assert.That(plantersList.StdOut, Does.Not.Contain("No planters configured"));
+            Assert.That(plantersList.StdOut, Does.Contain("harness-builder"));
+            Assert.That(plantersList.StdOut, Does.Contain("integration-test-author"));
+            Assert.That(plantersList.StdOut, Does.Contain("stability-engineer"));
+
+            // 4a2) planters list --json should include the planter IDs
+            var plantersJson = await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["planters", "list", "--json"]);
+            Assert.That(plantersJson.ExitCode, Is.EqualTo(0), () => $"git-forest planters list --json failed.\nSTDOUT:\n{plantersJson.StdOut}\nSTDERR:\n{plantersJson.StdErr}");
+
+            using (var plantersDoc = JsonDocument.Parse(plantersJson.StdOut.Trim()))
+            {
+                var rootPlanters = plantersDoc.RootElement;
+                Assert.That(rootPlanters.TryGetProperty("planters", out var plantersArray), Is.True);
+                Assert.That(plantersArray.ValueKind, Is.EqualTo(JsonValueKind.Array));
+                var ids = plantersArray.EnumerateArray().Select(x => x.GetProperty("id").GetString()).ToArray();
+                Assert.That(ids, Does.Contain("harness-builder"));
+                Assert.That(ids, Does.Contain("integration-test-author"));
+                Assert.That(ids, Does.Contain("stability-engineer"));
+            }
+
+            // 4b) planners list should reflect planners available via installed plan.yaml
+            var plannersList = await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["planners", "list"]);
+            Assert.That(plannersList.ExitCode, Is.EqualTo(0), () => $"git-forest planners list failed.\nSTDOUT:\n{plannersList.StdOut}\nSTDERR:\n{plannersList.StdErr}");
+            Assert.That(plannersList.StdOut, Does.Not.Contain("No planners configured"));
+            Assert.That(plannersList.StdOut, Does.Contain("integration-surface-mapper"));
+            Assert.That(plannersList.StdOut, Does.Contain("dependency-harness-planner"));
+            Assert.That(plannersList.StdOut, Does.Contain("flaky-integration-detector"));
+
+            // 4c) planners list --json should include the planner IDs
+            var plannersJson = await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["planners", "list", "--json"]);
+            Assert.That(plannersJson.ExitCode, Is.EqualTo(0), () => $"git-forest planners list --json failed.\nSTDOUT:\n{plannersJson.StdOut}\nSTDERR:\n{plannersJson.StdErr}");
+
+            using (var plannersDoc = JsonDocument.Parse(plannersJson.StdOut.Trim()))
+            {
+                var rootPlanners = plannersDoc.RootElement;
+                Assert.That(rootPlanners.TryGetProperty("planners", out var planners), Is.True);
+                Assert.That(planners.ValueKind, Is.EqualTo(JsonValueKind.Array));
+                var ids = planners.EnumerateArray().Select(x => x.GetProperty("id").GetString()).ToArray();
+                Assert.That(ids, Does.Contain("integration-surface-mapper"));
+                Assert.That(ids, Does.Contain("dependency-harness-planner"));
+                Assert.That(ids, Does.Contain("flaky-integration-detector"));
+            }
+
             // 5) plants list --json should reference planner + planters explicitly
             var listJson = await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["plants", "list", "--json"]);
             Assert.That(listJson.ExitCode, Is.EqualTo(0), () => $"git-forest plants list --json failed.\nSTDOUT:\n{listJson.StdOut}\nSTDERR:\n{listJson.StdErr}");
@@ -162,6 +217,8 @@ public sealed class ForestInitAndPlantsListTests
 
             await EnsureSuccessAsync(await ProcessRunner.RunAsync("git", ["config", "user.email", "test@example.com"], directory, environmentVariables: null, timeout: TimeSpan.FromMinutes(1)));
             await EnsureSuccessAsync(await ProcessRunner.RunAsync("git", ["config", "user.name", "Test User"], directory, environmentVariables: null, timeout: TimeSpan.FromMinutes(1)));
+            // Ensure tests are not coupled to developer machine commit signing (e.g. 1Password SSH/GPG signing).
+            await EnsureSuccessAsync(await ProcessRunner.RunAsync("git", ["config", "commit.gpgsign", "false"], directory, environmentVariables: null, timeout: TimeSpan.FromMinutes(1)));
 
             var readme = Path.Combine(directory, "README.md");
             await File.WriteAllTextAsync(readme, "# Test Repo\n", Encoding.UTF8);

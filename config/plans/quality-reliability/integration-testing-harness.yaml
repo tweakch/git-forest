@@ -2,6 +2,10 @@ id: integration-testing-harness
 name: Integration Testing Harness
 version: 1.0.0
 category: quality-reliability
+author: git-forest
+license: MIT
+repository: https://github.com/tweakch/git-forest
+homepage: https://github.com/tweakch/git-forest
 description: |
   Build and maintain stable integration testing infrastructure and coverage.
   This plan focuses on identifying important integration boundaries, creating a

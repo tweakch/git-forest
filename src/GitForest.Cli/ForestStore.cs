@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -106,18 +107,38 @@ internal static class ForestStore
         var destPlanYaml = Path.Combine(planDir, "plan.yaml");
         File.WriteAllText(destPlanYaml, yaml, Encoding.UTF8);
 
+        var installedAt = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
+        var sha256 = ComputeSha256Hex(Encoding.UTF8.GetBytes(yaml));
+
         var installMetadataPath = Path.Combine(planDir, "install.json");
         var metadata = new
         {
             id = plan.Id,
             name = plan.Name,
             version = plan.Version,
+            category = plan.Category,
+            author = plan.Author,
+            license = plan.License,
+            repository = plan.Repository,
+            homepage = plan.Homepage,
             source = source,
-            installedAt = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture)
+            installedAt,
+            sha256
         };
         File.WriteAllText(installMetadataPath, JsonSerializer.Serialize(metadata, new JsonSerializerOptions(JsonSerializerDefaults.Web)), Encoding.UTF8);
 
-        return new InstalledPlan(plan.Id, plan.Name, plan.Version, source);
+        return new InstalledPlan(
+            Id: plan.Id,
+            Name: plan.Name,
+            Version: plan.Version,
+            Category: plan.Category,
+            Author: plan.Author,
+            License: plan.License,
+            Repository: plan.Repository,
+            Homepage: plan.Homepage,
+            Source: source,
+            InstalledAt: installedAt,
+            Sha256: sha256);
     }
 
     public static IReadOnlyList<InstalledPlan> ListPlans(string forestDir)
@@ -147,6 +168,8 @@ internal static class ForestStore
             var id = string.IsNullOrWhiteSpace(parsed.Id) ? Path.GetFileName(dir) : parsed.Id;
 
             var source = string.Empty;
+            var installedAt = string.Empty;
+            var sha256 = string.Empty;
             var installJsonPath = Path.Combine(dir, "install.json");
             if (File.Exists(installJsonPath))
             {
@@ -157,6 +180,16 @@ internal static class ForestStore
                     {
                         source = src.GetString() ?? string.Empty;
                     }
+
+                    if (doc.RootElement.TryGetProperty("installedAt", out var iat))
+                    {
+                        installedAt = iat.GetString() ?? string.Empty;
+                    }
+
+                    if (doc.RootElement.TryGetProperty("sha256", out var sh))
+                    {
+                        sha256 = sh.GetString() ?? string.Empty;
+                    }
                 }
                 catch
                 {
@@ -164,7 +197,23 @@ internal static class ForestStore
                 }
             }
 
-            results.Add(new InstalledPlan(id, parsed.Name, parsed.Version, source));
+            if (string.IsNullOrWhiteSpace(sha256))
+            {
+                sha256 = ComputeSha256Hex(Encoding.UTF8.GetBytes(yaml));
+            }
+
+            results.Add(new InstalledPlan(
+                Id: id,
+                Name: parsed.Name,
+                Version: parsed.Version,
+                Category: parsed.Category,
+                Author: parsed.Author,
+                License: parsed.License,
+                Repository: parsed.Repository,
+                Homepage: parsed.Homepage,
+                Source: source,
+                InstalledAt: installedAt,
+                Sha256: sha256));
         }
 
         return results
@@ -320,9 +369,26 @@ internal static class ForestStore
         return slug.Length == 0 ? "untitled" : slug;
     }
 
-    public sealed record InstalledPlan(string Id, string Name, string Version, string Source);
+    public sealed record InstalledPlan(
+        string Id,
+        string Name,
+        string Version,
+        string Category,
+        string Author,
+        string License,
+        string Repository,
+        string Homepage,
+        string Source,
+        string InstalledAt,
+        string Sha256);
     public sealed record ReconcileResult(string PlanId, int PlantsCreated, int PlantsUpdated);
     public sealed record PlantRecord(string Key, string Status, string Title, string PlanId, string? PlannerId, IReadOnlyList<string> AssignedPlanters);
+
+    private static string ComputeSha256Hex(ReadOnlySpan<byte> bytes)
+    {
+        var hash = SHA256.HashData(bytes);
+        return Convert.ToHexString(hash).ToLowerInvariant();
+    }
 
     public sealed class ForestNotInitializedException : Exception
     {
@@ -346,6 +412,11 @@ internal static class PlanYamlLite
         string Id,
         string Name,
         string Version,
+        string Category,
+        string Author,
+        string License,
+        string Repository,
+        string Homepage,
         IReadOnlyList<string> Planners,
         IReadOnlyList<string> Planters,
         IReadOnlyList<string> PlantTemplateNames);
@@ -355,6 +426,11 @@ internal static class PlanYamlLite
         var id = string.Empty;
         var name = string.Empty;
         var version = string.Empty;
+        var category = string.Empty;
+        var author = string.Empty;
+        var license = string.Empty;
+        var repository = string.Empty;
+        var homepage = string.Empty;
         var planners = new List<string>();
         var planters = new List<string>();
         var templateNames = new List<string>();
@@ -380,6 +456,11 @@ internal static class PlanYamlLite
                 if (TryParseTopLevelScalar(line, "id", out var v)) { id = v; continue; }
                 if (TryParseTopLevelScalar(line, "name", out v)) { name = v; continue; }
                 if (TryParseTopLevelScalar(line, "version", out v)) { version = v; continue; }
+                if (TryParseTopLevelScalar(line, "category", out v)) { category = v; continue; }
+                if (TryParseTopLevelScalar(line, "author", out v)) { author = v; continue; }
+                if (TryParseTopLevelScalar(line, "license", out v)) { license = v; continue; }
+                if (TryParseTopLevelScalar(line, "repository", out v)) { repository = v; continue; }
+                if (TryParseTopLevelScalar(line, "homepage", out v)) { homepage = v; continue; }
 
                 if (IsTopLevelKey(line, "planners")) { currentList = "planners"; continue; }
                 if (IsTopLevelKey(line, "planters")) { currentList = "planters"; continue; }
@@ -422,6 +503,11 @@ internal static class PlanYamlLite
             Id: id,
             Name: name,
             Version: version,
+            Category: category,
+            Author: author,
+            License: license,
+            Repository: repository,
+            Homepage: homepage,
             Planners: planners,
             Planters: planters,
             PlantTemplateNames: templateNames);

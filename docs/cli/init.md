@@ -5,8 +5,14 @@ Initialize a new forest in the current directory.
 ## Usage
 
 ```bash
-git-forest init
+git-forest init [--force] [--dir <dir>] [--json]
 ```
+
+## Options
+
+- `--dir <dir>` - Directory for forest state (default: `.git-forest`)
+- `--force` - Force re-initialization (currently a no-op; init is idempotent)
+- `--json` - Output in JSON format (global option)
 
 ## Description
 
@@ -22,6 +28,5 @@ The `init` command creates a new forest configuration in the current directory. 
 
 ```bash
 $ git-forest init
-Initializing forest...
-Forest initialized successfully!
+initialized (.git-forest)
 ```

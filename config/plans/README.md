@@ -83,6 +83,7 @@ Plans that explicitly assume AI planters.
 ### 9. Meta / Governance Plans
 Plans that manage plans.
 
+- **repository-overview** - Comprehensive repository status overview for team leads
 - **forest-governance** - Rules, limits, quotas for planters
 - **plan-composition** - Detect conflicting or overlapping plans
 - **risk-aware-planning** - Rank plants by blast radius

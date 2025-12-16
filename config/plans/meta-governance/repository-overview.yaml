@@ -1,0 +1,493 @@
+id: repository-overview
+name: Repository Overview
+version: 1.0.0
+category: meta-governance
+description: |
+  Comprehensive repository status overview plan for git-forest team leads.
+  This plan provides a complete overview of the repository's current state by
+  analyzing code health, plan status, plant lifecycle, planter capabilities,
+  documentation completeness, and CI/CD pipeline status.
+  
+  This is the go-to plan when a team lead needs to understand "where we are"
+  across all dimensions of the forest. It generates a holistic view by running
+  multiple specialized planners that each focus on a specific aspect of the
+  repository.
+  
+  USAGE: Run this plan when preparing for sprint planning, status reports,
+  team reviews, or any situation requiring a comprehensive repository overview.
+
+focus_areas:
+  - Repository structure and organization
+  - Code health and quality metrics
+  - Plan catalog status and coverage
+  - Plant lifecycle and status distribution
+  - Planter capabilities and workload
+  - Documentation completeness and drift
+  - CI/CD pipeline health
+  - Test coverage and quality
+  - Dependency health
+  - Technical debt inventory
+
+scopes:
+  - repository-overview
+  - status-reporting
+  - meta-analysis
+  - team-visibility
+
+planners:
+  - repository-structure-analyzer
+  - code-health-overview
+  - plan-catalog-status
+  - plant-lifecycle-analyzer
+  - planter-capacity-analyzer
+  - documentation-completeness
+  - ci-pipeline-health
+  - test-coverage-overview
+  - dependency-health-summary
+  - technical-debt-inventory
+
+planters:
+  - overview-reporter
+  - status-dashboard-generator
+  - metrics-aggregator
+
+policies:
+  execution_mode: propose
+  risk_level: low
+  max_concurrent_plants: 10
+  require_review: false
+  auto_apply: false
+  read_only: true
+
+safety_rules:
+  determinism: required
+  idempotency: required
+  read_only: true
+  advisory_only: true
+  ci_safe: true
+
+metrics:
+  - name: repository_health_score
+    description: Overall repository health score (0-100)
+    target: 80
+  - name: active_plans_count
+    description: Number of active plans installed
+    target: monitored
+  - name: plant_completion_rate
+    description: Percentage of harvested vs total plants
+    target: 70
+  - name: code_quality_score
+    description: Aggregated code quality score
+    target: 85
+  - name: documentation_coverage
+    description: Percentage of documented components
+    target: 90
+  - name: ci_pipeline_health
+    description: CI/CD pipeline success rate
+    target: 95
+  - name: technical_debt_ratio
+    description: Ratio of technical debt to total code
+    target: monitored
+
+plant_templates:
+  - name: generate-repository-overview
+    title_template: "Generate comprehensive repository overview report"
+    priority: high
+    category: overview-generation
+    
+  - name: update-status-dashboard
+    title_template: "Update status dashboard with latest metrics"
+    priority: high
+    category: overview-generation
+    
+  - name: analyze-repository-structure
+    title_template: "Analyze repository structure and organization"
+    priority: medium
+    category: structure-analysis
+    
+  - name: assess-code-health
+    title_template: "Assess overall code health and quality"
+    priority: medium
+    category: code-analysis
+    
+  - name: evaluate-plan-catalog
+    title_template: "Evaluate plan catalog status and coverage"
+    priority: medium
+    category: plan-analysis
+    
+  - name: analyze-plant-lifecycle
+    title_template: "Analyze plant lifecycle and status distribution"
+    priority: medium
+    category: plant-analysis
+    
+  - name: evaluate-planter-capacity
+    title_template: "Evaluate planter capabilities and workload"
+    priority: medium
+    category: planter-analysis
+    
+  - name: check-documentation-completeness
+    title_template: "Check documentation completeness and drift"
+    priority: medium
+    category: documentation-analysis
+    
+  - name: assess-ci-pipeline-health
+    title_template: "Assess CI/CD pipeline health and status"
+    priority: medium
+    category: pipeline-analysis
+    
+  - name: evaluate-test-coverage
+    title_template: "Evaluate test coverage and quality"
+    priority: medium
+    category: test-analysis
+    
+  - name: analyze-dependency-health
+    title_template: "Analyze dependency health and security"
+    priority: medium
+    category: dependency-analysis
+    
+  - name: inventory-technical-debt
+    title_template: "Inventory technical debt across the repository"
+    priority: low
+    category: debt-analysis
+
+planner_definitions:
+  repository-structure-analyzer:
+    name: Repository Structure Analyzer
+    description: Analyzes the overall structure and organization of the repository
+    type: analyzer
+    inputs:
+      - Repository directory structure
+      - .git-forest/ structure
+      - Project files and solutions
+      - Configuration files
+    outputs:
+      - Repository structure report
+      - Organizational health metrics
+      - Structure improvement suggestions
+    analysis_dimensions:
+      - Directory organization
+      - File naming conventions
+      - Module boundaries
+      - Configuration consistency
+      - Build system structure
+      
+  code-health-overview:
+    name: Code Health Overview Planner
+    description: Provides high-level code health and quality assessment
+    type: analyzer
+    inputs:
+      - Source code (src/**/*.cs)
+      - Code metrics
+      - Static analysis results
+      - Complexity measurements
+    outputs:
+      - Code health score
+      - Quality hotspots
+      - Improvement priorities
+    analysis_dimensions:
+      - Code complexity
+      - Duplication levels
+      - Maintainability index
+      - Technical debt hotspots
+      - Code smells
+      
+  plan-catalog-status:
+    name: Plan Catalog Status Planner
+    description: Analyzes the plan catalog for completeness and coverage
+    type: analyzer
+    inputs:
+      - config/plans/**/*.yaml
+      - config/plans/README.md
+      - Installed plans (.git-forest/plans/)
+    outputs:
+      - Plan catalog health report
+      - Coverage gaps
+      - Plan recommendations
+    analysis_dimensions:
+      - Plan category coverage
+      - Plan completeness
+      - Plan metadata quality
+      - Plan interdependencies
+      - Missing plan areas
+      
+  plant-lifecycle-analyzer:
+    name: Plant Lifecycle Analyzer
+    description: Analyzes plant status distribution and lifecycle health
+    type: analyzer
+    inputs:
+      - .git-forest/plants/
+      - Plant status data
+      - Plant history
+    outputs:
+      - Plant lifecycle report
+      - Status distribution
+      - Bottleneck identification
+    analysis_dimensions:
+      - Plants by status
+      - Age distribution
+      - Completion trends
+      - Stuck plants
+      - Success rate
+      
+  planter-capacity-analyzer:
+    name: Planter Capacity Analyzer
+    description: Evaluates planter capabilities and current workload
+    type: analyzer
+    inputs:
+      - .git-forest/planters/
+      - Planter definitions
+      - Plant assignments
+      - Execution history
+    outputs:
+      - Planter capacity report
+      - Workload distribution
+      - Capability gaps
+    analysis_dimensions:
+      - Active planters
+      - Workload per planter
+      - Capability coverage
+      - Performance metrics
+      - Capacity constraints
+      
+  documentation-completeness:
+    name: Documentation Completeness Planner
+    description: Assesses documentation coverage and identifies gaps
+    type: analyzer
+    inputs:
+      - README.md
+      - docs/
+      - CLI.md
+      - INSTALLATION.md
+      - Inline code documentation
+    outputs:
+      - Documentation coverage report
+      - Missing documentation
+      - Documentation drift alerts
+    analysis_dimensions:
+      - API documentation
+      - User guides
+      - Architecture docs
+      - Code comments
+      - Documentation consistency
+      
+  ci-pipeline-health:
+    name: CI/CD Pipeline Health Planner
+    description: Evaluates CI/CD pipeline status and reliability
+    type: analyzer
+    inputs:
+      - .github/workflows/
+      - CI run history
+      - Build logs
+      - Test results
+    outputs:
+      - Pipeline health report
+      - Success rate metrics
+      - Failure patterns
+    analysis_dimensions:
+      - Build success rate
+      - Test pass rate
+      - Pipeline duration
+      - Failure frequency
+      - Reliability trends
+      
+  test-coverage-overview:
+    name: Test Coverage Overview Planner
+    description: Provides comprehensive test coverage analysis
+    type: analyzer
+    inputs:
+      - tests/
+      - Coverage reports
+      - Test results
+      - Source code
+    outputs:
+      - Coverage overview
+      - Untested areas
+      - Test quality metrics
+    analysis_dimensions:
+      - Line coverage
+      - Branch coverage
+      - Critical path coverage
+      - Test distribution
+      - Test quality
+      
+  dependency-health-summary:
+    name: Dependency Health Summary Planner
+    description: Summarizes dependency health and security status
+    type: analyzer
+    inputs:
+      - Project dependency files
+      - Security scan results
+      - Version information
+      - License data
+    outputs:
+      - Dependency health report
+      - Security vulnerabilities
+      - Update recommendations
+    analysis_dimensions:
+      - Outdated dependencies
+      - Security vulnerabilities
+      - License compliance
+      - Dependency tree health
+      - Update urgency
+      
+  technical-debt-inventory:
+    name: Technical Debt Inventory Planner
+    description: Inventories and categorizes technical debt across the repository
+    type: analyzer
+    inputs:
+      - Source code
+      - TODOs and FIXMEs
+      - Code comments
+      - Issue tracker
+    outputs:
+      - Technical debt inventory
+      - Debt categorization
+      - Priority ranking
+    analysis_dimensions:
+      - Debt types
+      - Debt locations
+      - Impact assessment
+      - Resolution effort
+      - Debt trends
+
+planter_definitions:
+  overview-reporter:
+    name: Overview Reporter
+    description: Generates comprehensive overview reports from planner outputs
+    capabilities:
+      - report_generation
+      - data_aggregation
+      - visualization
+      - markdown_generation
+    constraints:
+      mode: propose_only
+      requires_review: false
+      read_only: true
+    outputs:
+      - Markdown reports
+      - JSON metrics
+      - HTML dashboards
+      
+  status-dashboard-generator:
+    name: Status Dashboard Generator
+    description: Creates interactive status dashboards from metrics
+    capabilities:
+      - dashboard_creation
+      - real_time_metrics
+      - visualization
+      - trend_analysis
+    constraints:
+      mode: propose_only
+      requires_review: false
+      read_only: true
+    outputs:
+      - Interactive dashboards
+      - Metric visualizations
+      - Trend charts
+      
+  metrics-aggregator:
+    name: Metrics Aggregator
+    description: Aggregates metrics from multiple planners into unified reports
+    capabilities:
+      - metric_collection
+      - data_normalization
+      - statistical_analysis
+      - trend_detection
+    constraints:
+      mode: propose_only
+      requires_review: false
+      read_only: true
+    outputs:
+      - Aggregated metrics
+      - Statistical summaries
+      - Comparative reports
+
+output_templates:
+  overview_report:
+    format: markdown
+    sections:
+      - executive_summary
+      - repository_structure
+      - code_health
+      - plan_status
+      - plant_lifecycle
+      - planter_capacity
+      - documentation_status
+      - ci_pipeline_health
+      - test_coverage
+      - dependency_health
+      - technical_debt
+      - recommendations
+    
+  status_dashboard:
+    format: html
+    components:
+      - health_score_gauge
+      - plant_status_chart
+      - code_quality_trends
+      - planter_workload_bars
+      - ci_pipeline_timeline
+      - test_coverage_gauge
+      - dependency_security_alerts
+      - technical_debt_heatmap
+    
+  metrics_summary:
+    format: json
+    fields:
+      - timestamp
+      - repository_health_score
+      - active_plans_count
+      - total_plants
+      - plants_by_status
+      - code_quality_score
+      - test_coverage_percentage
+      - ci_success_rate
+      - dependency_vulnerabilities
+      - technical_debt_ratio
+
+usage_scenarios:
+  - scenario: Sprint Planning Preparation
+    description: Run before sprint planning to understand current state
+    commands:
+      - git-forest plans install config/plans/meta-governance/repository-overview.yaml
+      - git-forest plan repository-overview reconcile
+      - git-forest plants list --plan repository-overview
+      
+  - scenario: Team Status Review
+    description: Generate status report for team reviews or standups
+    commands:
+      - git-forest plan repository-overview reconcile
+      - git-forest plant repository-overview:generate-repository-overview show
+      
+  - scenario: Executive Summary
+    description: Create high-level summary for stakeholders
+    commands:
+      - git-forest plan repository-overview reconcile
+      - git-forest plant repository-overview:update-status-dashboard show --json
+      
+  - scenario: Continuous Monitoring
+    description: Set up continuous overview monitoring in CI
+    commands:
+      - git-forest init
+      - git-forest plans install config/plans/meta-governance/repository-overview.yaml
+      - git-forest plan repository-overview reconcile
+      - git-forest plants list --json > overview-status.json
+
+integration:
+  ci_workflow: true
+  scheduled_runs: true
+  webhook_triggers: true
+  api_endpoints: true
+
+resource_limits:
+  max_execution_time_seconds: 600
+  max_memory_mb: 1024
+  max_plants_per_run: 100
+  max_files_analyzed: 5000
+
+determinism_contract:
+  stable_keys: true
+  idempotent_reconcile: true
+  reproducible_analysis: true
+  no_side_effects: true
+  same_input_same_output: true

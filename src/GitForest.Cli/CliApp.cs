@@ -68,7 +68,8 @@ public static class CliApp
         services.AddSingleton<IForestInitializer>(_ => new FileSystemForestInitializer());
         services.AddSingleton<ILockStatusProvider>(_ => new FileSystemLockStatusProvider(forestDir));
         services.AddSingleton<IPlanInstaller>(_ => new FileSystemPlanInstaller(forestDir));
-        services.AddSingleton<IPlanReconciler>(_ => new FileSystemPlanReconciler(forestDir));
+        services.AddSingleton<IReconciliationForum>(_ => new FileSystemReconciliationForum(forestDir));
+        services.AddSingleton<IPlanReconciler, ForumPlanReconciler>();
 
         // LLM / agent chat client (default mock for offline determinism).
         var llmProvider = string.IsNullOrWhiteSpace(forestConfig.Llm.Provider)

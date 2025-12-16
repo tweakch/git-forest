@@ -2,20 +2,40 @@ using System.Text;
 
 namespace GitForest.Cli;
 
+public sealed record LlmConfig(
+    string Provider,
+    string Model,
+    string BaseUrl,
+    string ApiKeyEnvVar,
+    double Temperature);
+
 public sealed record ForestConfig(
     string PersistenceProvider,
-    int LocksTimeoutSeconds);
+    int LocksTimeoutSeconds,
+    LlmConfig Llm);
 
 public static class ForestConfigReader
 {
     public const string DefaultPersistenceProvider = "file";
     public const int DefaultLocksTimeoutSeconds = 15;
+    public const string DefaultLlmProvider = "mock";
+    public const string DefaultLlmModel = "gpt-4o-mini";
+    public const string DefaultLlmBaseUrl = "https://api.openai.com/v1";
+    public const string DefaultLlmApiKeyEnvVar = "OPENAI_API_KEY";
+    public const double DefaultLlmTemperature = 0;
 
     private static readonly HashSet<string> AllowedProviders = new(StringComparer.OrdinalIgnoreCase)
     {
         "file",
         "memory",
         "orleans"
+    };
+
+    private static readonly HashSet<string> AllowedLlmProviders = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "mock",
+        "openai",
+        "ollama"
     };
 
     public static ForestConfig ReadEffective(string forestDir)
@@ -28,7 +48,13 @@ public static class ForestConfigReader
 
         return new ForestConfig(
             PersistenceProvider: DefaultPersistenceProvider,
-            LocksTimeoutSeconds: DefaultLocksTimeoutSeconds);
+            LocksTimeoutSeconds: DefaultLocksTimeoutSeconds,
+            Llm: new LlmConfig(
+                Provider: DefaultLlmProvider,
+                Model: DefaultLlmModel,
+                BaseUrl: DefaultLlmBaseUrl,
+                ApiKeyEnvVar: DefaultLlmApiKeyEnvVar,
+                Temperature: DefaultLlmTemperature));
     }
 
     public static ForestConfig? TryRead(string forestDir)
@@ -62,6 +88,11 @@ public static class ForestConfigReader
     {
         var provider = DefaultPersistenceProvider;
         var locksTimeoutSeconds = DefaultLocksTimeoutSeconds;
+        var llmProvider = DefaultLlmProvider;
+        var llmModel = DefaultLlmModel;
+        var llmBaseUrl = DefaultLlmBaseUrl;
+        var llmApiKeyEnvVar = DefaultLlmApiKeyEnvVar;
+        var llmTemperature = DefaultLlmTemperature;
 
         var lines = SplitLines(yaml);
         string? currentSection = null;
@@ -125,12 +156,77 @@ public static class ForestConfigReader
                 {
                     locksTimeoutSeconds = seconds;
                 }
+
+                continue;
+            }
+
+            if (currentSection.Equals("llm", StringComparison.OrdinalIgnoreCase))
+            {
+                if (nestedKey.Equals("provider", StringComparison.OrdinalIgnoreCase))
+                {
+                    var candidate = nestedValue.Trim();
+                    if (AllowedLlmProviders.Contains(candidate))
+                    {
+                        llmProvider = candidate.ToLowerInvariant();
+                    }
+
+                    continue;
+                }
+
+                if (nestedKey.Equals("model", StringComparison.OrdinalIgnoreCase))
+                {
+                    var candidate = nestedValue.Trim();
+                    if (candidate.Length > 0)
+                    {
+                        llmModel = candidate;
+                    }
+
+                    continue;
+                }
+
+                if (nestedKey.Equals("baseUrl", StringComparison.OrdinalIgnoreCase) ||
+                    nestedKey.Equals("base_url", StringComparison.OrdinalIgnoreCase))
+                {
+                    var candidate = nestedValue.Trim();
+                    if (candidate.Length > 0)
+                    {
+                        llmBaseUrl = candidate;
+                    }
+
+                    continue;
+                }
+
+                if (nestedKey.Equals("apiKeyEnvVar", StringComparison.OrdinalIgnoreCase) ||
+                    nestedKey.Equals("api_key_env_var", StringComparison.OrdinalIgnoreCase))
+                {
+                    var candidate = nestedValue.Trim();
+                    if (candidate.Length > 0)
+                    {
+                        llmApiKeyEnvVar = candidate;
+                    }
+
+                    continue;
+                }
+
+                if (nestedKey.Equals("temperature", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (double.TryParse(nestedValue.Trim(), out var t) && t >= 0)
+                    {
+                        llmTemperature = t;
+                    }
+                }
             }
         }
 
         return new ForestConfig(
             PersistenceProvider: provider,
-            LocksTimeoutSeconds: locksTimeoutSeconds);
+            LocksTimeoutSeconds: locksTimeoutSeconds,
+            Llm: new LlmConfig(
+                Provider: llmProvider,
+                Model: llmModel,
+                BaseUrl: llmBaseUrl,
+                ApiKeyEnvVar: llmApiKeyEnvVar,
+                Temperature: llmTemperature));
     }
 
     private static bool TryParseKeyValue(string line, out string key, out string value)

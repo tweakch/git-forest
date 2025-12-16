@@ -38,10 +38,18 @@ public sealed class FileSystemForestInitializer : IForestInitializer
         if (!File.Exists(configYamlPath))
         {
             // Keep defaults aligned with ForestConfigReader:
-            // persistence.provider=file, locks.timeoutSeconds=15
+            // persistence.provider=file, locks.timeoutSeconds=15, llm.provider=mock
             File.WriteAllText(
                 configYamlPath,
-                $"# Repo-level git-forest config{Environment.NewLine}persistence:{Environment.NewLine}  provider: file{Environment.NewLine}locks:{Environment.NewLine}  timeoutSeconds: 15{Environment.NewLine}",
+                $"# Repo-level git-forest config{Environment.NewLine}" +
+                $"persistence:{Environment.NewLine}  provider: file{Environment.NewLine}" +
+                $"locks:{Environment.NewLine}  timeoutSeconds: 15{Environment.NewLine}" +
+                $"llm:{Environment.NewLine}" +
+                $"  provider: mock{Environment.NewLine}" +
+                $"  model: gpt-4o-mini{Environment.NewLine}" +
+                $"  baseUrl: https://api.openai.com/v1{Environment.NewLine}" +
+                $"  apiKeyEnvVar: OPENAI_API_KEY{Environment.NewLine}" +
+                $"  temperature: 0{Environment.NewLine}",
                 Encoding.UTF8);
         }
 

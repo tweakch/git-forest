@@ -1,27 +1,29 @@
 # plants
 
-List all plants in the forest.
+Manage plants.
 
 ## Usage
 
 ```bash
-git-forest plants
+git-forest plants list [--status <status>] [--plan <plan-id>] [--json]
 ```
 
-## Description
+## Subcommands
 
-The `plants` command displays all registered plants (repositories) in the current forest, including:
-- Plant name
-- Repository path
-- Last commit date
-- Planter who added it
+### `plants list`
+
+List plants.
+
+## Options
+
+- `--status <status>` - Filter by status (`planned|planted|growing|harvestable|harvested|archived`)
+- `--plan <plan-id>` - Filter by plan ID
+- `--json` - Output in JSON format (global option)
 
 ## Example
 
 ```bash
-$ git-forest plants
-Plants in the forest:
-1. my-app (./my-app) - planted by john@example.com
-2. api-service (./api-service) - planted by jane@example.com
-3. shared-lib (./shared-lib) - planted by john@example.com
+$ git-forest plants list
+Key                             Status   Title                         Plan   Planter
+No plants found
 ```

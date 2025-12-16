@@ -1,37 +1,28 @@
 # planter
 
-Add or view a planter (contributor).
+Manage a specific planter.
 
 ## Usage
 
 ```bash
-# Add a new planter
-git-forest planter --name <name> --email <email>
-
-# View current planter
-git-forest planter
+git-forest planter <planter-id> show [--json]
 ```
+
+## Arguments
+
+- `<planter-id>` - Planter identifier
 
 ## Options
 
-- `--name` - Name of the planter
-- `--email` - Email address of the planter
+- `--json` - Output in JSON format (global option)
 
 ## Description
 
-The `planter` command manages planters - contributors who plant repositories in the forest. Planters are the active developers and contributors.
+The `planter` command is used for operations on a single planter.
 
 ## Examples
 
 ```bash
-# Add a new planter
-$ git-forest planter --name "John Doe" --email john@example.com
-Adding planter 'John Doe' (john@example.com)...
-Planter added successfully!
-
-# View current planter
-$ git-forest planter
-Current planter information:
-Name: John Doe
-Email: john@example.com
+$ git-forest planter john.doe show
+Planter 'john.doe': not found
 ```

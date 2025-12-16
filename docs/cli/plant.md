@@ -1,26 +1,28 @@
 # plant
 
-Add a new plant (repository) to the forest.
+Manage a specific plant.
 
 ## Usage
 
 ```bash
-git-forest plant --name <name> --path <path>
+git-forest plant <selector> show [--json]
 ```
+
+## Arguments
+
+- `<selector>` - Plant selector (key, slug, or `P01`)
 
 ## Options
 
-- `--name` (required) - Name of the plant
-- `--path` (required) - Path to the git repository
+- `--json` - Output in JSON format (global option)
 
 ## Description
 
-The `plant` command registers a git repository as a plant in your forest. This allows the forest to track and manage the repository.
+The `plant` command is used for operations on a single plant.
 
 ## Example
 
 ```bash
-$ git-forest plant --name my-app --path ./my-app
-Planting 'my-app' at './my-app'...
-Plant added successfully!
+$ git-forest plant P01 show
+Plant 'P01': not found
 ```

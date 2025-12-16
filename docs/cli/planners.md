@@ -1,27 +1,27 @@
 # planners
 
-List all planners in the forest.
+Manage planners.
 
 ## Usage
 
 ```bash
-git-forest planners
+git-forest planners list [--plan <plan-id>] [--json]
 ```
 
-## Description
+## Subcommands
 
-The `planners` command displays all registered planners (organizers/managers) in the forest, including:
-- Planner name
-- Email address
-- Role
-- Managed forests
+### `planners list`
+
+List planners aggregated from installed plans.
+
+## Options
+
+- `--plan <plan-id>` - Filter by plan ID
+- `--json` - Output in JSON format (global option)
 
 ## Example
 
 ```bash
-$ git-forest planners
-Planners in the forest:
-1. Alice Manager (alice@example.com) - Tech Lead
-2. Bob Supervisor (bob@example.com) - Engineering Manager
-3. Carol Director (carol@example.com) - Director of Engineering
+$ git-forest planners list
+No planners configured
 ```

@@ -156,6 +156,85 @@ public sealed class ForestInitAndPlantsListTests
         }
     }
 
+    [Test]
+    public async Task Plant_can_move_through_full_lifecycle_and_creates_branch_and_commit()
+    {
+        var repoRoot = RepoPaths.FindRepoRoot(TestContext.CurrentContext.TestDirectory);
+        var cliProject = Path.Combine(repoRoot, "src", "GitForest.Cli", "GitForest.Cli.csproj");
+        Assert.That(File.Exists(cliProject), Is.True, () => $"Expected CLI project at: {cliProject}");
+
+        var planSource = Path.Combine(repoRoot, "config", "plans", "quality-reliability", "integration-testing-harness.yaml");
+        Assert.That(File.Exists(planSource), Is.True, () => $"Expected plan file to exist in repo: {planSource}");
+
+        var tempRoot = Path.Combine(Path.GetTempPath(), "git-forest-integration", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempRoot);
+
+        var workingRepoDir = Path.Combine(tempRoot, "repo");
+        Directory.CreateDirectory(workingRepoDir);
+
+        try
+        {
+            await GitRepo.CreateAsync(workingRepoDir);
+
+            // init + install + reconcile
+            Assert.That((await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["init"])).ExitCode, Is.EqualTo(0));
+            Assert.That((await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["plans", "install", planSource])).ExitCode, Is.EqualTo(0));
+            Assert.That((await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["plan", "integration-testing-harness", "reconcile"])).ExitCode, Is.EqualTo(0));
+
+            var plantKey = "integration-testing-harness:add-integration-tests";
+            var planterId = "harness-builder";
+
+            // planned -> planted (assign)
+            var assign = await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["plant", plantKey, "assign", planterId]);
+            Assert.That(assign.ExitCode, Is.EqualTo(0), () => $"assign failed\nSTDOUT:\n{assign.StdOut}\nSTDERR:\n{assign.StdErr}");
+
+            // planter plant (branch + record branch)
+            var plant = await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["planter", planterId, "plant", plantKey, "--branch", "auto", "--yes"]);
+            Assert.That(plant.ExitCode, Is.EqualTo(0), () => $"planter plant failed\nSTDOUT:\n{plant.StdOut}\nSTDERR:\n{plant.StdErr}");
+
+            // branch exists + checked out
+            var headBranch = Git.AsText(workingRepoDir, ["rev-parse", "--abbrev-ref", "HEAD"]).Trim();
+            Assert.That(headBranch.StartsWith(planterId + "/", StringComparison.OrdinalIgnoreCase), Is.True, () => $"Expected HEAD branch to start with '{planterId}/' but was '{headBranch}'");
+
+            // grow apply (writes README marker and commits)
+            var grow = await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["planter", planterId, "grow", plantKey, "--mode", "apply"]);
+            Assert.That(grow.ExitCode, Is.EqualTo(0), () => $"grow failed\nSTDOUT:\n{grow.StdOut}\nSTDERR:\n{grow.StdErr}");
+
+            // one new commit should exist on the branch
+            var log = Git.AsText(workingRepoDir, ["log", "--max-count", "1", "--pretty=%B"]).Trim();
+            Assert.That(log, Does.Contain($"git-forest: grow {plantKey}"));
+
+            // harvestable -> harvested
+            var harvest = await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["plant", plantKey, "harvest"]);
+            Assert.That(harvest.ExitCode, Is.EqualTo(0), () => $"harvest failed\nSTDOUT:\n{harvest.StdOut}\nSTDERR:\n{harvest.StdErr}");
+
+            // harvested -> archived
+            var archive = await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["plant", plantKey, "archive"]);
+            Assert.That(archive.ExitCode, Is.EqualTo(0), () => $"archive failed\nSTDOUT:\n{archive.StdOut}\nSTDERR:\n{archive.StdErr}");
+
+            // status should count archived >= 1
+            var status = await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["status", "--json"]);
+            Assert.That(status.ExitCode, Is.EqualTo(0));
+            using var statusDoc = JsonDocument.Parse(status.StdOut.Trim());
+            var plantsByStatus = statusDoc.RootElement.GetProperty("plantsByStatus");
+            Assert.That(plantsByStatus.GetProperty("archived").GetInt32(), Is.GreaterThanOrEqualTo(1));
+        }
+        finally
+        {
+            try
+            {
+                if (Directory.Exists(tempRoot))
+                {
+                    Directory.Delete(tempRoot, recursive: true);
+                }
+            }
+            catch
+            {
+                // best-effort cleanup
+            }
+        }
+    }
+
     private sealed record ProcessResult(int ExitCode, string StdOut, string StdErr);
 
     private static class DotNetCli
@@ -231,6 +310,26 @@ public sealed class ForestInitAndPlantsListTests
         {
             Assert.That(result.ExitCode, Is.EqualTo(0), () => $"Git command failed.\nSTDOUT:\n{result.StdOut}\nSTDERR:\n{result.StdErr}");
             return Task.CompletedTask;
+        }
+    }
+
+    private static class Git
+    {
+        public static string AsText(string workingDirectory, IReadOnlyList<string> args)
+        {
+            var result = ProcessRunner.RunAsync(
+                fileName: "git",
+                arguments: args,
+                workingDirectory: workingDirectory,
+                environmentVariables: new Dictionary<string, string>
+                {
+                    ["GIT_TERMINAL_PROMPT"] = "0",
+                    ["GIT_CONFIG_NOSYSTEM"] = "1"
+                },
+                timeout: TimeSpan.FromMinutes(1)).GetAwaiter().GetResult();
+
+            Assert.That(result.ExitCode, Is.EqualTo(0), () => $"Git command failed.\nSTDOUT:\n{result.StdOut}\nSTDERR:\n{result.StdErr}");
+            return result.StdOut ?? string.Empty;
         }
     }
 

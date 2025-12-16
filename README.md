@@ -1,4 +1,4 @@
-# git-forest
+﻿# git-forest
 
 A .NET Aspire-based CLI for managing collections of git repositories as a unified forest.
 
@@ -263,3 +263,5 @@ Please follow the guidelines in [.github/copilot-instructions.md](.github/copilo
 ## Support
 
 For issues and questions, please use the GitHub issue tracker.
+
+<!-- git-forest: integration-testing-harness:add-integration-tests (planter=harness-builder) -->

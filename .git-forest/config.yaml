@@ -1,0 +1,3 @@
+﻿# Repo-level git-forest config
+locks:
+  timeoutSeconds: 15

@@ -1,0 +1,10 @@
+﻿key: integration-testing-harness:improve-integration-diagnostics
+status: planned
+title: "Integration Testing Harness: improve-integration-diagnostics"
+plan_id: integration-testing-harness
+context:
+  planner: integration-surface-mapper
+assigned_planters:
+  - harness-builder
+branches: []
+created_at: 2025-12-15T22:30:54.9680183+00:00

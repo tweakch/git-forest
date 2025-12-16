@@ -1,0 +1,10 @@
+﻿key: integration-testing-harness:build-harness
+status: planned
+title: "Integration Testing Harness: build-harness"
+plan_id: integration-testing-harness
+context:
+  planner: dependency-harness-planner
+assigned_planters:
+  - integration-test-author
+branches: []
+created_at: 2025-12-15T22:30:54.9662748+00:00

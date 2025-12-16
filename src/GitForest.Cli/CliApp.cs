@@ -59,7 +59,10 @@ public static class CliApp
         services.AddSingleton(forestConfig);
 
         // MediatR handlers live across multiple assemblies during migration.
-        services.AddMediatR(typeof(CliApp).Assembly, typeof(ListPlansQuery).Assembly);
+        services.AddMediator(cfg => {
+            cfg.RegisterServicesFromAssembly(typeof(CliApp).Assembly);
+            cfg.RegisterServicesFromAssembly(typeof(ListPlansQuery).Assembly);
+        });
 
         // Repository ports (swappable persistence). Default is file for backward compatibility.
         var provider = string.IsNullOrWhiteSpace(forestConfig.PersistenceProvider)

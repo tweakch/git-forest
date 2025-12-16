@@ -1,11 +1,13 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using GitForest.Application.Features.Plants;
+using MediatR;
 
 namespace GitForest.Cli.Commands;
 
 public static class PlantsCommand
 {
-    public static Command Build(CliOptions cliOptions)
+    public static Command Build(CliOptions cliOptions, IMediator mediator)
     {
         var plantsCommand = new Command("plants", "Manage plants");
 
@@ -15,17 +17,21 @@ public static class PlantsCommand
         listCommand.AddOption(statusFilterOption);
         listCommand.AddOption(planFilterOption);
 
-        listCommand.SetHandler((InvocationContext context) =>
+        listCommand.SetHandler(async (InvocationContext context) =>
         {
             var output = context.GetOutput(cliOptions);
             var status = context.ParseResult.GetValueForOption(statusFilterOption);
             var plan = context.ParseResult.GetValueForOption(planFilterOption);
 
-            var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
-
             try
             {
-                var plants = ForestStore.ListPlants(forestDir, status, plan);
+                var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
+                if (!ForestStore.IsInitialized(forestDir))
+                {
+                    throw new ForestStore.ForestNotInitializedException(forestDir);
+                }
+
+                var plants = await mediator.Send(new ListPlantsQuery(Status: status, PlanId: plan));
 
                 if (output.Json)
                 {
@@ -37,8 +43,8 @@ public static class PlantsCommand
                             status = p.Status,
                             title = p.Title,
                             planId = p.PlanId,
-                            plannerId = p.PlannerId,
-                            planters = p.AssignedPlanters.ToArray()
+                            plannerId = string.IsNullOrWhiteSpace(p.PlannerId) ? null : p.PlannerId,
+                            planters = (p.AssignedPlanters ?? new List<string>()).ToArray()
                         }).ToArray()
                     });
                 }

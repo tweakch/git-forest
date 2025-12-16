@@ -1,26 +1,27 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using AppPlantCmd = GitForest.Application.Features.Plants.Commands;
+using CliPlants = GitForest.Cli.Features.Plants;
+using MediatR;
 
 namespace GitForest.Cli.Commands;
 
 public static class PlantCommand
 {
-    public static Command Build(CliOptions cliOptions)
+    public static Command Build(CliOptions cliOptions, IMediator mediator)
     {
         var plantCommand = new Command("plant", "Manage a specific plant");
         var selectorArg = new Argument<string>("selector", "Plant selector (key, slug, or P01)");
         plantCommand.AddArgument(selectorArg);
 
         var showCommand = new Command("show", "Show plant details");
-        showCommand.SetHandler((InvocationContext context) =>
+        showCommand.SetHandler(async (InvocationContext context) =>
         {
             var output = context.GetOutput(cliOptions);
             var selector = context.ParseResult.GetValueForArgument(selectorArg);
-
-            var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
             try
             {
-                var plant = ForestStore.ResolvePlant(forestDir, selector);
+                var plant = await mediator.Send(new CliPlants.GetPlantQuery(Selector: selector));
                 if (output.Json)
                 {
                     output.WriteJson(new
@@ -110,38 +111,21 @@ public static class PlantCommand
         var planterIdArg = new Argument<string>("planter-id", "Planter identifier");
         assignCommand.AddArgument(planterIdArg);
         assignCommand.AddOption(dryRunOption);
-        assignCommand.SetHandler((InvocationContext context) =>
+        assignCommand.SetHandler(async (InvocationContext context) =>
         {
             var output = context.GetOutput(cliOptions);
             var selector = context.ParseResult.GetValueForArgument(selectorArg);
             var planterId = context.ParseResult.GetValueForArgument(planterIdArg);
             var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
-
-            var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
             try
             {
-                var updated = ForestStore.UpdatePlant(forestDir, selector, plant =>
+                var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
+                if (!ForestStore.IsInitialized(forestDir))
                 {
-                    var normalizedPlanterId = (planterId ?? string.Empty).Trim();
-                    if (normalizedPlanterId.Length == 0)
-                    {
-                        return plant;
-                    }
+                    throw new ForestStore.ForestNotInitializedException(forestDir);
+                }
 
-                    var planters = (plant.AssignedPlanters ?? Array.Empty<string>()).ToList();
-                    if (!planters.Any(p => string.Equals(p, normalizedPlanterId, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        planters.Add(normalizedPlanterId);
-                    }
-
-                    var status = plant.Status;
-                    if (string.Equals(status, "planned", StringComparison.OrdinalIgnoreCase))
-                    {
-                        status = "planted";
-                    }
-
-                    return plant with { AssignedPlanters = planters, Status = status };
-                }, dryRun);
+                var updated = await mediator.Send(new AppPlantCmd.AssignPlanterToPlantCommand(Selector: selector, PlanterId: planterId, DryRun: dryRun));
 
                 if (output.Json)
                 {
@@ -169,7 +153,7 @@ public static class PlantCommand
 
                 context.ExitCode = ExitCodes.ForestNotInitialized;
             }
-            catch (ForestStore.PlantNotFoundException)
+            catch (AppPlantCmd.PlantNotFoundException)
             {
                 if (output.Json)
                 {
@@ -182,7 +166,7 @@ public static class PlantCommand
 
                 context.ExitCode = ExitCodes.PlantNotFoundOrAmbiguous;
             }
-            catch (ForestStore.PlantAmbiguousSelectorException ex)
+            catch (AppPlantCmd.PlantAmbiguousSelectorException ex)
             {
                 if (output.Json)
                 {
@@ -200,24 +184,21 @@ public static class PlantCommand
         var unassignCommand = new Command("unassign", "Unassign a planter from this plant");
         unassignCommand.AddArgument(planterIdArg);
         unassignCommand.AddOption(dryRunOption);
-        unassignCommand.SetHandler((InvocationContext context) =>
+        unassignCommand.SetHandler(async (InvocationContext context) =>
         {
             var output = context.GetOutput(cliOptions);
             var selector = context.ParseResult.GetValueForArgument(selectorArg);
             var planterId = context.ParseResult.GetValueForArgument(planterIdArg);
             var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
-
-            var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
             try
             {
-                var updated = ForestStore.UpdatePlant(forestDir, selector, plant =>
+                var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
+                if (!ForestStore.IsInitialized(forestDir))
                 {
-                    var normalizedPlanterId = (planterId ?? string.Empty).Trim();
-                    var planters = (plant.AssignedPlanters ?? Array.Empty<string>())
-                        .Where(p => !string.Equals(p, normalizedPlanterId, StringComparison.OrdinalIgnoreCase))
-                        .ToList();
-                    return plant with { AssignedPlanters = planters };
-                }, dryRun);
+                    throw new ForestStore.ForestNotInitializedException(forestDir);
+                }
+
+                var updated = await mediator.Send(new AppPlantCmd.UnassignPlanterFromPlantCommand(Selector: selector, PlanterId: planterId, DryRun: dryRun));
 
                 if (output.Json)
                 {
@@ -245,7 +226,7 @@ public static class PlantCommand
 
                 context.ExitCode = ExitCodes.ForestNotInitialized;
             }
-            catch (ForestStore.PlantNotFoundException)
+            catch (AppPlantCmd.PlantNotFoundException)
             {
                 if (output.Json)
                 {
@@ -258,7 +239,7 @@ public static class PlantCommand
 
                 context.ExitCode = ExitCodes.PlantNotFoundOrAmbiguous;
             }
-            catch (ForestStore.PlantAmbiguousSelectorException ex)
+            catch (AppPlantCmd.PlantAmbiguousSelectorException ex)
             {
                 if (output.Json)
                 {
@@ -275,24 +256,23 @@ public static class PlantCommand
 
         var branchesCommand = new Command("branches", "Manage plant branches");
         var branchesListCommand = new Command("list", "List branches recorded for this plant");
-        branchesListCommand.SetHandler((InvocationContext context) =>
+        branchesListCommand.SetHandler(async (InvocationContext context) =>
         {
             var output = context.GetOutput(cliOptions);
             var selector = context.ParseResult.GetValueForArgument(selectorArg);
-            var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
 
             try
             {
-                var plant = ForestStore.ResolvePlant(forestDir, selector);
-                var branches = plant.Branches ?? Array.Empty<string>();
+                var result = await mediator.Send(new CliPlants.ListPlantBranchesQuery(Selector: selector));
+                var branches = result.Branches;
 
                 if (output.Json)
                 {
-                    output.WriteJson(new { plantKey = plant.Key, branches = branches.ToArray() });
+                    output.WriteJson(new { plantKey = result.PlantKey, branches = branches.ToArray() });
                 }
                 else
                 {
-                    if (branches.Count == 0)
+                    if (branches.Length == 0)
                     {
                         output.WriteLine("No branches recorded");
                     }
@@ -354,25 +334,22 @@ public static class PlantCommand
         var harvestCommand = new Command("harvest", "Mark plant as harvested");
         harvestCommand.AddOption(forceOption);
         harvestCommand.AddOption(dryRunOption);
-        harvestCommand.SetHandler((InvocationContext context) =>
+        harvestCommand.SetHandler(async (InvocationContext context) =>
         {
             var output = context.GetOutput(cliOptions);
             var selector = context.ParseResult.GetValueForArgument(selectorArg);
             var force = context.ParseResult.GetValueForOption(forceOption);
             var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
-            var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
 
             try
             {
-                var updated = ForestStore.UpdatePlant(forestDir, selector, plant =>
+                var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
+                if (!ForestStore.IsInitialized(forestDir))
                 {
-                    if (!force && !string.Equals(plant.Status, "harvestable", StringComparison.OrdinalIgnoreCase))
-                    {
-                        throw new InvalidOperationException($"Plant is not harvestable (status={plant.Status}).");
-                    }
+                    throw new ForestStore.ForestNotInitializedException(forestDir);
+                }
 
-                    return plant with { Status = "harvested" };
-                }, dryRun);
+                var updated = await mediator.Send(new AppPlantCmd.HarvestPlantCommand(Selector: selector, Force: force, DryRun: dryRun));
 
                 if (output.Json)
                 {
@@ -411,7 +388,7 @@ public static class PlantCommand
 
                 context.ExitCode = ExitCodes.ForestNotInitialized;
             }
-            catch (ForestStore.PlantNotFoundException)
+            catch (AppPlantCmd.PlantNotFoundException)
             {
                 if (output.Json)
                 {
@@ -424,7 +401,7 @@ public static class PlantCommand
 
                 context.ExitCode = ExitCodes.PlantNotFoundOrAmbiguous;
             }
-            catch (ForestStore.PlantAmbiguousSelectorException ex)
+            catch (AppPlantCmd.PlantAmbiguousSelectorException ex)
             {
                 if (output.Json)
                 {
@@ -442,25 +419,22 @@ public static class PlantCommand
         var archiveCommand = new Command("archive", "Archive plant");
         archiveCommand.AddOption(forceOption);
         archiveCommand.AddOption(dryRunOption);
-        archiveCommand.SetHandler((InvocationContext context) =>
+        archiveCommand.SetHandler(async (InvocationContext context) =>
         {
             var output = context.GetOutput(cliOptions);
             var selector = context.ParseResult.GetValueForArgument(selectorArg);
             var force = context.ParseResult.GetValueForOption(forceOption);
             var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
-            var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
 
             try
             {
-                var updated = ForestStore.UpdatePlant(forestDir, selector, plant =>
+                var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
+                if (!ForestStore.IsInitialized(forestDir))
                 {
-                    if (!force && !string.Equals(plant.Status, "harvested", StringComparison.OrdinalIgnoreCase))
-                    {
-                        throw new InvalidOperationException($"Plant is not harvested (status={plant.Status}).");
-                    }
+                    throw new ForestStore.ForestNotInitializedException(forestDir);
+                }
 
-                    return plant with { Status = "archived" };
-                }, dryRun);
+                var updated = await mediator.Send(new AppPlantCmd.ArchivePlantCommand(Selector: selector, Force: force, DryRun: dryRun));
 
                 if (output.Json)
                 {
@@ -499,7 +473,7 @@ public static class PlantCommand
 
                 context.ExitCode = ExitCodes.ForestNotInitialized;
             }
-            catch (ForestStore.PlantNotFoundException)
+            catch (AppPlantCmd.PlantNotFoundException)
             {
                 if (output.Json)
                 {
@@ -512,7 +486,7 @@ public static class PlantCommand
 
                 context.ExitCode = ExitCodes.PlantNotFoundOrAmbiguous;
             }
-            catch (ForestStore.PlantAmbiguousSelectorException ex)
+            catch (AppPlantCmd.PlantAmbiguousSelectorException ex)
             {
                 if (output.Json)
                 {

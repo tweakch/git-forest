@@ -1,11 +1,13 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using AppPlans = GitForest.Application.Features.Plans;
+using MediatR;
 
 namespace GitForest.Cli.Commands;
 
 public static class PlanCommand
 {
-    public static Command Build(CliOptions cliOptions)
+    public static Command Build(CliOptions cliOptions, IMediator mediator)
     {
         var planCommand = new Command("plan", "Manage a specific plan");
         var planIdArg = new Argument<string>("plan-id", "Plan identifier");
@@ -17,7 +19,7 @@ public static class PlanCommand
         reconcileCommand.AddOption(updateOption);
         reconcileCommand.AddOption(dryRunOption);
 
-        reconcileCommand.SetHandler((InvocationContext context) =>
+        reconcileCommand.SetHandler(async (InvocationContext context) =>
         {
             var output = context.GetOutput(cliOptions);
             var planId = context.ParseResult.GetValueForArgument(planIdArg);
@@ -26,10 +28,15 @@ public static class PlanCommand
 
             _ = update; // not implemented yet
 
-            var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
             try
             {
-                var result = ForestStore.ReconcilePlan(forestDir, planId, dryRun);
+                var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
+                if (!ForestStore.IsInitialized(forestDir))
+                {
+                    throw new ForestStore.ForestNotInitializedException(forestDir);
+                }
+
+                var result = await mediator.Send(new AppPlans.ReconcilePlanCommand(PlanId: planId, DryRun: dryRun));
 
                 if (output.Json)
                 {
@@ -65,7 +72,7 @@ public static class PlanCommand
 
                 context.ExitCode = ExitCodes.ForestNotInitialized;
             }
-            catch (ForestStore.PlanNotInstalledException)
+            catch (AppPlans.PlanNotInstalledException)
             {
                 if (output.Json)
                 {

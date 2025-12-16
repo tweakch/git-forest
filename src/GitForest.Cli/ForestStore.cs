@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using GitForest.Infrastructure.FileSystem.Serialization;
 
 namespace GitForest.Cli;
 
@@ -60,7 +61,7 @@ internal static class ForestStore
         {
             File.WriteAllText(
                 configYamlPath,
-                $"# Repo-level git-forest config{Environment.NewLine}locks:{Environment.NewLine}  timeoutSeconds: 15{Environment.NewLine}",
+                $"# Repo-level git-forest config{Environment.NewLine}persistence:{Environment.NewLine}  provider: {ForestConfigReader.DefaultPersistenceProvider}{Environment.NewLine}locks:{Environment.NewLine}  timeoutSeconds: {ForestConfigReader.DefaultLocksTimeoutSeconds}{Environment.NewLine}",
                 Encoding.UTF8);
         }
 
@@ -282,7 +283,7 @@ internal static class ForestStore
                 if (!dryRun)
                 {
                     Directory.CreateDirectory(plantDir);
-                    File.WriteAllText(plantYamlPath, PlantYamlLite.Serialize(plant), Encoding.UTF8);
+                    File.WriteAllText(plantYamlPath, PlantYamlLite.Serialize(ToFileModel(plant)), Encoding.UTF8);
                 }
 
                 created++;
@@ -320,7 +321,7 @@ internal static class ForestStore
             }
 
             var yaml = File.ReadAllText(plantYamlPath, Encoding.UTF8);
-            var plant = PlantYamlLite.Parse(yaml);
+            var plant = FromFileModel(PlantYamlLite.Parse(yaml));
             plants.Add(plant);
         }
 
@@ -401,7 +402,7 @@ internal static class ForestStore
 
         File.WriteAllText(
             plantYamlPath,
-            PlantYamlLite.Serialize(plant with { CreatedAt = createdAt }),
+            PlantYamlLite.Serialize(ToFileModel(plant with { CreatedAt = createdAt })),
             Encoding.UTF8);
     }
 
@@ -539,6 +540,35 @@ internal static class ForestStore
         return slug.Length == 0 ? "untitled" : slug;
     }
 
+    private static PlantFileModel ToFileModel(PlantRecord plant)
+    {
+        return new PlantFileModel(
+            Key: plant.Key,
+            Status: plant.Status,
+            Title: plant.Title,
+            PlanId: plant.PlanId,
+            PlannerId: plant.PlannerId,
+            AssignedPlanters: plant.AssignedPlanters ?? Array.Empty<string>(),
+            Branches: plant.Branches ?? Array.Empty<string>(),
+            CreatedAt: plant.CreatedAt,
+            UpdatedAt: plant.UpdatedAt,
+            Description: null);
+    }
+
+    private static PlantRecord FromFileModel(PlantFileModel plant)
+    {
+        return new PlantRecord(
+            Key: plant.Key,
+            Status: plant.Status,
+            Title: plant.Title,
+            PlanId: plant.PlanId,
+            PlannerId: plant.PlannerId,
+            AssignedPlanters: plant.AssignedPlanters ?? Array.Empty<string>(),
+            Branches: plant.Branches ?? Array.Empty<string>(),
+            CreatedAt: plant.CreatedAt,
+            UpdatedAt: plant.UpdatedAt);
+    }
+
     public sealed record InstalledPlan(
         string Id,
         string Name,
@@ -602,366 +632,3 @@ internal static class ForestStore
         }
     }
 }
-
-internal static class PlanYamlLite
-{
-    public sealed record ParsedPlan(
-        string Id,
-        string Name,
-        string Version,
-        string Category,
-        string Author,
-        string License,
-        string Repository,
-        string Homepage,
-        IReadOnlyList<string> Planners,
-        IReadOnlyList<string> Planters,
-        IReadOnlyList<string> PlantTemplateNames);
-
-    public static ParsedPlan Parse(string yaml)
-    {
-        var id = string.Empty;
-        var name = string.Empty;
-        var version = string.Empty;
-        var category = string.Empty;
-        var author = string.Empty;
-        var license = string.Empty;
-        var repository = string.Empty;
-        var homepage = string.Empty;
-        var planners = new List<string>();
-        var planters = new List<string>();
-        var templateNames = new List<string>();
-
-        var lines = SplitLines(yaml);
-
-        string? currentList = null;
-        var inPlantTemplates = false;
-
-        foreach (var raw in lines)
-        {
-            var line = raw.TrimEnd();
-            if (string.IsNullOrWhiteSpace(line) || line.TrimStart().StartsWith('#'))
-            {
-                continue;
-            }
-
-            if (!char.IsWhiteSpace(line[0]))
-            {
-                inPlantTemplates = false;
-                currentList = null;
-
-                if (TryParseTopLevelScalar(line, "id", out var v)) { id = v; continue; }
-                if (TryParseTopLevelScalar(line, "name", out v)) { name = v; continue; }
-                if (TryParseTopLevelScalar(line, "version", out v)) { version = v; continue; }
-                if (TryParseTopLevelScalar(line, "category", out v)) { category = v; continue; }
-                if (TryParseTopLevelScalar(line, "author", out v)) { author = v; continue; }
-                if (TryParseTopLevelScalar(line, "license", out v)) { license = v; continue; }
-                if (TryParseTopLevelScalar(line, "repository", out v)) { repository = v; continue; }
-                if (TryParseTopLevelScalar(line, "homepage", out v)) { homepage = v; continue; }
-
-                if (IsTopLevelKey(line, "planners")) { currentList = "planners"; continue; }
-                if (IsTopLevelKey(line, "planters")) { currentList = "planters"; continue; }
-                if (IsTopLevelKey(line, "plant_templates")) { inPlantTemplates = true; continue; }
-
-                continue;
-            }
-
-            if (currentList is not null)
-            {
-                if (TryParseListItem(line, out var item))
-                {
-                    if (currentList == "planners") planners.Add(item);
-                    if (currentList == "planters") planters.Add(item);
-                }
-
-                continue;
-            }
-
-            if (inPlantTemplates)
-            {
-                // We only need the template names for deterministic seed plants.
-                // Supports shapes like:
-                //   - name: add-integration-tests
-                //     title_template: ...
-                var trimmed = line.TrimStart();
-                if (trimmed.StartsWith("- ", StringComparison.Ordinal))
-                {
-                    trimmed = trimmed[2..].TrimStart();
-                }
-
-                if (TryParseTopLevelScalar(trimmed, "name", out var tname) && !string.IsNullOrWhiteSpace(tname))
-                {
-                    templateNames.Add(tname);
-                }
-            }
-        }
-
-        return new ParsedPlan(
-            Id: id,
-            Name: name,
-            Version: version,
-            Category: category,
-            Author: author,
-            License: license,
-            Repository: repository,
-            Homepage: homepage,
-            Planners: planners,
-            Planters: planters,
-            PlantTemplateNames: templateNames);
-    }
-
-    private static bool IsTopLevelKey(string line, string key)
-    {
-        return line.StartsWith($"{key}:", StringComparison.Ordinal);
-    }
-
-    private static bool TryParseTopLevelScalar(string line, string key, out string value)
-    {
-        value = string.Empty;
-        if (!line.StartsWith($"{key}:", StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        value = line[(key.Length + 1)..].Trim();
-        // Drop wrapping quotes if present.
-        if (value.Length >= 2 && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\'')))
-        {
-            value = value[1..^1];
-        }
-
-        return true;
-    }
-
-    private static bool TryParseListItem(string line, out string value)
-    {
-        value = string.Empty;
-        var trimmed = line.TrimStart();
-        if (!trimmed.StartsWith("- ", StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        value = trimmed[2..].Trim();
-        if (value.Length >= 2 && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\'')))
-        {
-            value = value[1..^1];
-        }
-
-        return value.Length > 0;
-    }
-
-    private static string[] SplitLines(string yaml)
-    {
-        return yaml.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n').Split('\n');
-    }
-}
-
-internal static class PlantYamlLite
-{
-    private const string DefaultStatus = "planned";
-
-    public static string Serialize(ForestStore.PlantRecord plant)
-    {
-        // Minimal plant.yaml aligned with docs/forest-maintenance-contract.md
-        var sb = new StringBuilder();
-        sb.Append("key: ").Append(plant.Key).AppendLine();
-        sb.Append("status: ").Append(string.IsNullOrWhiteSpace(plant.Status) ? DefaultStatus : plant.Status).AppendLine();
-        sb.Append("title: ").Append(EscapeScalar(plant.Title)).AppendLine();
-        sb.Append("plan_id: ").Append(plant.PlanId).AppendLine();
-
-        if (!string.IsNullOrWhiteSpace(plant.PlannerId))
-        {
-            sb.AppendLine("context:");
-            sb.Append("  planner: ").Append(plant.PlannerId).AppendLine();
-        }
-
-        sb.AppendLine("assigned_planters:");
-        foreach (var planter in plant.AssignedPlanters ?? Array.Empty<string>())
-        {
-            if (!string.IsNullOrWhiteSpace(planter))
-            {
-                sb.Append("  - ").Append(planter.Trim()).AppendLine();
-            }
-        }
-
-        if (plant.Branches is null || plant.Branches.Count == 0)
-        {
-            sb.AppendLine("branches: []");
-        }
-        else
-        {
-            sb.AppendLine("branches:");
-            foreach (var br in plant.Branches)
-            {
-                if (!string.IsNullOrWhiteSpace(br))
-                {
-                    sb.Append("  - ").Append(br.Trim()).AppendLine();
-                }
-            }
-        }
-
-        var createdAt = string.IsNullOrWhiteSpace(plant.CreatedAt)
-            ? DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture)
-            : plant.CreatedAt.Trim();
-        sb.Append("created_at: ").Append(createdAt).AppendLine();
-        if (!string.IsNullOrWhiteSpace(plant.UpdatedAt))
-        {
-            sb.Append("updated_at: ").Append(plant.UpdatedAt.Trim()).AppendLine();
-        }
-        return sb.ToString();
-    }
-
-    public static ForestStore.PlantRecord Parse(string yaml)
-    {
-        var key = string.Empty;
-        var status = DefaultStatus;
-        var title = string.Empty;
-        var planId = string.Empty;
-        string? plannerId = null;
-        var assignedPlanters = new List<string>();
-        var branches = new List<string>();
-        var createdAt = string.Empty;
-        string? updatedAt = null;
-
-        var lines = yaml.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n').Split('\n');
-
-        string? currentList = null;
-        var inContext = false;
-
-        foreach (var raw in lines)
-        {
-            var line = raw.TrimEnd();
-            if (string.IsNullOrWhiteSpace(line) || line.TrimStart().StartsWith('#'))
-            {
-                continue;
-            }
-
-            if (!char.IsWhiteSpace(line[0]))
-            {
-                currentList = null;
-                inContext = false;
-
-                if (TryParseScalar(line, "key", out var v)) { key = v; continue; }
-                if (TryParseScalar(line, "status", out v)) { status = v; continue; }
-                if (TryParseScalar(line, "title", out v)) { title = v; continue; }
-                if (TryParseScalar(line, "plan_id", out v)) { planId = v; continue; }
-                if (TryParseScalar(line, "created_at", out v)) { createdAt = v; continue; }
-                if (TryParseScalar(line, "updated_at", out v)) { updatedAt = v; continue; }
-                if (line.StartsWith("assigned_planters:", StringComparison.Ordinal)) { currentList = "assigned_planters"; continue; }
-                if (line.StartsWith("branches:", StringComparison.Ordinal))
-                {
-                    // Support inline empty list: branches: []
-                    if (line.TrimEnd().EndsWith("[]", StringComparison.Ordinal))
-                    {
-                        continue;
-                    }
-
-                    currentList = "branches";
-                    continue;
-                }
-                if (line.StartsWith("context:", StringComparison.Ordinal)) { inContext = true; continue; }
-                continue;
-            }
-
-            if (inContext)
-            {
-                var trimmed = line.TrimStart();
-                if (TryParseScalar(trimmed, "planner", out var p))
-                {
-                    plannerId = p;
-                }
-
-                continue;
-            }
-
-            if (currentList == "assigned_planters")
-            {
-                var trimmed = line.TrimStart();
-                if (trimmed.StartsWith("- ", StringComparison.Ordinal))
-                {
-                    var item = trimmed[2..].Trim();
-                    if (item.Length > 0)
-                    {
-                        assignedPlanters.Add(Unquote(item));
-                    }
-                }
-            }
-
-            if (currentList == "branches")
-            {
-                var trimmed = line.TrimStart();
-                if (trimmed.StartsWith("- ", StringComparison.Ordinal))
-                {
-                    var item = trimmed[2..].Trim();
-                    if (item.Length > 0)
-                    {
-                        branches.Add(Unquote(item));
-                    }
-                }
-            }
-        }
-
-        // Best-effort fallbacks
-        if (string.IsNullOrWhiteSpace(planId) && !string.IsNullOrWhiteSpace(key))
-        {
-            var idx = key.IndexOf(':');
-            if (idx > 0)
-            {
-                planId = key[..idx];
-            }
-        }
-
-        if (string.IsNullOrWhiteSpace(createdAt))
-        {
-            createdAt = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
-        }
-
-        return new ForestStore.PlantRecord(
-            Key: key,
-            Status: string.IsNullOrWhiteSpace(status) ? DefaultStatus : status,
-            Title: title,
-            PlanId: planId,
-            PlannerId: plannerId,
-            AssignedPlanters: assignedPlanters,
-            Branches: branches,
-            CreatedAt: createdAt,
-            UpdatedAt: updatedAt);
-    }
-
-    private static bool TryParseScalar(string line, string key, out string value)
-    {
-        value = string.Empty;
-        if (!line.StartsWith($"{key}:", StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        value = Unquote(line[(key.Length + 1)..].Trim());
-        return true;
-    }
-
-    private static string Unquote(string value)
-    {
-        if (value.Length >= 2 && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\'')))
-        {
-            return value[1..^1];
-        }
-
-        return value;
-    }
-
-    private static string EscapeScalar(string value)
-    {
-        var v = value ?? string.Empty;
-        if (v.Contains(':') || v.Contains('#') || v.Contains('"') || v.Contains('\'') || v.Contains('\\'))
-        {
-            // YAML double-quoted scalar (minimal escaping)
-            var escaped = v.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal);
-            return $"\"{escaped}\"";
-        }
-
-        return v;
-    }
-}
-

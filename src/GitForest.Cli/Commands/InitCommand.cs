@@ -1,11 +1,13 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using AppForest = GitForest.Application.Features.Forest;
+using MediatR;
 
 namespace GitForest.Cli.Commands;
 
 public static class InitCommand
 {
-    public static Command Build(CliOptions cliOptions)
+    public static Command Build(CliOptions cliOptions, IMediator mediator)
     {
         var command = new Command("init", "Initialize forest in current git repo");
 
@@ -15,24 +17,21 @@ public static class InitCommand
         command.AddOption(forceOption);
         command.AddOption(dirOption);
 
-        command.SetHandler((InvocationContext context) =>
+        command.SetHandler(async (InvocationContext context) =>
         {
             var output = context.GetOutput(cliOptions);
             var force = context.ParseResult.GetValueForOption(forceOption);
             var dir = context.ParseResult.GetValueForOption(dirOption);
 
-            _ = force; // currently a no-op; init is idempotent
-
-            var forestDir = ForestStore.GetForestDir(dir);
-            ForestStore.Initialize(forestDir);
+            var result = await mediator.Send(new AppForest.InitForestCommand(DirOptionValue: dir, Force: force));
 
             if (output.Json)
             {
-                output.WriteJson(new { status = "initialized", directory = dir, path = forestDir });
+                output.WriteJson(new { status = "initialized", directory = result.DirectoryOptionValue, path = result.ForestDirPath });
             }
             else
             {
-                output.WriteLine($"initialized ({dir})");
+                output.WriteLine($"initialized ({result.DirectoryOptionValue})");
             }
 
             context.ExitCode = ExitCodes.Success;

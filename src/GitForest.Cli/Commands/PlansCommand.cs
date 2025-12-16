@@ -1,23 +1,30 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using AppPlans = GitForest.Application.Features.Plans;
+using MediatR;
 
 namespace GitForest.Cli.Commands;
 
 public static class PlansCommand
 {
-    public static Command Build(CliOptions cliOptions)
+    public static Command Build(CliOptions cliOptions, IMediator mediator)
     {
         var plansCommand = new Command("plans", "Manage plans");
 
         var listCommand = new Command("list", "List installed plans");
-        listCommand.SetHandler((InvocationContext context) =>
+        listCommand.SetHandler(async (InvocationContext context) =>
         {
             var output = context.GetOutput(cliOptions);
-            var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
 
             try
             {
-                var plans = ForestStore.ListPlans(forestDir);
+                var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
+                if (!ForestStore.IsInitialized(forestDir))
+                {
+                    throw new ForestStore.ForestNotInitializedException(forestDir);
+                }
+
+                var plans = await mediator.Send(new AppPlans.ListPlansQuery());
                 if (output.Json)
                 {
                     output.WriteJson(new
@@ -25,16 +32,16 @@ public static class PlansCommand
                         plans = plans.Select(p => new
                         {
                             id = p.Id,
-                            name = p.Name,
+                            name = p.Id,
                             version = p.Version,
-                            category = p.Category,
+                            category = string.Empty,
                             author = p.Author,
                             license = p.License,
                             repository = p.Repository,
                             homepage = p.Homepage,
                             source = p.Source,
-                            installedAt = p.InstalledAt,
-                            sha256 = p.Sha256
+                            installedAt = p.InstalledDate == default ? string.Empty : p.InstalledDate.ToString("O"),
+                            sha256 = string.Empty
                         }).ToArray()
                     });
                 }
@@ -52,12 +59,12 @@ public static class PlansCommand
                         foreach (var plan in plans)
                         {
                             var version = string.IsNullOrWhiteSpace(plan.Version) ? "-" : plan.Version;
-                            var category = string.IsNullOrWhiteSpace(plan.Category) ? "-" : plan.Category;
+                            var category = "-";
                             var author = string.IsNullOrWhiteSpace(plan.Author) ? "-" : plan.Author;
                             var license = string.IsNullOrWhiteSpace(plan.License) ? "-" : plan.License;
                             var repository = string.IsNullOrWhiteSpace(plan.Repository) ? "-" : plan.Repository;
-                            var installedAt = FormatInstalledAt(plan.InstalledAt);
-                            var sha = ShortSha(plan.Sha256);
+                            var installedAt = plan.InstalledDate == default ? "-" : FormatInstalledAt(plan.InstalledDate.ToString("O"));
+                            var sha = "-";
                             var source = string.IsNullOrWhiteSpace(plan.Source) ? "-" : plan.Source;
 
                             output.WriteLine(
@@ -87,15 +94,20 @@ public static class PlansCommand
         var installCommand = new Command("install", "Install a plan");
         var sourceArg = new Argument<string>("source", "Plan source (GitHub slug, URL, or local path)");
         installCommand.AddArgument(sourceArg);
-        installCommand.SetHandler((InvocationContext context) =>
+        installCommand.SetHandler(async (InvocationContext context) =>
         {
             var output = context.GetOutput(cliOptions);
             var source = context.ParseResult.GetValueForArgument(sourceArg);
-            var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
 
             try
             {
-                var installed = ForestStore.InstallPlan(forestDir, source);
+                var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
+                if (!ForestStore.IsInitialized(forestDir))
+                {
+                    throw new ForestStore.ForestNotInitializedException(forestDir);
+                }
+
+                var installed = await mediator.Send(new AppPlans.InstallPlanCommand(Source: source));
                 if (output.Json)
                 {
                     output.WriteJson(new { status = "installed", source, planId = installed.Id, version = installed.Version });
@@ -120,7 +132,7 @@ public static class PlansCommand
 
                 context.ExitCode = ExitCodes.ForestNotInitialized;
             }
-            catch (ForestStore.PlanSourceNotFoundException)
+            catch (FileNotFoundException)
             {
                 if (output.Json)
                 {

@@ -1,7 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\GitForest.Core\GitForest.Core.csproj" />
+    <ProjectReference Include="..\GitForest.Application\GitForest.Application.csproj" />
+    <ProjectReference Include="..\GitForest.Infrastructure.FileSystem\GitForest.Infrastructure.FileSystem.csproj" />
+    <ProjectReference Include="..\GitForest.Infrastructure.Memory\GitForest.Infrastructure.Memory.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -9,6 +12,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="MediatR" Version="11.1.0" />
+    <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="11.1.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
 

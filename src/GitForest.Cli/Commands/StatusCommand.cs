@@ -1,72 +1,36 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using AppForest = GitForest.Application.Features.Forest;
+using MediatR;
 
 namespace GitForest.Cli.Commands;
 
 public static class StatusCommand
 {
-    public static Command Build(CliOptions cliOptions)
+    public static Command Build(CliOptions cliOptions, IMediator mediator)
     {
         var command = new Command("status", "Show forest status");
 
-        command.SetHandler((InvocationContext context) =>
+        command.SetHandler(async (InvocationContext context) =>
         {
             var output = context.GetOutput(cliOptions);
-            var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
 
             try
             {
-                var plans = ForestStore.ListPlans(forestDir);
-                var plants = ForestStore.ListPlants(forestDir, statusFilter: null, planFilter: null);
-
-                var plantsByStatus = plants
-                    .GroupBy(p => (p.Status ?? string.Empty).Trim().ToLowerInvariant())
-                    .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
-
-                var planned = GetCount(plantsByStatus, "planned");
-                var planted = GetCount(plantsByStatus, "planted");
-                var growing = GetCount(plantsByStatus, "growing");
-                var harvestable = GetCount(plantsByStatus, "harvestable");
-                var harvested = GetCount(plantsByStatus, "harvested");
-                var archived = GetCount(plantsByStatus, "archived");
-
-                var (plantersAvailable, plannersAvailable) = LoadAvailablePlantersAndPlanners(forestDir, plans.Select(p => p.Id));
-
-                var nonArchivedPlants = plants.Where(p => !string.Equals(p.Status, "archived", StringComparison.OrdinalIgnoreCase)).ToArray();
-
-                var plantersActive = nonArchivedPlants
-                    .SelectMany(p => p.AssignedPlanters ?? Array.Empty<string>())
-                    .Where(p => !string.IsNullOrWhiteSpace(p))
-                    .Select(p => p.Trim())
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
-
-                var plannersActive = nonArchivedPlants
-                    .Select(p => p.PlannerId)
-                    .Where(p => !string.IsNullOrWhiteSpace(p))
-                    .Select(p => p!.Trim())
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
-
-                var lockPath = Path.Combine(forestDir, "lock");
-                var lockStatus = "free";
-                try
+                var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
+                if (!ForestStore.IsInitialized(forestDir))
                 {
-                    if (File.Exists(lockPath))
-                    {
-                        var lockText = File.ReadAllText(lockPath).Trim();
-                        if (!string.IsNullOrWhiteSpace(lockText))
-                        {
-                            lockStatus = "held";
-                        }
-                    }
+                    throw new ForestStore.ForestNotInitializedException(forestDir);
                 }
-                catch
-                {
-                    // best-effort lock status
-                }
+
+                var status = await mediator.Send(new AppForest.GetForestStatusQuery());
+
+                var planned = GetCount(status.PlantsByStatus, "planned");
+                var planted = GetCount(status.PlantsByStatus, "planted");
+                var growing = GetCount(status.PlantsByStatus, "growing");
+                var harvestable = GetCount(status.PlantsByStatus, "harvestable");
+                var harvested = GetCount(status.PlantsByStatus, "harvested");
+                var archived = GetCount(status.PlantsByStatus, "archived");
 
                 if (output.Json)
                 {
@@ -74,11 +38,11 @@ public static class StatusCommand
                     {
                         forest = "initialized",
                         repo = "origin/main",
-                        plans = plans.Count,
-                        plants = plants.Count,
-                        planters = plantersAvailable.Length,
-                        planners = plannersAvailable.Length,
-                        @lock = lockStatus,
+                        plans = status.PlansCount,
+                        plants = status.PlantsCount,
+                        planters = status.PlantersAvailable.Length,
+                        planners = status.PlannersAvailable.Length,
+                        @lock = status.LockStatus,
                         plantsByStatus = new
                         {
                             planned,
@@ -88,20 +52,20 @@ public static class StatusCommand
                             harvested,
                             archived
                         },
-                        plantersAvailable,
-                        plantersActive,
-                        plannersAvailable,
-                        plannersActive
+                        plantersAvailable = status.PlantersAvailable,
+                        plantersActive = status.PlantersActive,
+                        plannersAvailable = status.PlannersAvailable,
+                        plannersActive = status.PlannersActive
                     });
                 }
                 else
                 {
                     output.WriteLine("Forest: initialized  Repo: origin/main");
-                    output.WriteLine($"Plans: {plans.Count} installed");
+                    output.WriteLine($"Plans: {status.PlansCount} installed");
                     output.WriteLine($"Plants: planned {planned} | planted {planted} | growing {growing} | harvestable {harvestable} | harvested {harvested} | archived {archived}");
-                    output.WriteLine($"Planters: {plantersAvailable.Length} available | {plantersActive.Length} active");
-                    output.WriteLine($"Planners: {plannersAvailable.Length} available | {plannersActive.Length} active");
-                    output.WriteLine($"Lock: {lockStatus}");
+                    output.WriteLine($"Planters: {status.PlantersAvailable.Length} available | {status.PlantersActive.Length} active");
+                    output.WriteLine($"Planners: {status.PlannersAvailable.Length} available | {status.PlannersActive.Length} active");
+                    output.WriteLine($"Lock: {status.LockStatus}");
                 }
 
                 context.ExitCode = ExitCodes.Success;
@@ -134,56 +98,6 @@ public static class StatusCommand
         return 0;
     }
 
-    private static (string[] plantersAvailable, string[] plannersAvailable) LoadAvailablePlantersAndPlanners(string forestDir, IEnumerable<string> planIds)
-    {
-        var planters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var planners = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var planId in planIds)
-        {
-            if (string.IsNullOrWhiteSpace(planId))
-            {
-                continue;
-            }
-
-            var planYamlPath = Path.Combine(forestDir, "plans", planId.Trim(), "plan.yaml");
-            if (!File.Exists(planYamlPath))
-            {
-                continue;
-            }
-
-            try
-            {
-                var yaml = File.ReadAllText(planYamlPath);
-                var parsed = PlanYamlLite.Parse(yaml);
-
-                foreach (var p in parsed.Planters ?? Array.Empty<string>())
-                {
-                    if (!string.IsNullOrWhiteSpace(p))
-                    {
-                        planters.Add(p.Trim());
-                    }
-                }
-
-                foreach (var p in parsed.Planners ?? Array.Empty<string>())
-                {
-                    if (!string.IsNullOrWhiteSpace(p))
-                    {
-                        planners.Add(p.Trim());
-                    }
-                }
-            }
-            catch
-            {
-                // best-effort: ignore invalid plan YAML
-            }
-        }
-
-        return (
-            planters.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray(),
-            planners.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray()
-        );
-    }
 }
 
 

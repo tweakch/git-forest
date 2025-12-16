@@ -1,11 +1,13 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using GitForest.Cli.Features.Planner;
+using MediatR;
 
 namespace GitForest.Cli.Commands;
 
 public static class PlannerCommand
 {
-    public static Command Build(CliOptions cliOptions)
+    public static Command Build(CliOptions cliOptions, IMediator mediator)
     {
         var plannerCommand = new Command("planner", "Manage a specific planner");
         var plannerIdArg = new Argument<string>("planner-id", "Planner identifier");
@@ -15,19 +17,21 @@ public static class PlannerCommand
         var planOption = new Option<string>("--plan", "Plan ID to run against") { IsRequired = true };
         runCommand.AddOption(planOption);
 
-        runCommand.SetHandler((InvocationContext context) =>
+        runCommand.SetHandler(async (InvocationContext context) =>
         {
             var output = context.GetOutput(cliOptions);
             var plannerId = context.ParseResult.GetValueForArgument(plannerIdArg);
-            var plan = context.ParseResult.GetValueForOption(planOption);
+            var plan = context.ParseResult.GetValueForOption(planOption) ?? string.Empty;
+
+            var result = await mediator.Send(new RunPlannerCommand(PlannerId: plannerId, PlanId: plan));
 
             if (output.Json)
             {
-                output.WriteJson(new { plannerId, plan, status = "completed" });
+                output.WriteJson(new { plannerId = result.PlannerId, plan = result.PlanId, status = result.Status });
             }
             else
             {
-                output.WriteLine($"Running planner '{plannerId}' for plan '{plan}'...");
+                output.WriteLine($"Running planner '{result.PlannerId}' for plan '{result.PlanId}'...");
                 output.WriteLine("done");
             }
 

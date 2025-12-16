@@ -60,6 +60,12 @@ The repository-overview plan provides:
 - Dependency health summary
 - Technical debt inventory
 
+For a complete guide, see [docs/REPOSITORY_OVERVIEW_GUIDE.md](docs/REPOSITORY_OVERVIEW_GUIDE.md).
+- CI/CD pipeline health
+- Test coverage overview
+- Dependency health summary
+- Technical debt inventory
+
 ### 🌱 Plant
 **Plants** are concrete work items with stable keys and lifecycle facts. Each plant has:
 - Stable key format: `planId:plantSlug` (e.g., `sample:backend-memory-hygiene`)

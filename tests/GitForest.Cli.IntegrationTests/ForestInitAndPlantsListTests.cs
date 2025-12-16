@@ -59,6 +59,13 @@ public sealed class ForestInitAndPlantsListTests
 
             var seededPlantYaml = Path.Combine(forestDir, "plants", "integration-testing-harness__add-integration-tests", "plant.yaml");
             Assert.That(File.Exists(seededPlantYaml), Is.True, "Expected seeded plant at .git-forest/plants/integration-testing-harness__add-integration-tests/plant.yaml");
+            var seededPlantYamlBefore = await File.ReadAllTextAsync(seededPlantYaml, Encoding.UTF8);
+
+            // 3b) second reconcile should be idempotent (no duplicates, no rewrites)
+            var reconcile2 = await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["plan", "integration-testing-harness", "reconcile"]);
+            Assert.That(reconcile2.ExitCode, Is.EqualTo(0), () => $"git-forest plan reconcile (second run) failed.\nSTDOUT:\n{reconcile2.StdOut}\nSTDERR:\n{reconcile2.StdErr}");
+            var seededPlantYamlAfter = await File.ReadAllTextAsync(seededPlantYaml, Encoding.UTF8);
+            Assert.That(seededPlantYamlAfter, Is.EqualTo(seededPlantYamlBefore), "Expected second reconcile to be idempotent (no plant.yaml changes)");
 
             // 4) plants list (human output should include key + plan + planter)
             var list = await DotNetCli.RunGitForestAsync(cliProject, workingRepoDir, ["plants", "list"]);
@@ -131,6 +138,13 @@ public sealed class ForestInitAndPlantsListTests
             Assert.That(root.TryGetProperty("plants", out var plants), Is.True);
             Assert.That(plants.ValueKind, Is.EqualTo(JsonValueKind.Array));
             Assert.That(plants.GetArrayLength(), Is.GreaterThanOrEqualTo(1));
+
+            // Ensure reconcile did not create duplicates for the seeded plant.
+            var seeded = plants
+                .EnumerateArray()
+                .Where(p => string.Equals(p.GetProperty("key").GetString(), "integration-testing-harness:add-integration-tests", StringComparison.Ordinal))
+                .ToArray();
+            Assert.That(seeded.Length, Is.EqualTo(1), "Expected exactly one plant with key integration-testing-harness:add-integration-tests");
 
             var first = plants[0];
             Assert.That(first.GetProperty("planId").GetString(), Is.EqualTo("integration-testing-harness"));

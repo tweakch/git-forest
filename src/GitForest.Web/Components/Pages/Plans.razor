@@ -1,0 +1,121 @@
+@page "/plans"
+@using GitForest.Core
+@using GitForest.Core.Services
+@inject ICatalogPlanReader CatalogReader
+@inject NavigationManager Navigation
+
+<PageTitle>Plans Catalog - git-forest</PageTitle>
+
+<h1>Plans Catalog</h1>
+
+<p>Browse available plans from the repository catalog.</p>
+
+@if (isLoading)
+{
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+}
+else if (errorMessage != null)
+{
+    <div class="alert alert-danger" role="alert">
+        <strong>Error:</strong> @errorMessage
+    </div>
+}
+else if (plans == null || plans.Count == 0)
+{
+    <div class="alert alert-warning" role="alert">
+        No plans found in the catalog.
+    </div>
+}
+else
+{
+    <div class="mb-3">
+        <label for="categoryFilter" class="form-label">Filter by Category:</label>
+        <select id="categoryFilter" class="form-select" @bind="selectedCategory" @bind:after="OnCategoryChanged">
+            <option value="">All Categories</option>
+            @foreach (var category in categories)
+            {
+                <option value="@category">@category</option>
+            }
+        </select>
+    </div>
+
+    <div class="row">
+        @foreach (var plan in filteredPlans)
+        {
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">@plan.Name</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">@plan.Id v@plan.Version</h6>
+                        @if (!string.IsNullOrWhiteSpace(plan.Category))
+                        {
+                            <span class="badge bg-primary mb-2">@plan.Category</span>
+                        }
+                        <p class="card-text">@GetShortDescription(plan.Description)</p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="/plans/@plan.Id" class="btn btn-primary btn-sm">View Details</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<CatalogPlan>? plans;
+    private List<CatalogPlan> filteredPlans = new();
+    private List<string> categories = new();
+    private string selectedCategory = "";
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            plans = (await CatalogReader.ListCatalogPlansAsync()).ToList();
+            
+            // Extract unique categories
+            categories = plans
+                .Where(p => !string.IsNullOrWhiteSpace(p.Category))
+                .Select(p => p.Category)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToList();
+            
+            filteredPlans = plans;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OnCategoryChanged()
+    {
+        if (plans == null) return;
+
+        filteredPlans = string.IsNullOrWhiteSpace(selectedCategory)
+            ? plans
+            : plans.Where(p => p.Category == selectedCategory).ToList();
+    }
+
+    private string GetShortDescription(string description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return "No description available.";
+        
+        const int maxLength = 150;
+        if (description.Length <= maxLength)
+            return description;
+        
+        return description.Substring(0, maxLength) + "...";
+    }
+}

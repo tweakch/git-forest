@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitForest.Infrastructure.Me
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitForest.Application.Tests", "tests\GitForest.Application.Tests\GitForest.Application.Tests.csproj", "{855708AE-463B-42CF-990C-1217C055D253}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitForest.Web", "src\GitForest.Web\GitForest.Web.csproj", "{E93815A6-7D46-476B-BB1F-6A3E4E2DAE8C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -129,6 +131,18 @@ Global
 		{855708AE-463B-42CF-990C-1217C055D253}.Release|x64.Build.0 = Release|Any CPU
 		{855708AE-463B-42CF-990C-1217C055D253}.Release|x86.ActiveCfg = Release|Any CPU
 		{855708AE-463B-42CF-990C-1217C055D253}.Release|x86.Build.0 = Release|Any CPU
+		{E93815A6-7D46-476B-BB1F-6A3E4E2DAE8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E93815A6-7D46-476B-BB1F-6A3E4E2DAE8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E93815A6-7D46-476B-BB1F-6A3E4E2DAE8C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E93815A6-7D46-476B-BB1F-6A3E4E2DAE8C}.Debug|x64.Build.0 = Debug|Any CPU
+		{E93815A6-7D46-476B-BB1F-6A3E4E2DAE8C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E93815A6-7D46-476B-BB1F-6A3E4E2DAE8C}.Debug|x86.Build.0 = Debug|Any CPU
+		{E93815A6-7D46-476B-BB1F-6A3E4E2DAE8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E93815A6-7D46-476B-BB1F-6A3E4E2DAE8C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E93815A6-7D46-476B-BB1F-6A3E4E2DAE8C}.Release|x64.ActiveCfg = Release|Any CPU
+		{E93815A6-7D46-476B-BB1F-6A3E4E2DAE8C}.Release|x64.Build.0 = Release|Any CPU
+		{E93815A6-7D46-476B-BB1F-6A3E4E2DAE8C}.Release|x86.ActiveCfg = Release|Any CPU
+		{E93815A6-7D46-476B-BB1F-6A3E4E2DAE8C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -142,5 +156,6 @@ Global
 		{160ED53A-A024-48A1-B48E-DE414D130E53} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{DD8EDA2F-1B1C-4116-A6B2-A3BE9B7620ED} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{855708AE-463B-42CF-990C-1217C055D253} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{E93815A6-7D46-476B-BB1F-6A3E4E2DAE8C} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

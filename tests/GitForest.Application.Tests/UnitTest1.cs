@@ -4,6 +4,8 @@ using GitForest.Application.Features.Plants.Commands;
 using GitForest.Application.Features.Planters;
 using GitForest.Application.Features.Planners;
 using GitForest.Core;
+using GitForest.Core.Services;
+using GitForest.Core.Specifications.Plants;
 using GitForest.Infrastructure.Memory;
 
 namespace GitForest.Application.Tests;
@@ -289,5 +291,169 @@ public sealed class HandlerAndRepositoryTests
         var updated = await handler.Handle(new AssignPlanterToPlantCommand(Selector: "P01", PlanterId: "worker", DryRun: true), CancellationToken.None);
 
         Assert.That(updated.Key, Is.EqualTo("p:a"));
+    }
+
+    [Test]
+    public async Task ForumPlanReconciler_calls_forum_and_creates_normalized_plants_deterministically_and_idempotently()
+    {
+        var planId = "p";
+        var plans = new InMemoryPlanRepository(new[]
+        {
+            new Plan { Id = planId, Version = "1" }
+        });
+        var plants = new InMemoryPlantRepository();
+
+        var desired = new[]
+        {
+            // Missing key/slug -> slug normalized from title; assigned planters deduped.
+            new DesiredPlant(
+                Key: "",
+                Slug: "",
+                Title: "Dupe",
+                Description: "first",
+                PlannerId: "planner-a",
+                AssignedPlanters: new[] { " a ", "a", "b" }),
+
+            // Wrong plan key + colliding title/slug -> forced into plan + collision suffix -01.
+            new DesiredPlant(
+                Key: "other:Dupe",
+                Slug: "",
+                Title: "Dupe",
+                Description: "second",
+                PlannerId: "planner-b",
+                AssignedPlanters: new[] { "b" }),
+
+            // Key provided with non-normalized slug section -> slug derived from key and normalized.
+            new DesiredPlant(
+                Key: "p:Custom Key",
+                Slug: "",
+                Title: "",
+                Description: "",
+                PlannerId: "planner-c",
+                AssignedPlanters: Array.Empty<string>())
+        };
+
+        var forum = new FlippingOrderForum(desired);
+        var reconciler = new ForumPlanReconciler(plans, plants, forum);
+
+        var (pid1, created1, updated1) = await reconciler.ReconcileAsync(planId, dryRun: false, CancellationToken.None);
+        Assert.That(pid1, Is.EqualTo(planId));
+        Assert.That(created1, Is.EqualTo(3));
+        Assert.That(updated1, Is.EqualTo(0));
+
+        Assert.That(forum.CallCount, Is.EqualTo(1));
+        Assert.That(forum.LastContext, Is.Not.Null);
+        Assert.That(forum.LastContext!.PlanId, Is.EqualTo(planId));
+
+        var pDupe = await plants.GetByIdAsync("p:dupe");
+        var pDupe01 = await plants.GetByIdAsync("p:dupe-01");
+        var pCustom = await plants.GetByIdAsync("p:custom-key");
+
+        Assert.That(pDupe, Is.Not.Null);
+        Assert.That(pDupe01, Is.Not.Null);
+        Assert.That(pCustom, Is.Not.Null);
+
+        Assert.That(pDupe!.Slug, Is.EqualTo("dupe"));
+        Assert.That(pDupe01!.Slug, Is.EqualTo("dupe-01"));
+        Assert.That(pCustom!.Slug, Is.EqualTo("custom-key"));
+
+        Assert.That(pDupe.PlannerId, Is.EqualTo("planner-a"));
+        Assert.That(pDupe.AssignedPlanters, Is.EqualTo(new[] { "a", "b" }));
+
+        // Second run returns the same set but in a different order; should result in no creates/updates.
+        var (pid2, created2, updated2) = await reconciler.ReconcileAsync(planId, dryRun: false, CancellationToken.None);
+        Assert.That(pid2, Is.EqualTo(planId));
+        Assert.That(created2, Is.EqualTo(0));
+        Assert.That(updated2, Is.EqualTo(0));
+
+        var all = await plants.ListAsync(new PlantsByPlanIdSpec(planId), CancellationToken.None);
+        Assert.That(all.Select(x => x.Key).OrderBy(x => x, StringComparer.Ordinal).ToArray(),
+            Is.EqualTo(new[] { "p:custom-key", "p:dupe", "p:dupe-01" }));
+    }
+
+    [Test]
+    public async Task ForumPlanReconciler_updates_plan_owned_fields_but_preserves_status()
+    {
+        var planId = "p";
+        var plans = new InMemoryPlanRepository(new[] { new Plan { Id = planId, Version = "1" } });
+        var plants = new InMemoryPlantRepository(new[]
+        {
+            new Plant
+            {
+                Key = "p:keep-status",
+                Slug = "keep-status",
+                PlanId = planId,
+                PlannerId = "old",
+                Status = "archived",
+                Title = "Old",
+                Description = "Old",
+                AssignedPlanters = new List<string> { "x" },
+                Branches = new List<string> { "some/branch" },
+                CreatedDate = DateTime.UtcNow.AddDays(-1)
+            }
+        });
+
+        var forum = new StaticForum(new ReconciliationStrategy(new[]
+        {
+            new DesiredPlant(
+                Key: "p:keep-status",
+                Slug: "keep-status",
+                Title: "New",
+                Description: "New",
+                PlannerId: "new",
+                AssignedPlanters: new[] { "y" })
+        }));
+
+        var reconciler = new ForumPlanReconciler(plans, plants, forum);
+
+        var (_, created, updated) = await reconciler.ReconcileAsync(planId, dryRun: false, CancellationToken.None);
+        Assert.That(created, Is.EqualTo(0));
+        Assert.That(updated, Is.EqualTo(1));
+
+        var persisted = await plants.GetByIdAsync("p:keep-status");
+        Assert.That(persisted, Is.Not.Null);
+        Assert.That(persisted!.Status, Is.EqualTo("archived"), "Status should be preserved across reconcile");
+        Assert.That(persisted.PlannerId, Is.EqualTo("new"));
+        Assert.That(persisted.Title, Is.EqualTo("New"));
+        Assert.That(persisted.Description, Is.EqualTo("New"));
+        Assert.That(persisted.AssignedPlanters, Is.EqualTo(new[] { "y" }));
+        Assert.That(persisted.Branches, Is.EqualTo(new[] { "some/branch" }), "Branches should be preserved across reconcile");
+    }
+
+    private sealed class StaticForum : IReconciliationForum
+    {
+        private readonly ReconciliationStrategy _strategy;
+
+        public StaticForum(ReconciliationStrategy strategy) => _strategy = strategy;
+
+        public Task<ReconciliationStrategy> RunAsync(ReconcileContext context, CancellationToken cancellationToken = default)
+        {
+            _ = context;
+            _ = cancellationToken;
+            return Task.FromResult(_strategy);
+        }
+    }
+
+    private sealed class FlippingOrderForum : IReconciliationForum
+    {
+        private readonly IReadOnlyList<DesiredPlant> _desired;
+
+        public FlippingOrderForum(IReadOnlyList<DesiredPlant> desired) => _desired = desired;
+
+        public int CallCount { get; private set; }
+        public ReconcileContext? LastContext { get; private set; }
+
+        public Task<ReconciliationStrategy> RunAsync(ReconcileContext context, CancellationToken cancellationToken = default)
+        {
+            _ = cancellationToken;
+            CallCount++;
+            LastContext = context;
+
+            var list = CallCount % 2 == 1
+                ? _desired.Reverse().ToList()
+                : _desired.ToList();
+
+            return Task.FromResult(new ReconciliationStrategy(list));
+        }
     }
 }

@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -9,12 +7,15 @@ namespace GitForest.Cli.IntegrationTests;
 
 [TestFixture]
 [Category("Integration")]
+[NonParallelizable]
 public sealed class ToolInstallWorkflowTests
 {
     [Test]
     public async Task Pack_install_run_master_workflow_uninstall_verify()
     {
         var repoRoot = RepoPaths.FindRepoRoot(TestContext.CurrentContext.TestDirectory);
+        var cliProject = Path.Combine(repoRoot, "src", "GitForest.Cli", "GitForest.Cli.csproj");
+        Assert.That(File.Exists(cliProject), Is.True, () => $"Expected CLI project at: {cliProject}");
 
         var tempRoot = Path.Combine(Path.GetTempPath(), "git-forest-integration", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempRoot);
@@ -27,34 +28,44 @@ public sealed class ToolInstallWorkflowTests
         Directory.CreateDirectory(toolPath);
         Directory.CreateDirectory(workingRepoDir);
 
-        var dotnetEnv = new Dictionary<string, string>
-        {
-            ["DOTNET_NOLOGO"] = "1",
-            ["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1",
-            ["DOTNET_SKIP_FIRST_TIME_EXPERIENCE"] = "1"
-        };
-
-        var gitEnv = new Dictionary<string, string>
-        {
-            ["GIT_TERMINAL_PROMPT"] = "0",
-            ["GIT_CONFIG_NOSYSTEM"] = "1"
-        };
+        var dotnetEnv = TestEnvironments.DotNet;
+        var gitEnv = TestEnvironments.Git;
 
         string toolExePath;
 
         try
         {
+            // 0) Build once (so pack can be --no-build/--no-restore)
+            var build = await ProcessRunner.RunAsync(
+                fileName: "dotnet",
+                arguments:
+                [
+                    "build",
+                    cliProject,
+                    "--configuration",
+                    "Release",
+                    "--nologo"
+                ],
+                workingDirectory: repoRoot,
+                environmentVariables: dotnetEnv,
+                timeout: TimeSpan.FromMinutes(5));
+
+            Assert.That(build.ExitCode, Is.EqualTo(0), () => $"dotnet build failed.\nSTDOUT:\n{build.StdOut}\nSTDERR:\n{build.StdErr}");
+
             // 1) Pack tool
             var pack = await ProcessRunner.RunAsync(
                 fileName: "dotnet",
                 arguments:
                 [
                     "pack",
-                    Path.Combine(repoRoot, "src", "GitForest.Cli", "GitForest.Cli.csproj"),
+                    cliProject,
                     "--configuration",
                     "Release",
                     "--output",
-                    packagesDir
+                    packagesDir,
+                    "--no-build",
+                    "--no-restore",
+                    "--nologo"
                 ],
                 workingDirectory: repoRoot,
                 environmentVariables: dotnetEnv,
@@ -241,143 +252,6 @@ public sealed class ToolInstallWorkflowTests
         int ExitCode,
         Dictionary<string, JsonNode?>? JsonEquals = null,
         string[]? JsonPaths = null);
-
-    private static class RepoPaths
-    {
-        public static string FindRepoRoot(string startDirectory)
-        {
-            var dir = new DirectoryInfo(startDirectory);
-            while (dir is not null)
-            {
-                if (File.Exists(Path.Combine(dir.FullName, "GitForest.sln")))
-                {
-                    return dir.FullName;
-                }
-
-                dir = dir.Parent;
-            }
-
-            throw new DirectoryNotFoundException($"Could not locate repo root containing GitForest.sln starting from '{startDirectory}'");
-        }
-    }
-
-    private static class ToolPaths
-    {
-        public static string GetToolCommandPath(string toolPathDirectory, string toolCommandName)
-        {
-            var fileName = toolCommandName;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                fileName += ".exe";
-            }
-
-            return Path.Combine(toolPathDirectory, fileName);
-        }
-    }
-
-    private static class GitRepo
-    {
-        public static async Task CreateAsync(string directory, IReadOnlyDictionary<string, string> environmentVariables)
-        {
-            Directory.CreateDirectory(directory);
-
-            await EnsureSuccessAsync(await ProcessRunner.RunAsync("git", ["init"], directory, environmentVariables, TimeSpan.FromMinutes(1)));
-            await EnsureSuccessAsync(await ProcessRunner.RunAsync("git", ["config", "user.email", "test@example.com"], directory, environmentVariables, TimeSpan.FromMinutes(1)));
-            await EnsureSuccessAsync(await ProcessRunner.RunAsync("git", ["config", "user.name", "Test User"], directory, environmentVariables, TimeSpan.FromMinutes(1)));
-            // Ensure tests are not coupled to developer machine commit signing (e.g. 1Password SSH/GPG signing).
-            await EnsureSuccessAsync(await ProcessRunner.RunAsync("git", ["config", "commit.gpgsign", "false"], directory, environmentVariables, TimeSpan.FromMinutes(1)));
-
-            var readme = Path.Combine(directory, "README.md");
-            await File.WriteAllTextAsync(readme, "# Test Repo\n", Encoding.UTF8);
-
-            await EnsureSuccessAsync(await ProcessRunner.RunAsync("git", ["add", "README.md"], directory, environmentVariables, TimeSpan.FromMinutes(1)));
-            await EnsureSuccessAsync(await ProcessRunner.RunAsync("git", ["commit", "-m", "Initial commit"], directory, environmentVariables, TimeSpan.FromMinutes(1)));
-        }
-
-        private static Task EnsureSuccessAsync(ProcessResult result)
-        {
-            Assert.That(result.ExitCode, Is.EqualTo(0), () => $"Git command failed.\nSTDOUT:\n{result.StdOut}\nSTDERR:\n{result.StdErr}");
-            return Task.CompletedTask;
-        }
-    }
-
-    private sealed record ProcessResult(int ExitCode, string StdOut, string StdErr);
-
-    private static class ProcessRunner
-    {
-        public static async Task<ProcessResult> RunAsync(
-            string fileName,
-            IReadOnlyList<string> arguments,
-            string workingDirectory,
-            IReadOnlyDictionary<string, string>? environmentVariables,
-            TimeSpan timeout)
-        {
-            using var process = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = fileName,
-                    WorkingDirectory = workingDirectory,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
-            };
-
-            foreach (var arg in arguments)
-            {
-                process.StartInfo.ArgumentList.Add(arg);
-            }
-
-            if (environmentVariables is not null)
-            {
-                foreach (var (key, value) in environmentVariables)
-                {
-                    process.StartInfo.Environment[key] = value;
-                }
-            }
-
-            var stdout = new StringBuilder();
-            var stderr = new StringBuilder();
-
-            process.OutputDataReceived += (_, e) =>
-            {
-                if (e.Data is not null)
-                {
-                    stdout.AppendLine(e.Data);
-                }
-            };
-            process.ErrorDataReceived += (_, e) =>
-            {
-                if (e.Data is not null)
-                {
-                    stderr.AppendLine(e.Data);
-                }
-            };
-
-            if (!process.Start())
-            {
-                throw new InvalidOperationException($"Failed to start process: {fileName}");
-            }
-
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-
-            using var cts = new CancellationTokenSource(timeout);
-            try
-            {
-                await process.WaitForExitAsync(cts.Token);
-            }
-            catch (OperationCanceledException)
-            {
-                try { process.Kill(entireProcessTree: true); } catch { /* ignore */ }
-                throw new TimeoutException($"Process timed out after {timeout}: {fileName} {string.Join(' ', arguments)}");
-            }
-
-            return new ProcessResult(process.ExitCode, stdout.ToString(), stderr.ToString());
-        }
-    }
 
     private static class JsonAsserts
     {

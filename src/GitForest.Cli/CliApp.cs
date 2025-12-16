@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using GitForest.Core.Persistence;
 using GitForest.Core.Services;
 using GitForest.Infrastructure.FileSystem.Forest;
+using GitForest.Infrastructure.FileSystem.Llm;
 using GitForest.Infrastructure.FileSystem.Plans;
 using GitForest.Infrastructure.FileSystem.Repositories;
 using GitForest.Infrastructure.Memory;
@@ -67,7 +68,32 @@ public static class CliApp
         services.AddSingleton<IForestInitializer>(_ => new FileSystemForestInitializer());
         services.AddSingleton<ILockStatusProvider>(_ => new FileSystemLockStatusProvider(forestDir));
         services.AddSingleton<IPlanInstaller>(_ => new FileSystemPlanInstaller(forestDir));
-        services.AddSingleton<IPlanReconciler>(_ => new FileSystemPlanReconciler(forestDir));
+        services.AddSingleton<IReconciliationForum>(_ => new FileSystemReconciliationForum(forestDir));
+        services.AddSingleton<IPlanReconciler, ForumPlanReconciler>();
+
+        // LLM / agent chat client (default mock for offline determinism).
+        var llmProvider = string.IsNullOrWhiteSpace(forestConfig.Llm.Provider)
+            ? ForestConfigReader.DefaultLlmProvider
+            : forestConfig.Llm.Provider.Trim().ToLowerInvariant();
+
+        switch (llmProvider)
+        {
+            case "openai":
+            case "ollama":
+                services.AddSingleton<IAgentChatClient>(_ => new OpenAiCompatibleAgentChatClient(
+                    httpClient: new HttpClient(),
+                    baseUrl: string.IsNullOrWhiteSpace(forestConfig.Llm.BaseUrl) ? ForestConfigReader.DefaultLlmBaseUrl : forestConfig.Llm.BaseUrl.Trim(),
+                    apiKeyEnvVar: string.IsNullOrWhiteSpace(forestConfig.Llm.ApiKeyEnvVar) ? ForestConfigReader.DefaultLlmApiKeyEnvVar : forestConfig.Llm.ApiKeyEnvVar.Trim(),
+                    defaultModel: string.IsNullOrWhiteSpace(forestConfig.Llm.Model) ? ForestConfigReader.DefaultLlmModel : forestConfig.Llm.Model.Trim(),
+                    defaultTemperature: forestConfig.Llm.Temperature));
+                break;
+            case "mock":
+            default:
+                services.AddSingleton<IAgentChatClient>(_ => new DeterministicMockAgentChatClient(
+                    defaultModel: string.IsNullOrWhiteSpace(forestConfig.Llm.Model) ? ForestConfigReader.DefaultLlmModel : forestConfig.Llm.Model.Trim(),
+                    defaultTemperature: forestConfig.Llm.Temperature));
+                break;
+        }
 
         switch (provider)
         {

@@ -61,7 +61,15 @@ internal static class ForestStore
         {
             File.WriteAllText(
                 configYamlPath,
-                $"# Repo-level git-forest config{Environment.NewLine}persistence:{Environment.NewLine}  provider: {ForestConfigReader.DefaultPersistenceProvider}{Environment.NewLine}locks:{Environment.NewLine}  timeoutSeconds: {ForestConfigReader.DefaultLocksTimeoutSeconds}{Environment.NewLine}",
+                $"# Repo-level git-forest config{Environment.NewLine}" +
+                $"persistence:{Environment.NewLine}  provider: {ForestConfigReader.DefaultPersistenceProvider}{Environment.NewLine}" +
+                $"locks:{Environment.NewLine}  timeoutSeconds: {ForestConfigReader.DefaultLocksTimeoutSeconds}{Environment.NewLine}" +
+                $"llm:{Environment.NewLine}" +
+                $"  provider: {ForestConfigReader.DefaultLlmProvider}{Environment.NewLine}" +
+                $"  model: {ForestConfigReader.DefaultLlmModel}{Environment.NewLine}" +
+                $"  baseUrl: {ForestConfigReader.DefaultLlmBaseUrl}{Environment.NewLine}" +
+                $"  apiKeyEnvVar: {ForestConfigReader.DefaultLlmApiKeyEnvVar}{Environment.NewLine}" +
+                $"  temperature: {ForestConfigReader.DefaultLlmTemperature}{Environment.NewLine}",
                 Encoding.UTF8);
         }
 

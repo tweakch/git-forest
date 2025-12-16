@@ -92,16 +92,18 @@ public static class PlantCommand
             }
             catch (ForestStore.ForestNotInitializedException)
             {
+                // For single-plant lookup, treat missing forest as "not found" (keeps CLI usable
+                // in fresh repos and matches the smoke-test contract).
                 if (output.Json)
                 {
-                    output.WriteJsonError(code: "forest_not_initialized", message: "Forest not initialized");
+                    output.WriteJsonError(code: "plant_not_found", message: "Plant not found", details: new { selector });
                 }
                 else
                 {
-                    output.WriteErrorLine("Error: forest not initialized");
+                    output.WriteErrorLine($"Plant '{selector}': not found");
                 }
 
-                context.ExitCode = ExitCodes.ForestNotInitialized;
+                context.ExitCode = ExitCodes.PlantNotFoundOrAmbiguous;
             }
         });
 

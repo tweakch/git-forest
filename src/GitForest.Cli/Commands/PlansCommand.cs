@@ -100,7 +100,7 @@ public static class PlansCommand
         installCommand.SetAction(async (parseResult, token) =>
         {
             var output = parseResult.GetOutput(cliOptions);
-            var source = parseResult.GetValue(sourceArg);
+            var source = parseResult.GetRequiredValue(sourceArg);
 
             try
             {

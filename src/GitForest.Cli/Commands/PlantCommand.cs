@@ -21,7 +21,7 @@ public static class PlantCommand
         showCommand.SetAction(async (parseResult, token) =>
         {
             var output = parseResult.GetOutput(cliOptions);
-            var selector = parseResult.GetValue(selectorArg);
+            var selector = parseResult.GetRequiredValue(selectorArg);
             try
             {
                 var plant = await mediator.Send(new CliPlants.GetPlantQuery(Selector: selector), token);
@@ -123,8 +123,8 @@ public static class PlantCommand
         assignCommand.SetAction(async (parseResult, token) =>
         {
             var output = parseResult.GetOutput(cliOptions);
-            var selector = parseResult.GetValue(selectorArg);
-            var planterId = parseResult.GetValue(planterIdArg);
+            var selector = parseResult.GetRequiredValue(selectorArg);
+            var planterId = parseResult.GetRequiredValue(planterIdArg);
             var dryRun = parseResult.GetValue(dryRunOption);
             try
             {
@@ -196,8 +196,8 @@ public static class PlantCommand
         unassignCommand.SetAction(async (parseResult, token) =>
         {
             var output = parseResult.GetOutput(cliOptions);
-            var selector = parseResult.GetValue(selectorArg);
-            var planterId = parseResult.GetValue(planterIdArg);
+            var selector = parseResult.GetRequiredValue(selectorArg);
+            var planterId = parseResult.GetRequiredValue(planterIdArg);
             var dryRun = parseResult.GetValue(dryRunOption);
             try
             {
@@ -268,7 +268,7 @@ public static class PlantCommand
         branchesListCommand.SetAction(async (parseResult, token) =>
         {
             var output = parseResult.GetOutput(cliOptions);
-            var selector = parseResult.GetValue(selectorArg);
+            var selector = parseResult.GetRequiredValue(selectorArg);
 
             try
             {
@@ -349,7 +349,7 @@ public static class PlantCommand
         harvestCommand.SetAction(async (parseResult, token) =>
         {
             var output = parseResult.GetOutput(cliOptions);
-            var selector = parseResult.GetValue(selectorArg);
+            var selector = parseResult.GetRequiredValue(selectorArg);
             var force = parseResult.GetValue(forceOption);
             var dryRun = parseResult.GetValue(dryRunOption);
 
@@ -434,7 +434,7 @@ public static class PlantCommand
         archiveCommand.SetAction(async (parseResult, token) =>
         {
             var output = parseResult.GetOutput(cliOptions);
-            var selector = parseResult.GetValue(selectorArg);
+            var selector = parseResult.GetRequiredValue(selectorArg);
             var force = parseResult.GetValue(forceOption);
             var dryRun = parseResult.GetValue(dryRunOption);
 

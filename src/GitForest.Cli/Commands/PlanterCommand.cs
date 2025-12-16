@@ -19,7 +19,7 @@ public static class PlanterCommand
         showCommand.SetAction(async (parseResult, token) =>
         {
             var output = parseResult.GetOutput(cliOptions);
-            var planterId = parseResult.GetValue(planterIdArg);
+            var planterId = parseResult.GetRequiredValue(planterIdArg);
 
             try
             {
@@ -94,8 +94,8 @@ public static class PlanterCommand
         plantCommand.SetAction(async (parseResult, token) =>
         {
             var output = parseResult.GetOutput(cliOptions);
-            var planterId = parseResult.GetValue(planterIdArg);
-            var selector = parseResult.GetValue(selectorArg);
+            var planterId = parseResult.GetRequiredValue(planterIdArg);
+            var selector = parseResult.GetRequiredValue(selectorArg);
             var branch = (parseResult.GetValue(branchOption) ?? "auto").Trim();
             var yes = parseResult.GetValue(yesOption);
             var dryRun = parseResult.GetValue(dryRunOption);
@@ -218,8 +218,8 @@ public static class PlanterCommand
         growCommand.SetAction(async (parseResult, token) =>
         {
             var output = parseResult.GetOutput(cliOptions);
-            var planterId = parseResult.GetValue(planterIdArg);
-            var selector = parseResult.GetValue(selectorArg);
+            var planterId = parseResult.GetRequiredValue(planterIdArg);
+            var selector = parseResult.GetRequiredValue(selectorArg);
             var mode = (parseResult.GetValue(modeOption) ?? "apply").Trim();
             var dryRun = parseResult.GetValue(dryRunOption);
 

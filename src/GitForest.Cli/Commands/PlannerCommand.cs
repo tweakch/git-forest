@@ -27,7 +27,7 @@ public static class PlannerCommand
         runCommand.SetAction(async (parseResult, token) =>
         {
             var output = parseResult.GetOutput(cliOptions);
-            var plannerId = parseResult.GetValue(plannerIdArg);
+            var plannerId = parseResult.GetRequiredValue(plannerIdArg);
             var plan = parseResult.GetValue(planOption) ?? string.Empty;
 
             var result = await mediator.Send(new RunPlannerCommand(PlannerId: plannerId, PlanId: plan), token);

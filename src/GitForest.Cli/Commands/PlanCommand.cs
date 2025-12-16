@@ -31,7 +31,7 @@ public static class PlanCommand
         reconcileCommand.SetAction(async (parseResult, token) =>
         {
             var output = parseResult.GetOutput(cliOptions);
-            var planId = parseResult.GetValue(planIdArg);
+            var planId = parseResult.GetRequiredValue(planIdArg);
             var update = parseResult.GetValue(updateOption);
             var dryRun = parseResult.GetValue(dryRunOption);
 

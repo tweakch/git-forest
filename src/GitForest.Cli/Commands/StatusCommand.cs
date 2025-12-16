@@ -1,5 +1,5 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
+using GitForest.Cli;
 using AppForest = GitForest.Application.Features.Forest;
 using MediatR;
 
@@ -11,9 +11,9 @@ public static class StatusCommand
     {
         var command = new Command("status", "Show forest status");
 
-        command.SetHandler(async (InvocationContext context) =>
+        command.SetAction(async (parseResult, token) =>
         {
-            var output = context.GetOutput(cliOptions);
+            var output = parseResult.GetOutput(cliOptions);
 
             try
             {
@@ -23,7 +23,7 @@ public static class StatusCommand
                     throw new ForestStore.ForestNotInitializedException(forestDir);
                 }
 
-                var status = await mediator.Send(new AppForest.GetForestStatusQuery());
+                var status = await mediator.Send(new AppForest.GetForestStatusQuery(), token);
 
                 var planned = GetCount(status.PlantsByStatus, "planned");
                 var planted = GetCount(status.PlantsByStatus, "planted");
@@ -68,7 +68,7 @@ public static class StatusCommand
                     output.WriteLine($"Lock: {status.LockStatus}");
                 }
 
-                context.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (ForestStore.ForestNotInitializedException)
             {
@@ -81,7 +81,7 @@ public static class StatusCommand
                     output.WriteErrorLine("Error: forest not initialized");
                 }
 
-                context.ExitCode = ExitCodes.ForestNotInitialized;
+                return ExitCodes.ForestNotInitialized;
             }
         });
 

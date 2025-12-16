@@ -1,8 +1,8 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
 using GitForest.Core.Persistence;
 using GitForest.Core.Services;
 using GitForest.Infrastructure.FileSystem.Forest;
+using GitForest.Infrastructure.FileSystem.Llm;
 using GitForest.Infrastructure.FileSystem.Plans;
 using GitForest.Infrastructure.FileSystem.Repositories;
 using GitForest.Infrastructure.Memory;
@@ -24,25 +24,28 @@ public static class CliApp
         var mediator = serviceProvider.GetRequiredService<IMediator>();
 
         var rootCommand = BuildRootCommand(options, mediator);
-        return rootCommand.InvokeAsync(args);
+        var parseResult = rootCommand.Parse(args);
+        return parseResult.InvokeAsync();
     }
 
     public static RootCommand BuildRootCommand(CliOptions options, IMediator mediator)
     {
         var rootCommand = new RootCommand("git-forest (gf) - CLI for managing repository forests");
-        rootCommand.AddGlobalOption(options.Json);
+        // Equivalent to AddGlobalOption in older versions.
+        options.Json.Recursive = true;
+        rootCommand.Options.Add(options.Json);
 
-        rootCommand.AddCommand(InitCommand.Build(options, mediator));
-        rootCommand.AddCommand(StatusCommand.Build(options, mediator));
-        rootCommand.AddCommand(ConfigCommand.Build(options, mediator));
-        rootCommand.AddCommand(PlansCommand.Build(options, mediator));
-        rootCommand.AddCommand(PlanCommand.Build(options, mediator));
-        rootCommand.AddCommand(PlantsCommand.Build(options, mediator));
-        rootCommand.AddCommand(PlantCommand.Build(options, mediator));
-        rootCommand.AddCommand(PlantersCommand.Build(options, mediator));
-        rootCommand.AddCommand(PlanterCommand.Build(options, mediator));
-        rootCommand.AddCommand(PlannersCommand.Build(options, mediator));
-        rootCommand.AddCommand(PlannerCommand.Build(options, mediator));
+        rootCommand.Subcommands.Add(InitCommand.Build(options, mediator));
+        rootCommand.Subcommands.Add(StatusCommand.Build(options, mediator));
+        rootCommand.Subcommands.Add(ConfigCommand.Build(options, mediator));
+        rootCommand.Subcommands.Add(PlansCommand.Build(options, mediator));
+        rootCommand.Subcommands.Add(PlanCommand.Build(options, mediator));
+        rootCommand.Subcommands.Add(PlantsCommand.Build(options, mediator));
+        rootCommand.Subcommands.Add(PlantCommand.Build(options, mediator));
+        rootCommand.Subcommands.Add(PlantersCommand.Build(options, mediator));
+        rootCommand.Subcommands.Add(PlanterCommand.Build(options, mediator));
+        rootCommand.Subcommands.Add(PlannersCommand.Build(options, mediator));
+        rootCommand.Subcommands.Add(PlannerCommand.Build(options, mediator));
 
         return rootCommand;
     }
@@ -56,7 +59,10 @@ public static class CliApp
         services.AddSingleton(forestConfig);
 
         // MediatR handlers live across multiple assemblies during migration.
-        services.AddMediatR(typeof(CliApp).Assembly, typeof(ListPlansQuery).Assembly);
+        services.AddMediator(cfg => {
+            cfg.RegisterServicesFromAssembly(typeof(CliApp).Assembly);
+            cfg.RegisterServicesFromAssembly(typeof(ListPlansQuery).Assembly);
+        });
 
         // Repository ports (swappable persistence). Default is file for backward compatibility.
         var provider = string.IsNullOrWhiteSpace(forestConfig.PersistenceProvider)
@@ -67,7 +73,32 @@ public static class CliApp
         services.AddSingleton<IForestInitializer>(_ => new FileSystemForestInitializer());
         services.AddSingleton<ILockStatusProvider>(_ => new FileSystemLockStatusProvider(forestDir));
         services.AddSingleton<IPlanInstaller>(_ => new FileSystemPlanInstaller(forestDir));
-        services.AddSingleton<IPlanReconciler>(_ => new FileSystemPlanReconciler(forestDir));
+        services.AddSingleton<IReconciliationForum>(_ => new FileSystemReconciliationForum(forestDir));
+        services.AddSingleton<IPlanReconciler, ForumPlanReconciler>();
+
+        // LLM / agent chat client (default mock for offline determinism).
+        var llmProvider = string.IsNullOrWhiteSpace(forestConfig.Llm.Provider)
+            ? ForestConfigReader.DefaultLlmProvider
+            : forestConfig.Llm.Provider.Trim().ToLowerInvariant();
+
+        switch (llmProvider)
+        {
+            case "openai":
+            case "ollama":
+                services.AddSingleton<IAgentChatClient>(_ => new OpenAiCompatibleAgentChatClient(
+                    httpClient: new HttpClient(),
+                    baseUrl: string.IsNullOrWhiteSpace(forestConfig.Llm.BaseUrl) ? ForestConfigReader.DefaultLlmBaseUrl : forestConfig.Llm.BaseUrl.Trim(),
+                    apiKeyEnvVar: string.IsNullOrWhiteSpace(forestConfig.Llm.ApiKeyEnvVar) ? ForestConfigReader.DefaultLlmApiKeyEnvVar : forestConfig.Llm.ApiKeyEnvVar.Trim(),
+                    defaultModel: string.IsNullOrWhiteSpace(forestConfig.Llm.Model) ? ForestConfigReader.DefaultLlmModel : forestConfig.Llm.Model.Trim(),
+                    defaultTemperature: forestConfig.Llm.Temperature));
+                break;
+            case "mock":
+            default:
+                services.AddSingleton<IAgentChatClient>(_ => new DeterministicMockAgentChatClient(
+                    defaultModel: string.IsNullOrWhiteSpace(forestConfig.Llm.Model) ? ForestConfigReader.DefaultLlmModel : forestConfig.Llm.Model.Trim(),
+                    defaultTemperature: forestConfig.Llm.Temperature));
+                break;
+        }
 
         switch (provider)
         {

@@ -1,5 +1,5 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
+using GitForest.Cli;
 using AppForest = GitForest.Application.Features.Forest;
 using MediatR;
 
@@ -11,19 +11,26 @@ public static class InitCommand
     {
         var command = new Command("init", "Initialize forest in current git repo");
 
-        var forceOption = new Option<bool>("--force", "Force re-initialization");
-        var dirOption = new Option<string>("--dir", () => ".git-forest", "Directory for forest state");
-
-        command.AddOption(forceOption);
-        command.AddOption(dirOption);
-
-        command.SetHandler(async (InvocationContext context) =>
+        var forceOption = new Option<bool>("--force")
         {
-            var output = context.GetOutput(cliOptions);
-            var force = context.ParseResult.GetValueForOption(forceOption);
-            var dir = context.ParseResult.GetValueForOption(dirOption);
+            Description = "Force re-initialization"
+        };
+        var dirOption = new Option<string>("--dir")
+        {
+            Description = "Directory for forest state",
+            DefaultValueFactory = _ => ".git-forest"
+        };
 
-            var result = await mediator.Send(new AppForest.InitForestCommand(DirOptionValue: dir, Force: force));
+        command.Options.Add(forceOption);
+        command.Options.Add(dirOption);
+
+        command.SetAction(async (parseResult, token) =>
+        {
+            var output = parseResult.GetOutput(cliOptions);
+            var force = parseResult.GetValue(forceOption);
+            var dir = parseResult.GetValue(dirOption);
+
+            var result = await mediator.Send(new AppForest.InitForestCommand(DirOptionValue: dir, Force: force), token);
 
             if (output.Json)
             {
@@ -34,7 +41,7 @@ public static class InitCommand
                 output.WriteLine($"initialized ({result.DirectoryOptionValue})");
             }
 
-            context.ExitCode = ExitCodes.Success;
+            return ExitCodes.Success;
         });
 
         return command;

@@ -1,5 +1,5 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
+using GitForest.Cli;
 using GitForest.Application.Features.Plants;
 using MediatR;
 
@@ -12,16 +12,22 @@ public static class PlantsCommand
         var plantsCommand = new Command("plants", "Manage plants");
 
         var listCommand = new Command("list", "List plants");
-        var statusFilterOption = new Option<string?>("--status", "Filter by status (planned|planted|growing|harvestable|harvested|archived)");
-        var planFilterOption = new Option<string?>("--plan", "Filter by plan ID");
-        listCommand.AddOption(statusFilterOption);
-        listCommand.AddOption(planFilterOption);
-
-        listCommand.SetHandler(async (InvocationContext context) =>
+        var statusFilterOption = new Option<string?>("--status")
         {
-            var output = context.GetOutput(cliOptions);
-            var status = context.ParseResult.GetValueForOption(statusFilterOption);
-            var plan = context.ParseResult.GetValueForOption(planFilterOption);
+            Description = "Filter by status (planned|planted|growing|harvestable|harvested|archived)"
+        };
+        var planFilterOption = new Option<string?>("--plan")
+        {
+            Description = "Filter by plan ID"
+        };
+        listCommand.Options.Add(statusFilterOption);
+        listCommand.Options.Add(planFilterOption);
+
+        listCommand.SetAction(async (parseResult, token) =>
+        {
+            var output = parseResult.GetOutput(cliOptions);
+            var status = parseResult.GetValue(statusFilterOption);
+            var plan = parseResult.GetValue(planFilterOption);
 
             try
             {
@@ -31,7 +37,7 @@ public static class PlantsCommand
                     throw new ForestStore.ForestNotInitializedException(forestDir);
                 }
 
-                var plants = await mediator.Send(new ListPlantsQuery(Status: status, PlanId: plan));
+                var plants = await mediator.Send(new ListPlantsQuery(Status: status, PlanId: plan), token);
 
                 if (output.Json)
                 {
@@ -65,7 +71,7 @@ public static class PlantsCommand
                     }
                 }
 
-                context.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (ForestStore.ForestNotInitializedException)
             {
@@ -78,11 +84,11 @@ public static class PlantsCommand
                     output.WriteErrorLine("Error: forest not initialized");
                 }
 
-                context.ExitCode = ExitCodes.ForestNotInitialized;
+                return ExitCodes.ForestNotInitialized;
             }
         });
 
-        plantsCommand.AddCommand(listCommand);
+        plantsCommand.Subcommands.Add(listCommand);
         return plantsCommand;
     }
 

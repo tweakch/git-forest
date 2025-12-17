@@ -53,5 +53,11 @@ publish/
 *.svclog
 *.scc
 
+# Test Results
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
 .gemini/
 gha-creds-*.json

@@ -1,12 +1,11 @@
 using System.Text;
-using Ardalis.Specification;
 using GitForest.Core;
 using GitForest.Core.Persistence;
 using GitForest.Infrastructure.FileSystem.Serialization;
 
 namespace GitForest.Infrastructure.FileSystem.Repositories;
 
-public sealed class FileSystemPlanterRepository : IPlanterRepository
+public sealed class FileSystemPlanterRepository : AbstractPlanterRepository
 {
     private readonly FileSystemForestPaths _paths;
 
@@ -15,7 +14,7 @@ public sealed class FileSystemPlanterRepository : IPlanterRepository
         _paths = new FileSystemForestPaths(forestDir);
     }
 
-    public Task<Planter?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    public override Task<Planter?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
         if (string.IsNullOrWhiteSpace(id)) return Task.FromResult<Planter?>(null);
@@ -29,33 +28,12 @@ public sealed class FileSystemPlanterRepository : IPlanterRepository
         return Task.FromResult<Planter?>(ToDomain(model, planterId));
     }
 
-    public Task<Planter?> GetBySpecAsync(ISpecification<Planter> specification, CancellationToken cancellationToken = default)
-    {
-        return GetBySpecInternalAsync(specification, cancellationToken);
-    }
-
-    public Task<TResult?> GetBySpecAsync<TResult>(ISpecification<Planter, TResult> specification, CancellationToken cancellationToken = default)
-    {
-        return GetBySpecInternalAsync(specification, cancellationToken);
-    }
-
-    public Task<IReadOnlyList<Planter>> ListAsync(ISpecification<Planter> specification, CancellationToken cancellationToken = default)
-    {
-        return ListBySpecInternalAsync(specification, cancellationToken);
-    }
-
-    public Task<IReadOnlyList<TResult>> ListAsync<TResult>(ISpecification<Planter, TResult> specification, CancellationToken cancellationToken = default)
-    {
-        return ListBySpecInternalAsync(specification, cancellationToken);
-    }
-
-    public Task AddAsync(Planter entity, CancellationToken cancellationToken = default)
+    public override Task AddAsync(Planter entity, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
-        if (entity is null) throw new ArgumentNullException(nameof(entity));
-        if (string.IsNullOrWhiteSpace(entity.Id)) throw new ArgumentException("Planter.Id must be provided.", nameof(entity));
+        ValidateEntity(entity);
 
-        var id = entity.Id.Trim();
+        var id = GetTrimmedId(entity);
         var dir = _paths.PlanterDir(id);
         if (Directory.Exists(dir))
         {
@@ -67,19 +45,18 @@ public sealed class FileSystemPlanterRepository : IPlanterRepository
         return Task.CompletedTask;
     }
 
-    public Task UpdateAsync(Planter entity, CancellationToken cancellationToken = default)
+    public override Task UpdateAsync(Planter entity, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
-        if (entity is null) throw new ArgumentNullException(nameof(entity));
-        if (string.IsNullOrWhiteSpace(entity.Id)) throw new ArgumentException("Planter.Id must be provided.", nameof(entity));
+        ValidateEntity(entity);
 
         Directory.CreateDirectory(_paths.PlantersDir);
-        Directory.CreateDirectory(_paths.PlanterDir(entity.Id.Trim()));
+        Directory.CreateDirectory(_paths.PlanterDir(GetTrimmedId(entity)));
         WritePlanterYaml(entity);
         return Task.CompletedTask;
     }
 
-    public Task DeleteAsync(Planter entity, CancellationToken cancellationToken = default)
+    public override Task DeleteAsync(Planter entity, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
         if (entity is null) throw new ArgumentNullException(nameof(entity));
@@ -121,39 +98,7 @@ public sealed class FileSystemPlanterRepository : IPlanterRepository
         };
     }
 
-    private Task<T?> GetBySpecInternalAsync<T>(ISpecification<Planter, T> specification, CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
-        var all = LoadAll();
-        return Task.FromResult(GitForest.Core.Persistence.SpecificationEvaluator.Apply(all, specification).FirstOrDefault());
-    }
-
-    private Task<Planter?> GetBySpecInternalAsync(ISpecification<Planter> specification, CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
-        var all = LoadAll();
-        return Task.FromResult(GitForest.Core.Persistence.SpecificationEvaluator.Apply(all, specification).FirstOrDefault());
-    }
-
-    private Task<IReadOnlyList<T>> ListBySpecInternalAsync<T>(ISpecification<Planter, T> specification, CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
-        var all = LoadAll();
-        return Task.FromResult((IReadOnlyList<T>)GitForest.Core.Persistence.SpecificationEvaluator.Apply(all, specification).ToList());
-    }
-
-    private Task<IReadOnlyList<Planter>> ListBySpecInternalAsync(ISpecification<Planter> specification, CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
-        var all = LoadAll();
-        return Task.FromResult((IReadOnlyList<Planter>)GitForest.Core.Persistence.SpecificationEvaluator.Apply(all, specification).ToList());
-    }
-
-    private List<Planter> LoadAll()
+    protected override List<Planter> LoadAll()
     {
         var dir = _paths.PlantersDir;
         if (!Directory.Exists(dir))

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Orleans.Hosting;
 
 namespace GitForest.Infrastructure.Distributed;
 
@@ -72,6 +73,4 @@ public class OrleansConfiguration
     public bool UseMemoryStorage { get; set; } = true;
     public bool UseAzureStorage { get; set; } = false;
     public string? AzureStorageConnectionString { get; set; }
-    public int SiloPort { get; set; } = 11111;
-    public int GatewayPort { get; set; } = 30000;
 }

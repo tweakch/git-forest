@@ -207,16 +207,27 @@ For detailed documentation on each command, see the [CLI specification](./CLI.md
 ```
 git-forest/
 ├── src/
-│   ├── GitForest.Core/      # Core domain models and services
-│   └── GitForest.Cli/        # Command-line interface
-├── config/                   # Configuration files
+│   ├── GitForest.Core/                      # Core domain models and services
+│   ├── GitForest.Cli/                       # Command-line interface
+│   ├── GitForest.Web/                       # Blazor Web UI
+│   ├── GitForest.Application/               # Application layer services
+│   ├── GitForest.Mediator/                  # Mediator pattern implementation
+│   ├── GitForest.Infrastructure.Memory/     # In-memory repository implementations
+│   ├── GitForest.Infrastructure.FileSystem/ # File system repository implementations
+│   ├── GitForest.Infrastructure.Distributed/# Orleans distributed infrastructure
+│   └── GitForest.AppHost/                   # .NET Aspire orchestration host
+├── tests/
+│   ├── GitForest.Cli.Tests/                 # CLI unit tests
+│   ├── GitForest.Cli.IntegrationTests/      # CLI integration tests
+│   └── GitForest.Application.Tests/         # Application tests
+├── config/                                  # Configuration files
 ├── docs/
-│   └── cli/                  # CLI command documentation (legacy)
+│   └── cli/                                 # CLI command documentation (legacy)
 ├── .github/
-│   ├── copilot-instructions.md  # GitHub Copilot instructions
-│   └── workflows/            # GitHub Actions CI/CD
-├── CLI.md                    # CLI specification (v0.2)
-└── GitForest.sln            # Solution file
+│   ├── copilot-instructions.md             # GitHub Copilot instructions
+│   └── workflows/                          # GitHub Actions CI/CD
+├── CLI.md                                  # CLI specification (v0.2)
+└── GitForest.sln                           # Solution file
 ```
 
 ## On-Disk Layout
@@ -239,8 +250,42 @@ When initialized, git-forest creates a `.git-forest/` directory:
 
 - **.NET 10.0** - Latest .NET runtime
 - **.NET Aspire** - Cloud-native application framework (via NuGet)
+- **Microsoft Orleans** - Distributed actor framework for scalable execution
 - **System.CommandLine** - Modern CLI framework
 - **C#** - Primary language
+
+## Distributed Architecture
+
+git-forest now includes distributed infrastructure capabilities powered by Microsoft Orleans and .NET Aspire:
+
+### GitForest.Infrastructure.Distributed
+
+Provides Orleans-based distributed execution of planners and planters:
+- **Planners**: Distributed generation of plants across multiple nodes
+- **Planters**: Scalable execution with capacity management and concurrency control
+- Development and production clustering support
+- In-memory and persistent storage options
+
+See [src/GitForest.Infrastructure.Distributed/README.md](src/GitForest.Infrastructure.Distributed/README.md) for details.
+
+### GitForest.AppHost
+
+.NET Aspire orchestration host that manages all distributed services:
+- Orleans cluster coordination
+- Service discovery and health monitoring
+- Observability dashboard for logs, metrics, and tracing
+- Unified development experience
+
+To run the distributed stack:
+
+```bash
+cd src/GitForest.AppHost
+dotnet run
+```
+
+This starts the Orleans cluster, web UI, and Aspire dashboard. Access the dashboard at the URL shown in the console output (typically `http://localhost:15888`).
+
+See [src/GitForest.AppHost/README.md](src/GitForest.AppHost/README.md) for details.
 
 ## Exit Codes
 

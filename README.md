@@ -101,6 +101,17 @@ Verify:
 git-forest --version
 ```
 
+### Web UI (Optional)
+
+For a browser-based interface, you can run the Blazor Web App:
+
+```bash
+cd src/GitForest.Web
+dotnet run
+```
+
+Then open `http://localhost:5000` in your browser. The web UI provides a visual interface for browsing plans, installing them, and managing your forest. See [src/GitForest.Web/README.md](src/GitForest.Web/README.md) for more details.
+
 ### `gf` alias (optional)
 
 `.NET tools` expose a single command name (`git-forest`). If you want `gf`, add a shell alias:
@@ -273,6 +284,35 @@ For automation, the CLI provides stable exit codes:
 - `23` - Lock timeout / busy
 - `30` - Git operation failed
 - `40` - Execution not permitted by policy
+
+## GitHub Actions Integration
+
+git-forest includes automated workflows for continuous plan reconciliation:
+
+### Developer Experience Plan
+
+The `developer-experience-plan.yml` workflow automatically installs and reconciles the developer-experience plan to optimize build times, improve error messages, and streamline development workflows.
+
+**Triggers:**
+- **Manual**: Use "Run workflow" in the Actions tab
+- **Automatic**: Triggers on changes to `config/plans/team-process/developer-experience.yaml`
+
+**What it does:**
+1. Builds the git-forest CLI from source
+2. Installs the developer-experience plan from `config/plans/team-process/developer-experience.yaml`
+3. Reconciles the plan to generate plants (work items)
+4. Uploads a report artifact with generated plants
+
+**To run manually:**
+1. Go to the "Actions" tab in GitHub
+2. Select "Developer Experience Plan" workflow
+3. Click "Run workflow"
+
+The workflow is idempotent and safe to run multiple times. It uses concurrency controls to prevent parallel reconciliation runs.
+
+### Other Automated Plans
+
+- **Forest Self-Inspection** - Runs the forest-maintenance plan weekly to ensure git-forest dogfoods itself
 
 ## Contributing
 

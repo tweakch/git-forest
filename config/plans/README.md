@@ -1,6 +1,46 @@
-# Plans Catalog
+# 📚 Plans Catalog
 
 This directory contains pre-defined plan templates that can be installed and used as organizational lenses for managing your git-forest.
+
+---
+
+## 📋 Table of Contents
+
+- [Overview](#overview)
+- [Plan Categories](#plan-categories)
+  - [🏗️ Engineering Excellence](#-engineering-excellence)
+  - [✅ Quality & Reliability](#-quality--reliability)
+  - [⚡ Performance & Scalability](#-performance--scalability)
+  - [🔒 Security & Compliance](#-security--compliance)
+  - [👥 Team & Process](#-team--process)
+  - [📖 Documentation & Knowledge](#-documentation--knowledge)
+  - [🔄 Evolution & Migration](#-evolution--migration)
+  - [🤖 AI-Native](#-ai-native)
+  - [🎯 Meta / Governance](#-meta--governance)
+  - [🧪 Experimental](#-experimental)
+- [Plan Structure](#plan-structure)
+- [Using Plans](#using-plans)
+
+---
+
+## Overview
+
+git-forest includes **49 pre-defined plans** organized into **10 categories**. Each plan targets a specific aspect of codebase health and team productivity.
+
+| Category | Plans | Focus Area |
+|----------|:-----:|------------|
+| [🏗️ Engineering Excellence](#-engineering-excellence) | 6 | Code health, sustainability, long-term velocity |
+| [✅ Quality & Reliability](#-quality--reliability) | 9 | Correctness, confidence, operability |
+| [⚡ Performance & Scalability](#-performance--scalability) | 5 | Speed, predictability, scale |
+| [🔒 Security & Compliance](#-security--compliance) | 5 | Preventative security, regulatory compliance |
+| [👥 Team & Process](#-team--process) | 5 | Developer experience, workflow optimization |
+| [📖 Documentation & Knowledge](#-documentation--knowledge) | 4 | Living documentation, knowledge management |
+| [🔄 Evolution & Migration](#-evolution--migration) | 5 | Strategic change, system evolution |
+| [🤖 AI-Native](#-ai-native) | 5 | AI-assisted development, automation |
+| [🎯 Meta / Governance](#-meta--governance) | 5 | Plan management, resource governance |
+| [🧪 Experimental](#-experimental) | 4 | Innovative approaches to code quality |
+
+---
 
 ## Plan Categories
 
@@ -120,15 +160,45 @@ policies:
   risk_level: low
 ```
 
+> **Note:** See individual plan files for complete examples with additional fields like `metrics`, `plant_templates`, and `focus_areas`.
+
+---
+
 ## Using Plans
 
+### Installing a Plan
+
 ```bash
-# Install a plan
+# Install a plan from the catalog
 git-forest plans install config/plans/engineering-excellence/dependency-hygiene.yaml
+```
 
-# List installed plans
+### Listing Installed Plans
+
+```bash
+# List all installed plans
 git-forest plans list
+```
 
-# Reconcile a plan (generate plants)
+### Reconciling a Plan
+
+```bash
+# Reconcile a plan to generate plants (work items)
 git-forest plan dependency-hygiene reconcile
+```
+
+### Example Workflow
+
+```bash
+# 1. Install the security hygiene plan
+git-forest plans install config/plans/security-compliance/secret-hygiene.yaml
+
+# 2. Reconcile to generate plants
+git-forest plan secret-hygiene reconcile
+
+# 3. List generated plants
+git-forest plants list --plan secret-hygiene
+
+# 4. Show details of a specific plant
+git-forest plant secret-hygiene:remove-hardcoded-secret show
 ```

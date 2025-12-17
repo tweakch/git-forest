@@ -1,0 +1,38 @@
+﻿@page "/"
+
+<PageTitle>Home - git-forest</PageTitle>
+
+<h1>Welcome to git-forest Web UI</h1>
+
+<div class="alert alert-info mt-4">
+    <h4>What is git-forest?</h4>
+    <p>
+        <strong>git-forest</strong> is a .NET CLI for managing collections of git repositories as a unified forest, 
+        enabling systematic codebase cultivation.
+    </p>
+    <p>
+        This web interface allows you to:
+    </p>
+    <ul>
+        <li><strong>Browse Plans:</strong> View available plans from the catalog (config/plans)</li>
+        <li><strong>Install Plans:</strong> Install plans to your local forest</li>
+        <li><strong>Reconcile Plans:</strong> Execute reconciliation for installed plans</li>
+        <li><strong>View Installed Plans:</strong> See all plans currently installed in your forest</li>
+    </ul>
+</div>
+
+<div class="mt-4">
+    <h3>Quick Start</h3>
+    <ol>
+        <li>Navigate to <a href="/plans">Plans Catalog</a> to browse available plans</li>
+        <li>Click on a plan to view details and install it</li>
+        <li>Go to <a href="/installed">Installed Plans</a> to see your active plans and reconcile them</li>
+    </ol>
+</div>
+
+<div class="alert alert-secondary mt-4">
+    <p class="mb-0">
+        <strong>Note:</strong> This web interface shares the same state as the CLI. 
+        Plans installed here will be visible in the CLI and vice versa.
+    </p>
+</div>

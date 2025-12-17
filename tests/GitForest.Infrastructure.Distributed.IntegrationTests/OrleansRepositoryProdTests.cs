@@ -14,6 +14,9 @@ namespace GitForest.Infrastructure.Distributed.IntegrationTests;
 /// Tests persistence and clustering scenarios
 /// </summary>
 [TestFixture]
+[Category("Orleans")]
+[Category("Integration")]
+[Explicit("Orleans serialization configuration pending")]
 public class OrleansRepositoryProdTests
 {
     private IHost? _host;

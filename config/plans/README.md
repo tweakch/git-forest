@@ -44,148 +44,99 @@ git-forest includes **49 pre-defined plans** organized into **10 categories**. E
 
 ## Plan Categories
 
-### 🏗️ Engineering Excellence
+### 1. Engineering Excellence Plans
+Focused on code health, sustainability, and long-term velocity.
 
-> *Focused on code health, sustainability, and long-term velocity.*
+- **architecture-hardening** - Enforce boundaries, detect layering violations, stabilize core domains
+- **dependency-hygiene** - Reduce transitive deps, pin versions, remove unused packages
+- **api-contract-stability** - Validate public APIs, semver discipline, breaking-change detection
+- **refactor-hotspots** - Identify churn-heavy files and concentrate refactors there
+- **cyclomatic-reduction** - Target complex methods, split responsibilities
+- **dead-code-elimination** - Find unreachable, unused, or legacy paths
 
-| Plan ID | Description |
-|---------|-------------|
-| `architecture-hardening` | Enforce boundaries, detect layering violations, stabilize core domains |
-| `dependency-hygiene` | Reduce transitive deps, pin versions, remove unused packages |
-| `api-contract-stability` | Validate public APIs, semver discipline, breaking-change detection |
-| `refactor-hotspots` | Identify churn-heavy files and concentrate refactors there |
-| `cyclomatic-reduction` | Target complex methods, split responsibilities |
-| `dead-code-elimination` | Find unreachable, unused, or legacy paths |
+### 2. Quality & Reliability Plans
+Focused on correctness, confidence, and operability.
 
----
+- **test-pyramid-balance** - Shift tests toward unit / slice tests where appropriate
+- **mutation-testing** - Strengthen weak tests by introducing mutations
+- **flaky-test-eradication** - Detect and stabilize nondeterministic tests
+- **chaos-readiness** - Inject failures (timeouts, retries, partial outages)
+- **observability-boost** - Logs, metrics, traces completeness
+- **unit-testing-discipline** - Raise unit test coverage and quality; identify gaps; strengthen assertions
+- **tdd-enablement** - Reduce red/green/refactor loop friction (speed, determinism, ergonomics)
+- **bdd-scenarios** - Define and automate behavior scenarios with shared domain language
+- **integration-testing-harness** - Build stable integration harnesses and cover critical boundaries
 
-### ✅ Quality & Reliability
+### 3. Performance & Scalability Plans
+Beyond raw speed — also predictability.
 
-> *Focused on correctness, confidence, and operability.*
+- **latency-budgeting** - Enforce response time SLOs per boundary
+- **allocation-pressure-reduction** - Target GC hotspots, pooling, spans, struct usage
+- **throughput-optimization** - Async pipelines, batching, parallelism
+- **io-efficiency** - File, DB, HTTP usage patterns
+- **orleans-readiness** - Actor-friendly refactors, stateless services, grain boundaries
 
-| Plan ID | Description |
-|---------|-------------|
-| `test-pyramid-balance` | Shift tests toward unit/slice tests where appropriate |
-| `mutation-testing` | Strengthen weak tests by introducing mutations |
-| `flaky-test-eradication` | Detect and stabilize nondeterministic tests |
-| `chaos-readiness` | Inject failures (timeouts, retries, partial outages) |
-| `observability-boost` | Logs, metrics, traces completeness |
-| `unit-testing-discipline` | Raise unit test coverage and quality; identify gaps; strengthen assertions |
-| `tdd-enablement` | Reduce red/green/refactor loop friction (speed, determinism, ergonomics) |
-| `bdd-scenarios` | Define and automate behavior scenarios with shared domain language |
-| `integration-testing-harness` | Build stable integration harnesses and cover critical boundaries |
+### 4. Security & Compliance Plans
+Preventative, not reactive.
 
----
+- **threat-modeling** - Surface attack vectors and trust boundaries
+- **secret-hygiene** - Remove hardcoded secrets, rotate keys
+- **authz-consistency** - Ensure authorization is enforced uniformly
+- **dependency-vulnerability-guard** - CVE scanning + mitigation plans
+- **audit-trail-enforcement** - Ensure critical actions are traceable
 
-### ⚡ Performance & Scalability
+### 5. Team & Process Plans
+These shape how humans work with the forest.
 
-> *Beyond raw speed — also predictability.*
+- **developer-experience** - Faster builds, better errors, tooling cleanup
+- **onboarding-acceleration** - Docs, examples, guided walkthroughs
+- **scrum-signal** - Align backlog, PRs, and commits with Scrum goals
+- **flow-efficiency** - Reduce WIP, PR size, cycle time
+- **knowledge-radiation** - Turn tribal knowledge into docs/tests/diagrams
 
-| Plan ID | Description |
-|---------|-------------|
-| `latency-budgeting` | Enforce response time SLOs per boundary |
-| `allocation-pressure-reduction` | Target GC hotspots, pooling, spans, struct usage |
-| `throughput-optimization` | Async pipelines, batching, parallelism |
-| `io-efficiency` | File, DB, HTTP usage patterns |
-| `orleans-readiness` | Actor-friendly refactors, stateless services, grain boundaries |
+### 6. Documentation & Knowledge Plans
+More than "improve-docs".
 
----
+- **living-architecture** - Keep diagrams, ADRs, and code aligned
+- **decision-recording** - Extract implicit decisions into ADRs
+- **public-api-docs** - Consumer-oriented docs and examples
+- **internal-playbooks** - Runbooks for ops, incidents, migrations
 
-### 🔒 Security & Compliance
+### 7. Evolution & Migration Plans
+Strategic change over time.
 
-> *Preventative, not reactive.*
+- **monolith-modularization** - Gradual slicing without big-bang rewrites
+- **legacy-extraction** - Isolate legacy zones behind interfaces
+- **cloud-readiness** - Config, scaling, resilience for cloud targets
+- **framework-upgrade** - e.g. .NET LTS migrations, breaking change handling
+- **orleans-adoption** - Move coordination logic to virtual actors
 
-| Plan ID | Description |
-|---------|-------------|
-| `threat-modeling` | Surface attack vectors and trust boundaries |
-| `secret-hygiene` | Remove hardcoded secrets, rotate keys |
-| `authz-consistency` | Ensure authorization is enforced uniformly |
-| `dependency-vulnerability-guard` | CVE scanning + mitigation plans |
-| `audit-trail-enforcement` | Ensure critical actions are traceable |
+### 8. AI-Native Plans
+Plans that explicitly assume AI planters.
 
----
+- **semantic-code-map** - Build a knowledge graph of the repo
+- **intent-preservation** - Ensure refactors don't drift from original intent
+- **regression-scout** - Continuously look for subtle behavior changes
+- **memory-guard** - Prevent context loss across long refactor cycles
+- **self-healing-forest** - Auto-detect issues and plant new work
 
-### 👥 Team & Process
+### 9. Meta / Governance Plans
+Plans that manage plans.
 
-> *These shape how humans work with the forest.*
+- **repository-overview** - Comprehensive repository status overview for team leads
+- **forest-governance** - Rules, limits, quotas for planters
+- **plan-composition** - Detect conflicting or overlapping plans
+- **risk-aware-planning** - Rank plants by blast radius
+- **harvest-discipline** - Define when "done" actually means done
+- **forest-maintenance** - Self-inspection plan for git-forest to dogfood itself in CI
 
-| Plan ID | Description |
-|---------|-------------|
-| `developer-experience` | Faster builds, better errors, tooling cleanup |
-| `onboarding-acceleration` | Docs, examples, guided walkthroughs |
-| `scrum-signal` | Align backlog, PRs, and commits with Scrum goals |
-| `flow-efficiency` | Reduce WIP, PR size, cycle time |
-| `knowledge-radiation` | Turn tribal knowledge into docs/tests/diagrams |
+### 10. Experimental Plans
+Fun but useful experimental plans.
 
----
-
-### 📖 Documentation & Knowledge
-
-> *More than "improve-docs".*
-
-| Plan ID | Description |
-|---------|-------------|
-| `living-architecture` | Keep diagrams, ADRs, and code aligned |
-| `decision-recording` | Extract implicit decisions into ADRs |
-| `public-api-docs` | Consumer-oriented docs and examples |
-| `internal-playbooks` | Runbooks for ops, incidents, migrations |
-
----
-
-### 🔄 Evolution & Migration
-
-> *Strategic change over time.*
-
-| Plan ID | Description |
-|---------|-------------|
-| `monolith-modularization` | Gradual slicing without big-bang rewrites |
-| `legacy-extraction` | Isolate legacy zones behind interfaces |
-| `cloud-readiness` | Config, scaling, resilience for cloud targets |
-| `framework-upgrade` | e.g., .NET LTS migrations, breaking change handling |
-| `orleans-adoption` | Move coordination logic to virtual actors |
-
----
-
-### 🤖 AI-Native
-
-> *Plans that explicitly assume AI planters.*
-
-| Plan ID | Description |
-|---------|-------------|
-| `semantic-code-map` | Build a knowledge graph of the repo |
-| `intent-preservation` | Ensure refactors don't drift from original intent |
-| `regression-scout` | Continuously look for subtle behavior changes |
-| `memory-guard` | Prevent context loss across long refactor cycles |
-| `self-healing-forest` | Auto-detect issues and plant new work |
-
----
-
-### 🎯 Meta / Governance
-
-> *Plans that manage plans.*
-
-| Plan ID | Description |
-|---------|-------------|
-| `forest-governance` | Rules, limits, quotas for planters |
-| `plan-composition` | Detect conflicting or overlapping plans |
-| `risk-aware-planning` | Rank plants by blast radius |
-| `harvest-discipline` | Define when "done" actually means done |
-| `forest-maintenance` | Self-inspection plan for git-forest to dogfood itself in CI |
-
----
-
-### 🧪 Experimental
-
-> *Fun but useful experimental plans.*
-
-| Plan ID | Description |
-|---------|-------------|
-| `code-archeology` | Discover why things exist |
-| `intent-drift-detection` | Compare current code vs original commits |
-| `complexity-budgeting` | Enforce global complexity limits |
-| `entropy-reduction` | Fight gradual degradation |
-
----
+- **code-archeology** - Discover why things exist
+- **intent-drift-detection** - Compare current code vs original commits
+- **complexity-budgeting** - Enforce global complexity limits
+- **entropy-reduction** - Fight gradual degradation
 
 ## Plan Structure
 

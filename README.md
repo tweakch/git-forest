@@ -32,7 +32,35 @@ git-forest includes a comprehensive catalog of pre-defined plans organized by ca
 - **Meta/Governance** - Plan management and resource governance
 - **Experimental** - Innovative approaches to code quality
 
-See [config/plans/README.md](config/plans/README.md) for the complete catalog with 49 pre-defined plans.
+See [config/plans/README.md](config/plans/README.md) for the complete catalog with 54 pre-defined plans.
+
+#### Team Lead Quick Start
+For team leads wanting a comprehensive overview of their repository status:
+
+```bash
+# Install the repository overview plan
+git-forest plans install config/plans/meta-governance/repository-overview.yaml
+
+# Generate comprehensive overview
+git-forest plan repository-overview reconcile
+
+# View the overview report
+git-forest plants list --plan repository-overview
+```
+
+The repository-overview plan provides:
+- Repository structure and organization analysis
+- Code health and quality metrics
+- Plan catalog status and coverage
+- Plant lifecycle and status distribution
+- Planter capabilities and workload
+- Documentation completeness assessment
+- CI/CD pipeline health
+- Test coverage overview
+- Dependency health summary
+- Technical debt inventory
+
+For a complete guide, see [docs/REPOSITORY_OVERVIEW_GUIDE.md](docs/REPOSITORY_OVERVIEW_GUIDE.md).
 
 ### 🌱 Plant
 **Plants** are concrete work items with stable keys and lifecycle facts. Each plant has:
@@ -139,7 +167,7 @@ git-forest planner code-analyzer run --plan sample
 
 ## Plans Catalog
 
-git-forest includes 49 pre-defined plans across 10 categories to help you improve your codebase systematically:
+git-forest includes 54 pre-defined plans across 10 categories to help you improve your codebase systematically:
 
 ### Using Pre-defined Plans
 
@@ -160,14 +188,14 @@ git-forest plants list --plan dependency-hygiene
 ### Plan Categories
 
 1. **Engineering Excellence** (6 plans) - architecture-hardening, dependency-hygiene, api-contract-stability, refactor-hotspots, cyclomatic-reduction, dead-code-elimination
-2. **Quality & Reliability** (5 plans) - test-pyramid-balance, mutation-testing, flaky-test-eradication, chaos-readiness, observability-boost
+2. **Quality & Reliability** (9 plans) - test-pyramid-balance, mutation-testing, flaky-test-eradication, chaos-readiness, observability-boost, unit-testing-discipline, tdd-enablement, bdd-scenarios, integration-testing-harness
 3. **Performance & Scalability** (5 plans) - latency-budgeting, allocation-pressure-reduction, throughput-optimization, io-efficiency, orleans-readiness
 4. **Security & Compliance** (5 plans) - threat-modeling, secret-hygiene, authz-consistency, dependency-vulnerability-guard, audit-trail-enforcement
 5. **Team & Process** (5 plans) - developer-experience, onboarding-acceleration, scrum-signal, flow-efficiency, knowledge-radiation
 6. **Documentation & Knowledge** (4 plans) - living-architecture, decision-recording, public-api-docs, internal-playbooks
 7. **Evolution & Migration** (5 plans) - monolith-modularization, legacy-extraction, cloud-readiness, framework-upgrade, orleans-adoption
 8. **AI-Native** (5 plans) - semantic-code-map, intent-preservation, regression-scout, memory-guard, self-healing-forest
-9. **Meta/Governance** (5 plans) - forest-governance, plan-composition, risk-aware-planning, harvest-discipline, forest-maintenance
+9. **Meta/Governance** (6 plans) - repository-overview, forest-governance, plan-composition, risk-aware-planning, harvest-discipline, forest-maintenance
 10. **Experimental** (4 plans) - code-archeology, intent-drift-detection, complexity-budgeting, entropy-reduction
 
 For detailed descriptions of each plan, see [config/plans/README.md](config/plans/README.md).

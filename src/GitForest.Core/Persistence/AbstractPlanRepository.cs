@@ -38,7 +38,8 @@ public abstract class AbstractPlanRepository : IPlanRepository
 
     protected string GetTrimmedId(Plan entity)
     {
-        return entity.Id.Trim();
+        // ValidateEntity ensures entity.Id is not null or whitespace
+        return entity.Id!.Trim();
     }
 
     // Common specification evaluation methods

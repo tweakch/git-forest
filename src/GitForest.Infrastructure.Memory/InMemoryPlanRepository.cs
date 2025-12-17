@@ -1,10 +1,9 @@
-using Ardalis.Specification;
 using GitForest.Core;
 using GitForest.Core.Persistence;
 
 namespace GitForest.Infrastructure.Memory;
 
-public sealed class InMemoryPlanRepository : IPlanRepository
+public sealed class InMemoryPlanRepository : AbstractPlanRepository
 {
     private readonly object _gate = new();
     private readonly Dictionary<string, Plan> _plans;
@@ -25,7 +24,7 @@ public sealed class InMemoryPlanRepository : IPlanRepository
         }
     }
 
-    public Task<Plan?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    public override Task<Plan?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
         if (string.IsNullOrWhiteSpace(id)) return Task.FromResult<Plan?>(null);
@@ -37,25 +36,12 @@ public sealed class InMemoryPlanRepository : IPlanRepository
         }
     }
 
-    public Task<Plan?> GetBySpecAsync(ISpecification<Plan> specification, CancellationToken cancellationToken = default)
-        => GetBySpecInternalAsync(specification, cancellationToken);
-
-    public Task<TResult?> GetBySpecAsync<TResult>(ISpecification<Plan, TResult> specification, CancellationToken cancellationToken = default)
-        => GetBySpecInternalAsync(specification, cancellationToken);
-
-    public Task<IReadOnlyList<Plan>> ListAsync(ISpecification<Plan> specification, CancellationToken cancellationToken = default)
-        => ListBySpecInternalAsync(specification, cancellationToken);
-
-    public Task<IReadOnlyList<TResult>> ListAsync<TResult>(ISpecification<Plan, TResult> specification, CancellationToken cancellationToken = default)
-        => ListBySpecInternalAsync(specification, cancellationToken);
-
-    public Task AddAsync(Plan entity, CancellationToken cancellationToken = default)
+    public override Task AddAsync(Plan entity, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
-        if (entity is null) throw new ArgumentNullException(nameof(entity));
-        if (string.IsNullOrWhiteSpace(entity.Id)) throw new ArgumentException("Plan.Id must be provided.", nameof(entity));
+        ValidateEntity(entity);
 
-        var id = entity.Id.Trim();
+        var id = GetTrimmedId(entity);
         lock (_gate)
         {
             if (_plans.ContainsKey(id))
@@ -69,13 +55,12 @@ public sealed class InMemoryPlanRepository : IPlanRepository
         return Task.CompletedTask;
     }
 
-    public Task UpdateAsync(Plan entity, CancellationToken cancellationToken = default)
+    public override Task UpdateAsync(Plan entity, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
-        if (entity is null) throw new ArgumentNullException(nameof(entity));
-        if (string.IsNullOrWhiteSpace(entity.Id)) throw new ArgumentException("Plan.Id must be provided.", nameof(entity));
+        ValidateEntity(entity);
 
-        var id = entity.Id.Trim();
+        var id = GetTrimmedId(entity);
         lock (_gate)
         {
             _plans[id] = entity;
@@ -84,7 +69,7 @@ public sealed class InMemoryPlanRepository : IPlanRepository
         return Task.CompletedTask;
     }
 
-    public Task DeleteAsync(Plan entity, CancellationToken cancellationToken = default)
+    public override Task DeleteAsync(Plan entity, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
         if (entity is null) throw new ArgumentNullException(nameof(entity));
@@ -98,60 +83,12 @@ public sealed class InMemoryPlanRepository : IPlanRepository
         return Task.CompletedTask;
     }
 
-    private Task<T?> GetBySpecInternalAsync<T>(ISpecification<Plan, T> specification, CancellationToken cancellationToken)
+    protected override List<Plan> LoadAllPlans()
     {
-        _ = cancellationToken;
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
-
-        List<Plan> all;
         lock (_gate)
         {
-            all = _plans.Values.ToList();
+            return _plans.Values.ToList();
         }
-
-        return Task.FromResult(InMemorySpecificationEvaluator.Apply(all, specification).FirstOrDefault());
-    }
-
-    private Task<Plan?> GetBySpecInternalAsync(ISpecification<Plan> specification, CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
-
-        List<Plan> all;
-        lock (_gate)
-        {
-            all = _plans.Values.ToList();
-        }
-
-        return Task.FromResult(InMemorySpecificationEvaluator.Apply(all, specification).FirstOrDefault());
-    }
-
-    private Task<IReadOnlyList<T>> ListBySpecInternalAsync<T>(ISpecification<Plan, T> specification, CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
-
-        List<Plan> all;
-        lock (_gate)
-        {
-            all = _plans.Values.ToList();
-        }
-
-        return Task.FromResult((IReadOnlyList<T>)InMemorySpecificationEvaluator.Apply(all, specification).ToList());
-    }
-
-    private Task<IReadOnlyList<Plan>> ListBySpecInternalAsync(ISpecification<Plan> specification, CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
-
-        List<Plan> all;
-        lock (_gate)
-        {
-            all = _plans.Values.ToList();
-        }
-
-        return Task.FromResult((IReadOnlyList<Plan>)InMemorySpecificationEvaluator.Apply(all, specification).ToList());
     }
 }
 

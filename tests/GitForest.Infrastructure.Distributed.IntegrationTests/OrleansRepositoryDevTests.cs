@@ -5,6 +5,7 @@ using GitForest.Infrastructure.Distributed.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NUnit.Framework;
+using Orleans.Serialization;
 
 namespace GitForest.Infrastructure.Distributed.IntegrationTests;
 
@@ -31,6 +32,11 @@ public class OrleansRepositoryDevTests
         
         builder.ConfigureServices(services =>
         {
+            services.AddSerializer(builder =>
+            {
+                builder.AddJsonSerializer(isSupported: _ => true);
+            });
+            
             // Register repositories and specification evaluator
             services.AddSingleton<ISpecificationEvaluator, SpecificationEvaluator>();
             services.AddSingleton<IPlanRepository, OrleansPlansRepository>();

@@ -1,13 +1,13 @@
 using System.Linq.Expressions;
 using Ardalis.Specification;
 
-namespace GitForest.Infrastructure.Memory;
+namespace GitForest.Core.Persistence;
 
 /// <summary>
 /// Evaluates Ardalis specifications against in-memory collections (IEnumerable).
 /// We intentionally support only the subset of spec features we currently use: Where + Order + Skip/Take + Selector.
 /// </summary>
-internal static class InMemorySpecificationEvaluator
+public static class SpecificationEvaluator
 {
     public static IEnumerable<T> Apply<T>(IEnumerable<T> source, ISpecification<T> specification)
     {
@@ -181,4 +181,3 @@ internal static class InMemorySpecificationEvaluator
         return null;
     }
 }
-

@@ -1,14 +1,13 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using Ardalis.Specification;
 using GitForest.Core;
 using GitForest.Core.Persistence;
 using GitForest.Infrastructure.FileSystem.Serialization;
 
 namespace GitForest.Infrastructure.FileSystem.Repositories;
 
-public sealed class FileSystemPlanRepository : IPlanRepository
+public sealed class FileSystemPlanRepository : AbstractPlanRepository
 {
     private readonly FileSystemForestPaths _paths;
 
@@ -17,7 +16,7 @@ public sealed class FileSystemPlanRepository : IPlanRepository
         _paths = new FileSystemForestPaths(forestDir);
     }
 
-    public Task<Plan?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    public override Task<Plan?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
         if (string.IsNullOrWhiteSpace(id))
@@ -55,33 +54,12 @@ public sealed class FileSystemPlanRepository : IPlanRepository
         return Task.FromResult<Plan?>(plan);
     }
 
-    public Task<Plan?> GetBySpecAsync(ISpecification<Plan> specification, CancellationToken cancellationToken = default)
-    {
-        return GetBySpecInternalAsync(specification, cancellationToken);
-    }
-
-    public Task<TResult?> GetBySpecAsync<TResult>(ISpecification<Plan, TResult> specification, CancellationToken cancellationToken = default)
-    {
-        return GetBySpecInternalAsync(specification, cancellationToken);
-    }
-
-    public Task<IReadOnlyList<Plan>> ListAsync(ISpecification<Plan> specification, CancellationToken cancellationToken = default)
-    {
-        return ListBySpecInternalAsync(specification, cancellationToken);
-    }
-
-    public Task<IReadOnlyList<TResult>> ListAsync<TResult>(ISpecification<Plan, TResult> specification, CancellationToken cancellationToken = default)
-    {
-        return ListBySpecInternalAsync(specification, cancellationToken);
-    }
-
-    public Task AddAsync(Plan entity, CancellationToken cancellationToken = default)
+    public override Task AddAsync(Plan entity, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
-        if (entity is null) throw new ArgumentNullException(nameof(entity));
-        if (string.IsNullOrWhiteSpace(entity.Id)) throw new ArgumentException("Plan.Id must be provided.", nameof(entity));
+        ValidateEntity(entity);
 
-        var planId = entity.Id.Trim();
+        var planId = GetTrimmedId(entity);
         var dir = _paths.PlanDir(planId);
         if (Directory.Exists(dir))
         {
@@ -112,13 +90,12 @@ public sealed class FileSystemPlanRepository : IPlanRepository
         return Task.CompletedTask;
     }
 
-    public Task UpdateAsync(Plan entity, CancellationToken cancellationToken = default)
+    public override Task UpdateAsync(Plan entity, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
-        if (entity is null) throw new ArgumentNullException(nameof(entity));
-        if (string.IsNullOrWhiteSpace(entity.Id)) throw new ArgumentException("Plan.Id must be provided.", nameof(entity));
+        ValidateEntity(entity);
 
-        var planId = entity.Id.Trim();
+        var planId = GetTrimmedId(entity);
         Directory.CreateDirectory(_paths.PlanDir(planId));
         var yaml = PlanYamlLite.SerializeMinimal(
             id: planId,
@@ -134,7 +111,7 @@ public sealed class FileSystemPlanRepository : IPlanRepository
         return Task.CompletedTask;
     }
 
-    public Task DeleteAsync(Plan entity, CancellationToken cancellationToken = default)
+    public override Task DeleteAsync(Plan entity, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
         if (entity is null) throw new ArgumentNullException(nameof(entity));
@@ -149,43 +126,7 @@ public sealed class FileSystemPlanRepository : IPlanRepository
         return Task.CompletedTask;
     }
 
-    private Task<T?> GetBySpecInternalAsync<T>(ISpecification<Plan, T> specification, CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
-
-        var all = LoadAllPlans();
-        return Task.FromResult(InMemorySpecificationEvaluator.Apply(all, specification).FirstOrDefault());
-    }
-
-    private Task<Plan?> GetBySpecInternalAsync(ISpecification<Plan> specification, CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
-
-        var all = LoadAllPlans();
-        return Task.FromResult(InMemorySpecificationEvaluator.Apply(all, specification).FirstOrDefault());
-    }
-
-    private Task<IReadOnlyList<T>> ListBySpecInternalAsync<T>(ISpecification<Plan, T> specification, CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
-
-        var all = LoadAllPlans();
-        return Task.FromResult((IReadOnlyList<T>)InMemorySpecificationEvaluator.Apply(all, specification).ToList());
-    }
-
-    private Task<IReadOnlyList<Plan>> ListBySpecInternalAsync(ISpecification<Plan> specification, CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
-
-        var all = LoadAllPlans();
-        return Task.FromResult((IReadOnlyList<Plan>)InMemorySpecificationEvaluator.Apply(all, specification).ToList());
-    }
-
-    private List<Plan> LoadAllPlans()
+    protected override List<Plan> LoadAllPlans()
     {
         var dir = _paths.PlansDir;
         if (!Directory.Exists(dir))

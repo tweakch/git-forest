@@ -170,7 +170,7 @@ public sealed class FileSystemPlantRepository : IPlantRepository
         if (specification is null) throw new ArgumentNullException(nameof(specification));
 
         var all = LoadAllPlants();
-        return Task.FromResult(InMemorySpecificationEvaluator.Apply(all, specification).FirstOrDefault());
+        return Task.FromResult(GitForest.Core.Persistence.SpecificationEvaluator.Apply(all, specification).FirstOrDefault());
     }
 
     private Task<Plant?> GetBySpecInternalAsync(ISpecification<Plant> specification, CancellationToken cancellationToken)
@@ -179,7 +179,7 @@ public sealed class FileSystemPlantRepository : IPlantRepository
         if (specification is null) throw new ArgumentNullException(nameof(specification));
 
         var all = LoadAllPlants();
-        return Task.FromResult(InMemorySpecificationEvaluator.Apply(all, specification).FirstOrDefault());
+        return Task.FromResult(GitForest.Core.Persistence.SpecificationEvaluator.Apply(all, specification).FirstOrDefault());
     }
 
     private Task<IReadOnlyList<T>> ListBySpecInternalAsync<T>(ISpecification<Plant, T> specification, CancellationToken cancellationToken)
@@ -188,7 +188,7 @@ public sealed class FileSystemPlantRepository : IPlantRepository
         if (specification is null) throw new ArgumentNullException(nameof(specification));
 
         var all = LoadAllPlants();
-        return Task.FromResult((IReadOnlyList<T>)InMemorySpecificationEvaluator.Apply(all, specification).ToList());
+        return Task.FromResult((IReadOnlyList<T>)GitForest.Core.Persistence.SpecificationEvaluator.Apply(all, specification).ToList());
     }
 
     private Task<IReadOnlyList<Plant>> ListBySpecInternalAsync(ISpecification<Plant> specification, CancellationToken cancellationToken)
@@ -197,7 +197,7 @@ public sealed class FileSystemPlantRepository : IPlantRepository
         if (specification is null) throw new ArgumentNullException(nameof(specification));
 
         var all = LoadAllPlants();
-        return Task.FromResult((IReadOnlyList<Plant>)InMemorySpecificationEvaluator.Apply(all, specification).ToList());
+        return Task.FromResult((IReadOnlyList<Plant>)GitForest.Core.Persistence.SpecificationEvaluator.Apply(all, specification).ToList());
     }
 
     private List<Plant> LoadAllPlants()

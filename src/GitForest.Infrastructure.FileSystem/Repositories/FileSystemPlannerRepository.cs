@@ -156,7 +156,7 @@ public sealed class FileSystemPlannerRepository : IPlannerRepository
         _ = cancellationToken;
         if (specification is null) throw new ArgumentNullException(nameof(specification));
         var all = LoadAll();
-        return Task.FromResult(InMemorySpecificationEvaluator.Apply(all, specification).FirstOrDefault());
+        return Task.FromResult(GitForest.Core.Persistence.SpecificationEvaluator.Apply(all, specification).FirstOrDefault());
     }
 
     private Task<Planner?> GetBySpecInternalAsync(ISpecification<Planner> specification, CancellationToken cancellationToken)
@@ -164,7 +164,7 @@ public sealed class FileSystemPlannerRepository : IPlannerRepository
         _ = cancellationToken;
         if (specification is null) throw new ArgumentNullException(nameof(specification));
         var all = LoadAll();
-        return Task.FromResult(InMemorySpecificationEvaluator.Apply(all, specification).FirstOrDefault());
+        return Task.FromResult(GitForest.Core.Persistence.SpecificationEvaluator.Apply(all, specification).FirstOrDefault());
     }
 
     private Task<IReadOnlyList<T>> ListBySpecInternalAsync<T>(ISpecification<Planner, T> specification, CancellationToken cancellationToken)
@@ -172,7 +172,7 @@ public sealed class FileSystemPlannerRepository : IPlannerRepository
         _ = cancellationToken;
         if (specification is null) throw new ArgumentNullException(nameof(specification));
         var all = LoadAll();
-        return Task.FromResult((IReadOnlyList<T>)InMemorySpecificationEvaluator.Apply(all, specification).ToList());
+        return Task.FromResult((IReadOnlyList<T>)GitForest.Core.Persistence.SpecificationEvaluator.Apply(all, specification).ToList());
     }
 
     private Task<IReadOnlyList<Planner>> ListBySpecInternalAsync(ISpecification<Planner> specification, CancellationToken cancellationToken)
@@ -180,7 +180,7 @@ public sealed class FileSystemPlannerRepository : IPlannerRepository
         _ = cancellationToken;
         if (specification is null) throw new ArgumentNullException(nameof(specification));
         var all = LoadAll();
-        return Task.FromResult((IReadOnlyList<Planner>)InMemorySpecificationEvaluator.Apply(all, specification).ToList());
+        return Task.FromResult((IReadOnlyList<Planner>)GitForest.Core.Persistence.SpecificationEvaluator.Apply(all, specification).ToList());
     }
 
     private List<Planner> LoadAll()

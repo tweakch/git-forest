@@ -109,7 +109,7 @@ public sealed class InMemoryPlantRepository : IPlantRepository
             all = _plants.Values.ToList();
         }
 
-        return Task.FromResult(InMemorySpecificationEvaluator.Apply(all, specification).FirstOrDefault());
+        return Task.FromResult(GitForest.Core.Persistence.SpecificationEvaluator.Apply(all, specification).FirstOrDefault());
     }
 
     private Task<Plant?> GetBySpecInternalAsync(ISpecification<Plant> specification, CancellationToken cancellationToken)
@@ -123,7 +123,7 @@ public sealed class InMemoryPlantRepository : IPlantRepository
             all = _plants.Values.ToList();
         }
 
-        return Task.FromResult(InMemorySpecificationEvaluator.Apply(all, specification).FirstOrDefault());
+        return Task.FromResult(GitForest.Core.Persistence.SpecificationEvaluator.Apply(all, specification).FirstOrDefault());
     }
 
     private Task<IReadOnlyList<T>> ListBySpecInternalAsync<T>(ISpecification<Plant, T> specification, CancellationToken cancellationToken)
@@ -137,7 +137,7 @@ public sealed class InMemoryPlantRepository : IPlantRepository
             all = _plants.Values.ToList();
         }
 
-        return Task.FromResult((IReadOnlyList<T>)InMemorySpecificationEvaluator.Apply(all, specification).ToList());
+        return Task.FromResult((IReadOnlyList<T>)GitForest.Core.Persistence.SpecificationEvaluator.Apply(all, specification).ToList());
     }
 
     private Task<IReadOnlyList<Plant>> ListBySpecInternalAsync(ISpecification<Plant> specification, CancellationToken cancellationToken)
@@ -151,7 +151,7 @@ public sealed class InMemoryPlantRepository : IPlantRepository
             all = _plants.Values.ToList();
         }
 
-        return Task.FromResult((IReadOnlyList<Plant>)InMemorySpecificationEvaluator.Apply(all, specification).ToList());
+        return Task.FromResult((IReadOnlyList<Plant>)GitForest.Core.Persistence.SpecificationEvaluator.Apply(all, specification).ToList());
     }
 }
 

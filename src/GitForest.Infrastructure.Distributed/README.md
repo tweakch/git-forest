@@ -28,18 +28,13 @@ Use `ServiceCollectionExtensions` to register Orleans services:
 services.AddOrleansDistributedInfrastructure(config =>
 {
     config.UseMemoryStorage = true;
-    config.SiloPort = 11111;
-    config.GatewayPort = 30000;
 });
 ```
 
 For client applications:
 
 ```csharp
-services.AddOrleansClient(config =>
-{
-    // Configuration options
-});
+services.AddOrleansClient();
 ```
 
 ## Architecture

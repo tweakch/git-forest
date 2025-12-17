@@ -49,13 +49,8 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Adds Orleans client for connecting to a distributed cluster.
     /// </summary>
-    public static IServiceCollection AddOrleansClient(
-        this IServiceCollection services,
-        Action<OrleansConfiguration>? configure = null)
+    public static IServiceCollection AddOrleansClient(this IServiceCollection services)
     {
-        var config = new OrleansConfiguration();
-        configure?.Invoke(config);
-
         services.AddOrleansClient(clientBuilder =>
         {
             clientBuilder.UseLocalhostClustering();

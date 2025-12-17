@@ -29,7 +29,6 @@ public class OrleansRepositoryProdTests
         {
             siloBuilder.UseLocalhostClustering();
             siloBuilder.AddMemoryGrainStorage("Default");
-            siloBuilder.AddMemoryGrainStorage("PubSubStore");
         });
         
         builder.ConfigureServices(services =>

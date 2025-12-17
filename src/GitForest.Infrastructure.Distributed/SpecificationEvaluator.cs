@@ -126,7 +126,15 @@ public class SpecificationEvaluator : ISpecificationEvaluator
         if (selectorObj is LambdaExpression lambda)
         {
             var del = lambda.Compile();
-            return filtered.Select(x => (TResult)del.DynamicInvoke(x)!);
+            return filtered.Select(item =>
+            {
+                var result = del.DynamicInvoke(item);
+                if (result is null)
+                {
+                    throw new InvalidOperationException($"Selector returned null for input: {item}");
+                }
+                return (TResult)result;
+            });
         }
 
         return filtered.Cast<TResult>();

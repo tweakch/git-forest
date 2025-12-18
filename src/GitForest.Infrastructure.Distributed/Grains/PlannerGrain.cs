@@ -17,11 +17,33 @@ public class PlannerGrain : Grain, IPlannerGrain
 
     public Task<Planner?> GetAsync()
     {
-        return Task.FromResult(_state.State);
+        var planner = _state.State;
+        if (planner is null)
+            return Task.FromResult<Planner?>(null);
+
+        // Some storage providers initialize reference types to a default instance
+        // even when no record exists yet. Treat an empty Id as "no planner stored".
+        if (string.IsNullOrWhiteSpace(planner.Id))
+            return Task.FromResult<Planner?>(null);
+
+        return Task.FromResult<Planner?>(planner);
     }
 
     public async Task SetAsync(Planner planner)
     {
+        if (planner is null)
+            throw new ArgumentNullException(nameof(planner));
+
+        var key = this.GetPrimaryKeyString();
+        if (string.IsNullOrWhiteSpace(key))
+            throw new InvalidOperationException("Planner grain key was not available.");
+
+        // Keep persisted state consistent with grain identity.
+        if (string.IsNullOrWhiteSpace(planner.Id))
+            planner.Id = key;
+        else if (!string.Equals(planner.Id.Trim(), key, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"Planner.Id '{planner.Id}' does not match grain key '{key}'.");
+
         _state.State = planner;
         await _state.WriteStateAsync();
     }

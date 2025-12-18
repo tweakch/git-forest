@@ -15,14 +15,13 @@ namespace GitForest.Infrastructure.Distributed.IntegrationTests;
 [TestFixture]
 [Category("Orleans")]
 [Category("Integration")]
-[Explicit("Orleans serialization configuration pending")]
 public class OrleansRepositoryProdTests
 {
     private IHost? _host;
     private IServiceProvider? _services;
 
-    [SetUp]
-    public async Task Setup()
+    [OneTimeSetUp]
+    public async Task OneTimeSetup()
     {
         // Create host with Orleans silo using persistent storage
         var builder = Host.CreateDefaultBuilder();
@@ -53,13 +52,10 @@ public class OrleansRepositoryProdTests
         await _host.StartAsync();
 
         _services = _host.Services;
-
-        // Wait for Orleans to be ready
-        await Task.Delay(1000);
     }
 
-    [TearDown]
-    public async Task TearDown()
+    [OneTimeTearDown]
+    public async Task OneTimeTearDown()
     {
         if (_host is not null)
         {

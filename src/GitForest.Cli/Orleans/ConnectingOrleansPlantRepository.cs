@@ -15,7 +15,8 @@ internal sealed class ConnectingOrleansPlantRepository : IPlantRepository
         _client = client ?? throw new ArgumentNullException(nameof(client));
     }
 
-    private OrleansPlantRepository Inner => _inner ??= new OrleansPlantRepository(_client.GrainFactory);
+    private OrleansPlantRepository Inner =>
+        _inner ??= new OrleansPlantRepository(_client.GrainFactory);
 
     private Task EnsureConnectedAsync(CancellationToken cancellationToken)
     {
@@ -82,4 +83,3 @@ internal sealed class ConnectingOrleansPlantRepository : IPlantRepository
         await Inner.DeleteAsync(entity, cancellationToken);
     }
 }
-

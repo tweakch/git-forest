@@ -95,7 +95,8 @@ public static class ConfigCommand
         var setCommand = new Command("set", "Set a configuration value");
         var keyArg = new Argument<string>("key")
         {
-            Description = "Config key (persistence.provider | orleans.gatewayHost | orleans.gatewayPort | orleans.clusterId | orleans.serviceId)",
+            Description =
+                "Config key (persistence.provider | orleans.gatewayHost | orleans.gatewayPort | orleans.clusterId | orleans.serviceId)",
         };
         var valueArg = new Argument<string>("value") { Description = "Value to set" };
         setCommand.Arguments.Add(keyArg);
@@ -127,7 +128,9 @@ public static class ConfigCommand
                     var provider = value.ToLowerInvariant();
                     if (provider is not "orleans" and not "file" and not "memory")
                     {
-                        output.WriteErrorLine("Error: provider must be one of: orleans, file, memory");
+                        output.WriteErrorLine(
+                            "Error: provider must be one of: orleans, file, memory"
+                        );
                         return ExitCodes.InvalidArguments;
                     }
 
@@ -141,17 +144,25 @@ public static class ConfigCommand
                         return ExitCodes.InvalidArguments;
                     }
 
-                    updated = current with { Orleans = current.Orleans with { GatewayHost = value } };
+                    updated = current with
+                    {
+                        Orleans = current.Orleans with { GatewayHost = value },
+                    };
                 }
                 else if (key.Equals("orleans.gatewayPort", StringComparison.OrdinalIgnoreCase))
                 {
                     if (!int.TryParse(value, out var port) || port <= 0 || port > 65535)
                     {
-                        output.WriteErrorLine("Error: orleans.gatewayPort must be an integer 1..65535");
+                        output.WriteErrorLine(
+                            "Error: orleans.gatewayPort must be an integer 1..65535"
+                        );
                         return ExitCodes.InvalidArguments;
                     }
 
-                    updated = current with { Orleans = current.Orleans with { GatewayPort = port } };
+                    updated = current with
+                    {
+                        Orleans = current.Orleans with { GatewayPort = port },
+                    };
                 }
                 else if (key.Equals("orleans.clusterId", StringComparison.OrdinalIgnoreCase))
                 {

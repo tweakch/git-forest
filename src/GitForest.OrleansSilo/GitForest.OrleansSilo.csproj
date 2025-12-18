@@ -16,4 +16,3 @@
     <ProjectReference Include="..\GitForest.Infrastructure.Distributed\GitForest.Infrastructure.Distributed.csproj" />
   </ItemGroup>
 </Project>
-

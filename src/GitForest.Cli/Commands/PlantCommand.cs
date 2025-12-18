@@ -476,7 +476,10 @@ public static class PlantCommand
     {
         if (output.Json)
         {
-            output.WriteJsonError(code: "forest_not_initialized", message: "Forest not initialized");
+            output.WriteJsonError(
+                code: "forest_not_initialized",
+                message: "Forest not initialized"
+            );
         }
         else
         {
@@ -521,7 +524,9 @@ public static class PlantCommand
         }
         else
         {
-            output.WriteErrorLine($"Plant '{selector}': ambiguous; matched {matches.Length} plants");
+            output.WriteErrorLine(
+                $"Plant '{selector}': ambiguous; matched {matches.Length} plants"
+            );
             if (printMatches)
             {
                 foreach (var key in matches.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))

@@ -41,7 +41,9 @@ public class PlantGrain : Grain, IPlantGrain
         if (string.IsNullOrWhiteSpace(plant.Key))
             plant.Key = key;
         else if (!string.Equals(plant.Key.Trim(), key, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException($"Plant.Key '{plant.Key}' does not match grain key '{key}'.");
+            throw new InvalidOperationException(
+                $"Plant.Key '{plant.Key}' does not match grain key '{key}'."
+            );
 
         _state.State = plant;
         await _state.WriteStateAsync();

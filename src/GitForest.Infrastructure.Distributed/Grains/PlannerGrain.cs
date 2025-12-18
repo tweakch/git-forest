@@ -41,7 +41,9 @@ public class PlannerGrain : Grain, IPlannerGrain
         if (string.IsNullOrWhiteSpace(planner.Id))
             planner.Id = key;
         else if (!string.Equals(planner.Id.Trim(), key, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException($"Planner.Id '{planner.Id}' does not match grain key '{key}'.");
+            throw new InvalidOperationException(
+                $"Planner.Id '{planner.Id}' does not match grain key '{key}'."
+            );
 
         _state.State = planner;
         await _state.WriteStateAsync();

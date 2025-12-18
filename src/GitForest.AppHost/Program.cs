@@ -9,7 +9,8 @@ var orleans = builder
     .WithMemoryGrainStorage("Default");
 
 // Host a local silo which serves GitForest grains.
-builder.AddProject(
+builder
+    .AddProject(
         name: "gitforest-silo",
         projectPath: "../GitForest.OrleansSilo/GitForest.OrleansSilo.csproj"
     )

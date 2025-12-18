@@ -50,7 +50,9 @@ public static class MigrateCommand
                     }
                     else
                     {
-                        output.WriteErrorLine("Error: invalid provider; expected orleans|file|memory");
+                        output.WriteErrorLine(
+                            "Error: invalid provider; expected orleans|file|memory"
+                        );
                     }
 
                     return ExitCodes.InvalidArguments;
@@ -85,8 +87,10 @@ public static class MigrateCommand
 
                 var effective = ForestConfigReader.ReadEffective(forestDir);
 
-                await using var sourceAccessor = from == "orleans" ? new OrleansClientAccessor(effective) : null;
-                await using var destAccessor = to == "orleans" ? new OrleansClientAccessor(effective) : null;
+                await using var sourceAccessor =
+                    from == "orleans" ? new OrleansClientAccessor(effective) : null;
+                await using var destAccessor =
+                    to == "orleans" ? new OrleansClientAccessor(effective) : null;
 
                 var source = CreatePlantRepository(from, forestDir, sourceAccessor);
                 var dest = CreatePlantRepository(to, forestDir, destAccessor);
@@ -188,10 +192,11 @@ public static class MigrateCommand
             AssignedPlanters = source.AssignedPlanters is null
                 ? new List<string>()
                 : new List<string>(source.AssignedPlanters),
-            Branches = source.Branches is null ? new List<string>() : new List<string>(source.Branches),
+            Branches = source.Branches is null
+                ? new List<string>()
+                : new List<string>(source.Branches),
             CreatedDate = source.CreatedDate,
             LastActivityDate = source.LastActivityDate,
         };
     }
 }
-

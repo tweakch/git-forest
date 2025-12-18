@@ -139,4 +139,3 @@ internal static class PlanFileMapper
         return string.Empty;
     }
 }
-

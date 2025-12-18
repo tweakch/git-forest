@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using System.CommandLine;
+using System.Diagnostics;
 using GitForest.Cli.Orleans;
 using MediatR;
 using AppForest = GitForest.Application.Features.Forest;
@@ -20,15 +20,18 @@ public static class InitCommand
         };
         var hostingOption = new Option<string?>("--hosting")
         {
-            Description = "Hosting model / persistence provider (orleans|file|memory). If omitted, prompts in interactive mode.",
+            Description =
+                "Hosting model / persistence provider (orleans|file|memory). If omitted, prompts in interactive mode.",
         };
         var setupOption = new Option<bool>("--setup")
         {
-            Description = "If using orleans and no local cluster is found, attempt local setup (install Aspire workload and start AppHost).",
+            Description =
+                "If using orleans and no local cluster is found, attempt local setup (install Aspire workload and start AppHost).",
         };
         var fallbackToOption = new Option<string?>("--fallback-to")
         {
-            Description = "If using orleans and setup/connect fails, fall back to another provider (file|memory).",
+            Description =
+                "If using orleans and setup/connect fails, fall back to another provider (file|memory).",
         };
 
         command.Options.Add(forceOption);
@@ -147,7 +150,8 @@ public static class InitCommand
                             output.WriteErrorLine($"Details: {error}");
                         }
 
-                        var doSetup = setup
+                        var doSetup =
+                            setup
                             || PromptYesNo(
                                 "Set up local Orleans now? (installs Aspire workload and starts AppHost)",
                                 defaultYes: true
@@ -158,7 +162,11 @@ public static class InitCommand
                             var setupOk = await TrySetupLocalOrleansAsync(output, token);
                             if (setupOk)
                             {
-                                var ready = await WaitForOrleansAsync(updated, TimeSpan.FromSeconds(20), token);
+                                var ready = await WaitForOrleansAsync(
+                                    updated,
+                                    TimeSpan.FromSeconds(20),
+                                    token
+                                );
                                 if (!ready)
                                 {
                                     output.WriteErrorLine(
@@ -168,7 +176,11 @@ public static class InitCommand
                             }
                         }
 
-                        var finalOk = await WaitForOrleansAsync(updated, TimeSpan.FromSeconds(3), token);
+                        var finalOk = await WaitForOrleansAsync(
+                            updated,
+                            TimeSpan.FromSeconds(3),
+                            token
+                        );
                         if (!finalOk)
                         {
                             var fallback = NormalizeProvider(fallbackTo);
@@ -203,7 +215,9 @@ public static class InitCommand
                 }
                 else
                 {
-                    output.WriteLine($"initialized ({result.DirectoryOptionValue}) provider={updated.PersistenceProvider}");
+                    output.WriteLine(
+                        $"initialized ({result.DirectoryOptionValue}) provider={updated.PersistenceProvider}"
+                    );
                 }
 
                 return ExitCodes.Success;
@@ -302,7 +316,10 @@ public static class InitCommand
         return false;
     }
 
-    private static async Task<bool> TrySetupLocalOrleansAsync(Output output, CancellationToken cancellationToken)
+    private static async Task<bool> TrySetupLocalOrleansAsync(
+        Output output,
+        CancellationToken cancellationToken
+    )
     {
         // Local environment setup (v1): start the GitForest Aspire AppHost from this repo.
         // We intentionally keep this scope narrow for now.

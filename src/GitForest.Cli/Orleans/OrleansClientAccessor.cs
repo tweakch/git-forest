@@ -60,9 +60,10 @@ internal sealed class OrleansClientAccessor : IAsyncDisposable
             var gatewayHost = string.IsNullOrWhiteSpace(orleans.GatewayHost)
                 ? ForestConfigReader.DefaultOrleansGatewayHost
                 : orleans.GatewayHost.Trim();
-            var gatewayPort = orleans.GatewayPort <= 0
-                ? ForestConfigReader.DefaultOrleansGatewayPort
-                : orleans.GatewayPort;
+            var gatewayPort =
+                orleans.GatewayPort <= 0
+                    ? ForestConfigReader.DefaultOrleansGatewayPort
+                    : orleans.GatewayPort;
 
             if (!string.Equals(gatewayHost, "localhost", StringComparison.OrdinalIgnoreCase))
             {
@@ -121,4 +122,3 @@ internal sealed class OrleansClientAccessor : IAsyncDisposable
         }
     }
 }
-

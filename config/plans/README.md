@@ -202,3 +202,87 @@ git-forest plants list --plan secret-hygiene
 # 4. Show details of a specific plant
 git-forest plant secret-hygiene:remove-hardcoded-secret show
 ```
+
+### Walkthrough: `developer-experience` (install → reconcile → plant → grow → harvest)
+
+This is a practical end-to-end flow that starts from a brand-new repo and ends with a harvested plant.
+
+> Tip: You can use `git-forest` or the shorter alias `gf` (e.g. in PowerShell: `Set-Alias gf git-forest`).
+
+#### 1) Install git-forest + initialize your forest
+
+```bash
+# Install the CLI (once per machine)
+dotnet tool install --global git-forest
+
+# In the git repo you want to improve:
+git-forest init
+git-forest status
+```
+
+#### 2) Install the `developer-experience` plan
+
+```bash
+git-forest plans install config/plans/team-process/developer-experience.yaml
+git-forest plans list
+```
+
+#### 3) Reconcile the plan to generate plants (work items)
+
+```bash
+# Default forum comes from .git-forest/config.yaml (falls back to "file").
+git-forest plan developer-experience reconcile
+
+# (Optional) Force the local, deterministic file forum:
+git-forest plan developer-experience reconcile --forum file
+```
+
+Now you should have a set of plants created by the plan’s planners.
+
+```bash
+git-forest plants list --plan developer-experience
+git-forest plants list --plan developer-experience --status planned
+```
+
+#### 4) Pick a plant and “plant” it (assign a planter + create a working branch)
+
+Choose a plant selector from the list (full key like `developer-experience:...`, or `P01` if shown).
+
+```bash
+# Show details (helps you pick the right planter)
+git-forest plant P01 show
+
+# See available planters
+git-forest planters list
+
+# Plant it with one of the plan’s planters (creates/checks out a branch)
+git-forest planter dx-improver plant P01 --branch auto --yes
+
+# Alternative planter in this plan:
+git-forest planter build-optimizer plant P01 --branch auto --yes
+```
+
+#### 5) Grow the plant (propose or apply changes)
+
+```bash
+# Safe / review-first: generate a proposal (no direct application)
+git-forest planter dx-improver grow P01 --mode propose
+
+# If allowed by policy/config: apply changes
+git-forest planter dx-improver grow P01 --mode apply
+```
+
+At this point the plant should become `harvestable` (meaning: the work is ready to be “picked up” and integrated, e.g. via a PR merge).
+
+```bash
+git-forest plants list --plan developer-experience --status harvestable
+```
+
+#### 6) Harvest the fruits (mark the plant as harvested)
+
+Once the improvement is integrated (e.g. PR merged / changes applied), mark the plant as harvested:
+
+```bash
+git-forest plant P01 harvest
+git-forest plants list --plan developer-experience --status harvested
+```

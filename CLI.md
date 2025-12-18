@@ -197,7 +197,7 @@ gf plans remove <plan-id> [--purge-plants] [--yes]
 Default action is reconcile.
 
 ```bash
-gf plan <plan-id> [reconcile] [--update] [--only <scope>] [--dry-run] [--json]
+gf plan <plan-id> [reconcile] [--update] [--forum ai|file] [--only <scope>] [--dry-run] [--json]
 ```
 
 **Contract (important):**
@@ -209,6 +209,18 @@ gf plan <plan-id> [reconcile] [--update] [--only <scope>] [--dry-run] [--json]
   * update plan-owned fields
   * mark removed plants as `archived` (never delete unless `--purge`)
 * Never overwrites user-owned fields.
+
+**Forum selection:**
+
+* Default forum comes from `.git-forest/config.yaml`:
+
+  ```yaml
+  reconcile:
+    forum: file   # or ai
+  ```
+
+* Override per-run with `--forum ai|file` (takes precedence over config).
+* `ai` runs one agent call per planner id (multi-agent) and aggregates results deterministically.
 
 Human output:
 

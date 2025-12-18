@@ -334,9 +334,10 @@ public sealed class HandlerAndRepositoryTests
         };
 
         var forum = new FlippingOrderForum(desired);
-        var reconciler = new ForumPlanReconciler(plans, plants, forum);
+        // ForumPlanReconciler expects a forum router; use a test adapter that delegates to a forum.
+        var reconciler = new ForumPlanReconciler(plans, plants, new ForumRouterAdapter(forum));
 
-        var (pid1, created1, updated1) = await reconciler.ReconcileAsync(planId, dryRun: false, CancellationToken.None);
+        var (pid1, created1, updated1) = await reconciler.ReconcileAsync(planId, dryRun: false, forum: null, cancellationToken: CancellationToken.None);
         Assert.That(pid1, Is.EqualTo(planId));
         Assert.That(created1, Is.EqualTo(3));
         Assert.That(updated1, Is.EqualTo(0));
@@ -361,7 +362,7 @@ public sealed class HandlerAndRepositoryTests
         Assert.That(pDupe.AssignedPlanters, Is.EqualTo(new[] { "a", "b" }));
 
         // Second run returns the same set but in a different order; should result in no creates/updates.
-        var (pid2, created2, updated2) = await reconciler.ReconcileAsync(planId, dryRun: false, CancellationToken.None);
+        var (pid2, created2, updated2) = await reconciler.ReconcileAsync(planId, dryRun: false, forum: null, cancellationToken: CancellationToken.None);
         Assert.That(pid2, Is.EqualTo(planId));
         Assert.That(created2, Is.EqualTo(0));
         Assert.That(updated2, Is.EqualTo(0));
@@ -404,9 +405,9 @@ public sealed class HandlerAndRepositoryTests
                 AssignedPlanters: new[] { "y" })
         }));
 
-        var reconciler = new ForumPlanReconciler(plans, plants, forum);
+        var reconciler = new ForumPlanReconciler(plans, plants, new ForumRouterAdapter(forum));
 
-        var (_, created, updated) = await reconciler.ReconcileAsync(planId, dryRun: false, CancellationToken.None);
+        var (_, created, updated) = await reconciler.ReconcileAsync(planId, dryRun: false, forum: null, cancellationToken: CancellationToken.None);
         Assert.That(created, Is.EqualTo(0));
         Assert.That(updated, Is.EqualTo(1));
 
@@ -418,6 +419,22 @@ public sealed class HandlerAndRepositoryTests
         Assert.That(persisted.Description, Is.EqualTo("New"));
         Assert.That(persisted.AssignedPlanters, Is.EqualTo(new[] { "y" }));
         Assert.That(persisted.Branches, Is.EqualTo(new[] { "some/branch" }), "Branches should be preserved across reconcile");
+    }
+
+    private sealed class ForumRouterAdapter : IReconciliationForumRouter
+    {
+        private readonly IReconciliationForum _forum;
+
+        public ForumRouterAdapter(IReconciliationForum forum)
+        {
+            _forum = forum ?? throw new ArgumentNullException(nameof(forum));
+        }
+
+        public Task<ReconciliationStrategy> RunAsync(ReconcileContext context, string? forumOverride, CancellationToken cancellationToken = default)
+        {
+            _ = forumOverride;
+            return _forum.RunAsync(context, cancellationToken);
+        }
     }
 
     private sealed class StaticForum : IReconciliationForum

@@ -21,11 +21,16 @@ public static class PlanCommand
         {
             Description = "Update plan before reconciling"
         };
+        var forumOption = new Option<string?>("--forum")
+        {
+            Description = "Reconciliation forum to use (ai|file). Overrides config reconcile.forum"
+        };
         var dryRunOption = new Option<bool>("--dry-run")
         {
             Description = "Show what would be done without applying"
         };
         reconcileCommand.Options.Add(updateOption);
+        reconcileCommand.Options.Add(forumOption);
         reconcileCommand.Options.Add(dryRunOption);
 
         reconcileCommand.SetAction(async (parseResult, token) =>
@@ -33,9 +38,11 @@ public static class PlanCommand
             var output = parseResult.GetOutput(cliOptions);
             var planId = parseResult.GetRequiredValue(planIdArg);
             var update = parseResult.GetValue(updateOption);
+            var forum = parseResult.GetValue(forumOption);
             var dryRun = parseResult.GetValue(dryRunOption);
 
             _ = update; // not implemented yet
+            forum = string.IsNullOrWhiteSpace(forum) ? null : forum.Trim();
 
             try
             {
@@ -45,7 +52,7 @@ public static class PlanCommand
                     throw new ForestStore.ForestNotInitializedException(forestDir);
                 }
 
-                var result = await mediator.Send(new AppPlans.ReconcilePlanCommand(PlanId: planId, DryRun: dryRun), token);
+                var result = await mediator.Send(new AppPlans.ReconcilePlanCommand(PlanId: planId, DryRun: dryRun, Forum: forum), token);
 
                 if (output.Json)
                 {

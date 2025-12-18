@@ -16,18 +16,19 @@ public sealed class ForumPlanReconciler : IPlanReconciler
 {
     private readonly IPlanRepository _plans;
     private readonly IPlantRepository _plants;
-    private readonly IReconciliationForum _forum;
+    private readonly IReconciliationForumRouter _forums;
 
-    public ForumPlanReconciler(IPlanRepository plans, IPlantRepository plants, IReconciliationForum forum)
+    public ForumPlanReconciler(IPlanRepository plans, IPlantRepository plants, IReconciliationForumRouter forums)
     {
         _plans = plans ?? throw new ArgumentNullException(nameof(plans));
         _plants = plants ?? throw new ArgumentNullException(nameof(plants));
-        _forum = forum ?? throw new ArgumentNullException(nameof(forum));
+        _forums = forums ?? throw new ArgumentNullException(nameof(forums));
     }
 
     public async Task<(string planId, int plantsCreated, int plantsUpdated)> ReconcileAsync(
         string planId,
         bool dryRun,
+        string? forum = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(planId))
@@ -52,7 +53,7 @@ public sealed class ForumPlanReconciler : IPlanReconciler
             ExistingPlants: existingPlants,
             Repository: string.IsNullOrWhiteSpace(plan.Repository) ? null : plan.Repository);
 
-        var strategy = await _forum.RunAsync(context, cancellationToken);
+        var strategy = await _forums.RunAsync(context, forum, cancellationToken);
         var desired = NormalizeDesiredPlants(id, strategy?.DesiredPlants);
 
         var existingByKey = existingPlants

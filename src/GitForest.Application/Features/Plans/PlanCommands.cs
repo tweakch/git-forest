@@ -24,7 +24,7 @@ internal sealed class InstallPlanHandler : IRequestHandler<InstallPlanCommand, I
     }
 }
 
-public sealed record ReconcilePlanCommand(string PlanId, bool DryRun) : IRequest<ReconcileResult>;
+public sealed record ReconcilePlanCommand(string PlanId, bool DryRun, string? Forum = null) : IRequest<ReconcileResult>;
 
 public sealed record ReconcileResult(string PlanId, int PlantsCreated, int PlantsUpdated);
 
@@ -53,7 +53,7 @@ internal sealed class ReconcilePlanHandler : IRequestHandler<ReconcilePlanComman
 
         try
         {
-            var (planId, created, updated) = await _reconciler.ReconcileAsync(request.PlanId, request.DryRun, cancellationToken);
+            var (planId, created, updated) = await _reconciler.ReconcileAsync(request.PlanId, request.DryRun, request.Forum, cancellationToken);
             return new ReconcileResult(PlanId: planId, PlantsCreated: created, PlantsUpdated: updated);
         }
         catch (DirectoryNotFoundException)

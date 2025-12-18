@@ -26,6 +26,7 @@ internal sealed class ShowConfigHandler : IRequestHandler<ShowConfigQuery, ShowC
             config = ForestConfigReader.TryRead(forestDir) ?? new ForestConfig(
                 PersistenceProvider: string.Empty,
                 LocksTimeoutSeconds: 0,
+                Reconcile: new ReconcileConfig(Forum: string.Empty),
                 Llm: new LlmConfig(Provider: string.Empty, Model: string.Empty, BaseUrl: string.Empty, ApiKeyEnvVar: string.Empty, Temperature: 0));
         }
 

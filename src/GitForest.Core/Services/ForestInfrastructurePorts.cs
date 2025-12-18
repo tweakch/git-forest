@@ -29,6 +29,10 @@ public interface IPlanInstaller
 /// </summary>
 public interface IPlanReconciler
 {
-    Task<(string planId, int plantsCreated, int plantsUpdated)> ReconcileAsync(string planId, bool dryRun, CancellationToken cancellationToken = default);
+    Task<(string planId, int plantsCreated, int plantsUpdated)> ReconcileAsync(
+        string planId,
+        bool dryRun,
+        string? forum = null,
+        CancellationToken cancellationToken = default);
 }
 

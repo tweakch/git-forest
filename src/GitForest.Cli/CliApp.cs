@@ -6,6 +6,7 @@ using GitForest.Infrastructure.FileSystem.Llm;
 using GitForest.Infrastructure.FileSystem.Plans;
 using GitForest.Infrastructure.FileSystem.Repositories;
 using GitForest.Infrastructure.Memory;
+using GitForest.Cli.Reconciliation;
 using GitForest.Cli.Commands;
 using GitForest.Application.Features.Plans;
 using GitForest.Application.Features.Plants;
@@ -73,7 +74,12 @@ public static class CliApp
         services.AddSingleton<IForestInitializer>(_ => new FileSystemForestInitializer());
         services.AddSingleton<ILockStatusProvider>(_ => new FileSystemLockStatusProvider(forestDir));
         services.AddSingleton<IPlanInstaller>(_ => new FileSystemPlanInstaller(forestDir));
-        services.AddSingleton<IReconciliationForum>(_ => new FileSystemReconciliationForum(forestDir));
+        services.AddSingleton<FileSystemReconciliationForum>(_ => new FileSystemReconciliationForum(forestDir));
+        services.AddSingleton<AgentReconciliationForum>();
+        services.AddSingleton<IReconciliationForumRouter>(sp => new ReconciliationForumRouter(
+            config: sp.GetRequiredService<ForestConfig>(),
+            fileForum: sp.GetRequiredService<FileSystemReconciliationForum>(),
+            aiForum: sp.GetRequiredService<AgentReconciliationForum>()));
         services.AddSingleton<IPlanReconciler, ForumPlanReconciler>();
 
         // LLM / agent chat client (default mock for offline determinism).

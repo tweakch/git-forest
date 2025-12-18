@@ -14,8 +14,13 @@ public sealed class FileSystemPlanReconciler : IPlanReconciler
         _forestDir = forestDir ?? string.Empty;
     }
 
-    public Task<(string planId, int plantsCreated, int plantsUpdated)> ReconcileAsync(string planId, bool dryRun, CancellationToken cancellationToken = default)
+    public Task<(string planId, int plantsCreated, int plantsUpdated)> ReconcileAsync(
+        string planId,
+        bool dryRun,
+        string? forum = null,
+        CancellationToken cancellationToken = default)
     {
+        _ = forum;
         _ = cancellationToken;
         if (string.IsNullOrWhiteSpace(planId))
         {

@@ -5,6 +5,7 @@ using GitForest.Cli.Commands;
 using GitForest.Cli.Reconciliation;
 using GitForest.Core.Persistence;
 using GitForest.Core.Services;
+using GitForest.Cli.Orleans;
 using GitForest.Infrastructure.FileSystem.Forest;
 using GitForest.Infrastructure.FileSystem.Llm;
 using GitForest.Infrastructure.FileSystem.Plans;
@@ -39,6 +40,7 @@ public static class CliApp
         rootCommand.Subcommands.Add(InitCommand.Build(options, mediator));
         rootCommand.Subcommands.Add(StatusCommand.Build(options, mediator));
         rootCommand.Subcommands.Add(ConfigCommand.Build(options, mediator));
+        rootCommand.Subcommands.Add(MigrateCommand.Build(options));
         rootCommand.Subcommands.Add(PlansCommand.Build(options, mediator));
         rootCommand.Subcommands.Add(PlanCommand.Build(options, mediator));
         rootCommand.Subcommands.Add(PlantsCommand.Build(options, mediator));
@@ -57,6 +59,12 @@ public static class CliApp
 
         var forestDir = ForestStore.GetDefaultForestDir();
         var forestConfig = ForestConfigReader.ReadEffective(forestDir);
+        if (!ForestStore.IsInitialized(forestDir))
+        {
+            // Avoid connecting to distributed infrastructure before init exists.
+            // Most commands will fail with "forest not initialized" anyway, but startup should remain fast and offline-safe.
+            forestConfig = forestConfig with { PersistenceProvider = "file" };
+        }
         services.AddSingleton(forestConfig);
 
         // MediatR handlers live across multiple assemblies during migration.
@@ -132,19 +140,18 @@ public static class CliApp
                 break;
 
             case "orleans":
-                // Scaffold only: until Orleans infra exists, fall back to file for CLI usability.
-                services.AddSingleton<IPlanRepository>(_ => new FileSystemPlanRepository(
-                    forestDir
-                ));
-                services.AddSingleton<IPlantRepository>(_ => new FileSystemPlantRepository(
-                    forestDir
-                ));
+                // Plans/planters/planners remain file-backed (packages + agent defs live under .git-forest/).
+                services.AddSingleton<IPlanRepository>(_ => new FileSystemPlanRepository(forestDir));
                 services.AddSingleton<IPlanterRepository>(_ => new FileSystemPlanterRepository(
                     forestDir
                 ));
                 services.AddSingleton<IPlannerRepository>(_ => new FileSystemPlannerRepository(
                     forestDir
                 ));
+
+                // Plants are stored in Orleans (distributed persistence).
+                services.AddSingleton<OrleansClientAccessor>();
+                services.AddSingleton<IPlantRepository, ConnectingOrleansPlantRepository>();
                 break;
 
             case "file":

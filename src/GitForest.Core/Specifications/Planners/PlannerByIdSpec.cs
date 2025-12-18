@@ -9,3 +9,4 @@ public sealed class PlannerByIdSpec : Specification<Planner>, ISingleResultSpeci
         Query.Where(p => p.Id == plannerId);
     }
 }
+

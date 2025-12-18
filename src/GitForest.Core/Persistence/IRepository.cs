@@ -10,3 +10,4 @@ public interface IRepository<T, in TId> : IReadRepository<T, TId>
     Task UpdateAsync(T entity, CancellationToken cancellationToken = default);
     Task DeleteAsync(T entity, CancellationToken cancellationToken = default);
 }
+

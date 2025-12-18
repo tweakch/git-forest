@@ -115,3 +115,4 @@ public sealed class OpenAiCompatibleAgentChatClient : IAgentChatClient
         return new AgentChatResponse(RawContent: body, Json: null);
     }
 }
+

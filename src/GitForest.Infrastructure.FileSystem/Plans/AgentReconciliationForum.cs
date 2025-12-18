@@ -17,19 +17,29 @@ public sealed class AgentReconciliationForum : IReconciliationForum
         _chat = chat ?? throw new ArgumentNullException(nameof(chat));
     }
 
-    public async Task<ReconciliationStrategy> RunAsync(ReconcileContext context, CancellationToken cancellationToken = default)
+    public async Task<ReconciliationStrategy> RunAsync(
+        ReconcileContext context,
+        CancellationToken cancellationToken = default
+    )
     {
-        if (context is null) throw new ArgumentNullException(nameof(context));
+        if (context is null)
+            throw new ArgumentNullException(nameof(context));
         if (string.IsNullOrWhiteSpace(context.PlanId))
         {
-            return new ReconciliationStrategy(Array.Empty<DesiredPlant>(), Summary: "ai:empty-plan-id");
+            return new ReconciliationStrategy(
+                Array.Empty<DesiredPlant>(),
+                Summary: "ai:empty-plan-id"
+            );
         }
 
         var planId = context.PlanId.Trim();
         var planners = context.Plan?.Planners ?? new List<string>();
         if (planners.Count == 0)
         {
-            return new ReconciliationStrategy(Array.Empty<DesiredPlant>(), Summary: "ai:no-planners");
+            return new ReconciliationStrategy(
+                Array.Empty<DesiredPlant>(),
+                Summary: "ai:no-planners"
+            );
         }
 
         var existing = context.ExistingPlants ?? Array.Empty<Plant>();
@@ -41,7 +51,9 @@ public sealed class AgentReconciliationForum : IReconciliationForum
         var metadata = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["forum"] = "ai",
-            ["plannerCount"] = planners.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            ["plannerCount"] = planners.Count.ToString(
+                System.Globalization.CultureInfo.InvariantCulture
+            ),
         };
 
         for (var i = 0; i < planners.Count; i++)
@@ -57,18 +69,29 @@ public sealed class AgentReconciliationForum : IReconciliationForum
                 var request = new AgentChatRequest(
                     AgentId: plannerId,
                     SystemPrompt: BuildSystemPrompt(plannerId),
-                    UserPrompt: BuildUserPrompt(planId, plannerId, context.Repository, existingSnapshot),
+                    UserPrompt: BuildUserPrompt(
+                        planId,
+                        plannerId,
+                        context.Repository,
+                        existingSnapshot
+                    ),
                     Temperature: 0,
                     Model: null,
                     Metadata: new Dictionary<string, string>(StringComparer.Ordinal)
                     {
                         ["planId"] = planId,
                         ["plannerId"] = plannerId,
-                        ["forum"] = "ai"
-                    });
+                        ["forum"] = "ai",
+                    }
+                );
 
                 var response = await _chat.ChatAsync(request, cancellationToken);
-                var parsed = TryParseResponse(response, out var plants, out var summary, out var error);
+                var parsed = TryParseResponse(
+                    response,
+                    out var plants,
+                    out var summary,
+                    out var error
+                );
 
                 if (!string.IsNullOrWhiteSpace(summary))
                 {
@@ -95,13 +118,16 @@ public sealed class AgentReconciliationForum : IReconciliationForum
                     }
 
                     usedSlugs.Add(p.Slug);
-                    desired.Add(new DesiredPlant(
-                        Key: $"{planId}:{p.Slug}",
-                        Slug: p.Slug,
-                        Title: p.Title,
-                        Description: p.Description,
-                        PlannerId: plannerId,
-                        AssignedPlanters: p.AssignedPlanters));
+                    desired.Add(
+                        new DesiredPlant(
+                            Key: $"{planId}:{p.Slug}",
+                            Slug: p.Slug,
+                            Title: p.Title,
+                            Description: p.Description,
+                            PlannerId: plannerId,
+                            AssignedPlanters: p.AssignedPlanters
+                        )
+                    );
                 }
             }
             catch (Exception ex)
@@ -117,43 +143,46 @@ public sealed class AgentReconciliationForum : IReconciliationForum
 
     private static string BuildSystemPrompt(string plannerId)
     {
-        return
-            "You are a git-forest planner agent.\n" +
-            "Your job is to propose desired plants for a plan reconcile.\n" +
-            $"You are plannerId='{plannerId}'.\n" +
-            "Return JSON only (no Markdown), matching the requested schema.\n" +
-            "Be deterministic: do not use randomness.";
+        return "You are a git-forest planner agent.\n"
+            + "Your job is to propose desired plants for a plan reconcile.\n"
+            + $"You are plannerId='{plannerId}'.\n"
+            + "Return JSON only (no Markdown), matching the requested schema.\n"
+            + "Be deterministic: do not use randomness.";
     }
 
-    private static string BuildUserPrompt(string planId, string plannerId, string? repository, string existingPlants)
+    private static string BuildUserPrompt(
+        string planId,
+        string plannerId,
+        string? repository,
+        string existingPlants
+    )
     {
         var repo = string.IsNullOrWhiteSpace(repository) ? "" : repository.Trim();
-        return
-            "Reconcile plan into desired plants.\n" +
-            $"planId: {planId}\n" +
-            (repo.Length == 0 ? "" : $"repository: {repo}\n") +
-            $"plannerId: {plannerId}\n" +
-            "\n" +
-            "Existing plants snapshot (for context; do not duplicate slugs if avoidable):\n" +
-            existingPlants +
-            "\n" +
-            "Output JSON object with this schema:\n" +
-            "{\n" +
-            "  \"desiredPlants\": [\n" +
-            "    {\n" +
-            "      \"slug\": \"kebab-case-slug\",\n" +
-            "      \"title\": \"Short title\",\n" +
-            "      \"description\": \"Optional longer description\",\n" +
-            "      \"assignedPlanters\": [\"optional-planter-id\"]\n" +
-            "    }\n" +
-            "  ],\n" +
-            "  \"summary\": \"optional short summary\"\n" +
-            "}\n" +
-            "\n" +
-            "Rules:\n" +
-            "- Provide 0..10 desiredPlants.\n" +
-            "- Each slug must be unique within the response.\n" +
-            "- Use deterministic slugs; avoid timestamps, hashes, or random suffixes.\n";
+        return "Reconcile plan into desired plants.\n"
+            + $"planId: {planId}\n"
+            + (repo.Length == 0 ? "" : $"repository: {repo}\n")
+            + $"plannerId: {plannerId}\n"
+            + "\n"
+            + "Existing plants snapshot (for context; do not duplicate slugs if avoidable):\n"
+            + existingPlants
+            + "\n"
+            + "Output JSON object with this schema:\n"
+            + "{\n"
+            + "  \"desiredPlants\": [\n"
+            + "    {\n"
+            + "      \"slug\": \"kebab-case-slug\",\n"
+            + "      \"title\": \"Short title\",\n"
+            + "      \"description\": \"Optional longer description\",\n"
+            + "      \"assignedPlanters\": [\"optional-planter-id\"]\n"
+            + "    }\n"
+            + "  ],\n"
+            + "  \"summary\": \"optional short summary\"\n"
+            + "}\n"
+            + "\n"
+            + "Rules:\n"
+            + "- Provide 0..10 desiredPlants.\n"
+            + "- Each slug must be unique within the response.\n"
+            + "- Use deterministic slugs; avoid timestamps, hashes, or random suffixes.\n";
     }
 
     private static string BuildExistingSnapshot(IReadOnlyList<Plant> existingPlants)
@@ -164,12 +193,15 @@ public sealed class AgentReconciliationForum : IReconciliationForum
         }
 
         var lines = new List<string>(existingPlants.Count);
-        foreach (var p in existingPlants.OrderBy(x => x.Key ?? string.Empty, StringComparer.Ordinal))
+        foreach (
+            var p in existingPlants.OrderBy(x => x.Key ?? string.Empty, StringComparer.Ordinal)
+        )
         {
             var key = (p.Key ?? string.Empty).Trim();
             var status = (p.Status ?? string.Empty).Trim();
             var title = (p.Title ?? string.Empty).Trim();
-            if (key.Length == 0) continue;
+            if (key.Length == 0)
+                continue;
             lines.Add($"- {key} [{status}] {title}".TrimEnd());
         }
 
@@ -180,7 +212,8 @@ public sealed class AgentReconciliationForum : IReconciliationForum
         AgentChatResponse response,
         out List<ProposedPlant> plants,
         out string? summary,
-        out string? error)
+        out string? error
+    )
     {
         plants = new List<ProposedPlant>();
         summary = null;
@@ -215,7 +248,10 @@ public sealed class AgentReconciliationForum : IReconciliationForum
                 summary = s.GetString();
             }
 
-            if (!root.TryGetProperty("desiredPlants", out var dp) || dp.ValueKind != JsonValueKind.Array)
+            if (
+                !root.TryGetProperty("desiredPlants", out var dp)
+                || dp.ValueKind != JsonValueKind.Array
+            )
             {
                 // allow alternate key for convenience
                 if (!root.TryGetProperty("plants", out dp) || dp.ValueKind != JsonValueKind.Array)
@@ -227,13 +263,29 @@ public sealed class AgentReconciliationForum : IReconciliationForum
 
             foreach (var item in dp.EnumerateArray())
             {
-                if (item.ValueKind != JsonValueKind.Object) continue;
-                var slug = item.TryGetProperty("slug", out var slugEl) && slugEl.ValueKind == JsonValueKind.String ? slugEl.GetString() : null;
-                var title = item.TryGetProperty("title", out var titleEl) && titleEl.ValueKind == JsonValueKind.String ? titleEl.GetString() : null;
-                var description = item.TryGetProperty("description", out var descEl) && descEl.ValueKind == JsonValueKind.String ? descEl.GetString() : null;
+                if (item.ValueKind != JsonValueKind.Object)
+                    continue;
+                var slug =
+                    item.TryGetProperty("slug", out var slugEl)
+                    && slugEl.ValueKind == JsonValueKind.String
+                        ? slugEl.GetString()
+                        : null;
+                var title =
+                    item.TryGetProperty("title", out var titleEl)
+                    && titleEl.ValueKind == JsonValueKind.String
+                        ? titleEl.GetString()
+                        : null;
+                var description =
+                    item.TryGetProperty("description", out var descEl)
+                    && descEl.ValueKind == JsonValueKind.String
+                        ? descEl.GetString()
+                        : null;
 
                 List<string>? assigned = null;
-                if (item.TryGetProperty("assignedPlanters", out var ap) && ap.ValueKind == JsonValueKind.Array)
+                if (
+                    item.TryGetProperty("assignedPlanters", out var ap)
+                    && ap.ValueKind == JsonValueKind.Array
+                )
                 {
                     assigned = new List<string>();
                     foreach (var p in ap.EnumerateArray())
@@ -241,7 +293,8 @@ public sealed class AgentReconciliationForum : IReconciliationForum
                         if (p.ValueKind == JsonValueKind.String)
                         {
                             var v = (p.GetString() ?? string.Empty).Trim();
-                            if (v.Length > 0) assigned.Add(v);
+                            if (v.Length > 0)
+                                assigned.Add(v);
                         }
                     }
                 }
@@ -281,7 +334,10 @@ public sealed class AgentReconciliationForum : IReconciliationForum
         }
 
         // If the text is already JSON, keep it; otherwise attempt to slice from first '{' to last '}'.
-        if (text.StartsWith("{", StringComparison.Ordinal) && text.EndsWith("}", StringComparison.Ordinal))
+        if (
+            text.StartsWith("{", StringComparison.Ordinal)
+            && text.EndsWith("}", StringComparison.Ordinal)
+        )
         {
             return text;
         }
@@ -296,7 +352,11 @@ public sealed class AgentReconciliationForum : IReconciliationForum
         return string.Empty;
     }
 
-    private static List<NormalizedPlant> NormalizeProposedPlants(string planId, string plannerId, List<ProposedPlant> proposed)
+    private static List<NormalizedPlant> NormalizeProposedPlants(
+        string planId,
+        string plannerId,
+        List<ProposedPlant> proposed
+    )
     {
         var results = new List<NormalizedPlant>(proposed.Count);
         var used = new HashSet<string>(StringComparer.Ordinal);
@@ -311,12 +371,15 @@ public sealed class AgentReconciliationForum : IReconciliationForum
             }
 
             var slug = NormalizeSlug(rawSlug);
-            if (slug.Length == 0) continue;
-            if (used.Contains(slug)) continue;
+            if (slug.Length == 0)
+                continue;
+            if (used.Contains(slug))
+                continue;
             used.Add(slug);
 
             var title = (p.Title ?? string.Empty).Trim();
-            if (title.Length == 0) title = slug;
+            if (title.Length == 0)
+                title = slug;
 
             var description = (p.Description ?? string.Empty).Trim();
             var assigned = (p.AssignedPlanters ?? new List<string>())
@@ -366,7 +429,17 @@ public sealed class AgentReconciliationForum : IReconciliationForum
         return sb.ToString().Trim('-');
     }
 
-    private sealed record ProposedPlant(string? Slug, string? Title, string? Description, List<string>? AssignedPlanters);
-    private sealed record NormalizedPlant(string Slug, string Title, string Description, IReadOnlyList<string> AssignedPlanters);
-}
+    private sealed record ProposedPlant(
+        string? Slug,
+        string? Title,
+        string? Description,
+        List<string>? AssignedPlanters
+    );
 
+    private sealed record NormalizedPlant(
+        string Slug,
+        string Title,
+        string Description,
+        IReadOnlyList<string> AssignedPlanters
+    );
+}

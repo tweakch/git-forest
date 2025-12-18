@@ -5,13 +5,15 @@ using MediatR;
 
 namespace GitForest.Application.Features.Plants.Commands;
 
-public sealed record AssignPlanterToPlantCommand(string Selector, string PlanterId, bool DryRun) : IRequest<Plant>;
+public sealed record AssignPlanterToPlantCommand(string Selector, string PlanterId, bool DryRun)
+    : IRequest<Plant>;
 
 public sealed class PlantNotFoundException : Exception
 {
     public string Selector { get; }
 
-    public PlantNotFoundException(string selector) : base($"Plant not found: '{selector}'.")
+    public PlantNotFoundException(string selector)
+        : base($"Plant not found: '{selector}'.")
     {
         Selector = selector;
     }
@@ -30,7 +32,8 @@ public sealed class PlantAmbiguousSelectorException : Exception
     }
 }
 
-internal sealed class AssignPlanterToPlantHandler : IRequestHandler<AssignPlanterToPlantCommand, Plant>
+internal sealed class AssignPlanterToPlantHandler
+    : IRequestHandler<AssignPlanterToPlantCommand, Plant>
 {
     private readonly IPlantRepository _plants;
 
@@ -39,9 +42,13 @@ internal sealed class AssignPlanterToPlantHandler : IRequestHandler<AssignPlante
         _plants = plants ?? throw new ArgumentNullException(nameof(plants));
     }
 
-    public async Task<Plant> Handle(AssignPlanterToPlantCommand request, CancellationToken cancellationToken)
+    public async Task<Plant> Handle(
+        AssignPlanterToPlantCommand request,
+        CancellationToken cancellationToken
+    )
     {
-        if (request is null) throw new ArgumentNullException(nameof(request));
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
 
         var resolved = await ResolvePlantAsync(request.Selector, cancellationToken);
         var updated = Clone(resolved);
@@ -53,7 +60,11 @@ internal sealed class AssignPlanterToPlantHandler : IRequestHandler<AssignPlante
         }
 
         var planters = (updated.AssignedPlanters ?? new List<string>()).ToList();
-        if (!planters.Any(p => string.Equals(p, normalizedPlanterId, StringComparison.OrdinalIgnoreCase)))
+        if (
+            !planters.Any(p =>
+                string.Equals(p, normalizedPlanterId, StringComparison.OrdinalIgnoreCase)
+            )
+        )
         {
             planters.Add(normalizedPlanterId);
         }
@@ -74,7 +85,10 @@ internal sealed class AssignPlanterToPlantHandler : IRequestHandler<AssignPlante
         return updated;
     }
 
-    private async Task<Plant> ResolvePlantAsync(string selector, CancellationToken cancellationToken)
+    private async Task<Plant> ResolvePlantAsync(
+        string selector,
+        CancellationToken cancellationToken
+    )
     {
         var sel = (selector ?? string.Empty).Trim();
         if (sel.Length == 0)
@@ -94,7 +108,10 @@ internal sealed class AssignPlanterToPlantHandler : IRequestHandler<AssignPlante
             throw new PlantNotFoundException(selector ?? string.Empty);
         }
 
-        throw new PlantAmbiguousSelectorException(selector ?? string.Empty, matches.Select(p => p.Key).ToArray());
+        throw new PlantAmbiguousSelectorException(
+            selector ?? string.Empty,
+            matches.Select(p => p.Key).ToArray()
+        );
     }
 
     internal static IReadOnlyList<Plant> FindMatches(IReadOnlyList<Plant> plants, string selector)
@@ -106,7 +123,9 @@ internal sealed class AssignPlanterToPlantHandler : IRequestHandler<AssignPlante
         }
 
         // 1) Exact key match: <plan-id>:<slug>
-        var exact = plants.Where(p => string.Equals(p.Key, sel, StringComparison.OrdinalIgnoreCase)).ToArray();
+        var exact = plants
+            .Where(p => string.Equals(p.Key, sel, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
         if (exact.Length > 0)
         {
             return exact;
@@ -125,18 +144,20 @@ internal sealed class AssignPlanterToPlantHandler : IRequestHandler<AssignPlante
         }
 
         // 3) Slug match: match any plant whose key right-side equals selector.
-        var slugMatches = plants.Where(p =>
-        {
-            var key = p.Key ?? string.Empty;
-            var idx = key.IndexOf(':', StringComparison.Ordinal);
-            if (idx < 0 || idx == key.Length - 1)
+        var slugMatches = plants
+            .Where(p =>
             {
-                return false;
-            }
+                var key = p.Key ?? string.Empty;
+                var idx = key.IndexOf(':', StringComparison.Ordinal);
+                if (idx < 0 || idx == key.Length - 1)
+                {
+                    return false;
+                }
 
-            var slug = key[(idx + 1)..];
-            return string.Equals(slug, sel, StringComparison.OrdinalIgnoreCase);
-        }).ToArray();
+                var slug = key[(idx + 1)..];
+                return string.Equals(slug, sel, StringComparison.OrdinalIgnoreCase);
+            })
+            .ToArray();
 
         return slugMatches;
     }
@@ -180,7 +201,8 @@ internal sealed class AssignPlanterToPlantHandler : IRequestHandler<AssignPlante
 
     internal static Plant Clone(Plant source)
     {
-        if (source is null) throw new ArgumentNullException(nameof(source));
+        if (source is null)
+            throw new ArgumentNullException(nameof(source));
 
         return new Plant
         {
@@ -191,17 +213,23 @@ internal sealed class AssignPlanterToPlantHandler : IRequestHandler<AssignPlante
             Status = source.Status,
             Title = source.Title,
             Description = source.Description,
-            AssignedPlanters = source.AssignedPlanters is null ? new List<string>() : new List<string>(source.AssignedPlanters),
-            Branches = source.Branches is null ? new List<string>() : new List<string>(source.Branches),
+            AssignedPlanters = source.AssignedPlanters is null
+                ? new List<string>()
+                : new List<string>(source.AssignedPlanters),
+            Branches = source.Branches is null
+                ? new List<string>()
+                : new List<string>(source.Branches),
             CreatedDate = source.CreatedDate,
-            LastActivityDate = source.LastActivityDate
+            LastActivityDate = source.LastActivityDate,
         };
     }
 }
 
-public sealed record UnassignPlanterFromPlantCommand(string Selector, string PlanterId, bool DryRun) : IRequest<Plant>;
+public sealed record UnassignPlanterFromPlantCommand(string Selector, string PlanterId, bool DryRun)
+    : IRequest<Plant>;
 
-internal sealed class UnassignPlanterFromPlantHandler : IRequestHandler<UnassignPlanterFromPlantCommand, Plant>
+internal sealed class UnassignPlanterFromPlantHandler
+    : IRequestHandler<UnassignPlanterFromPlantCommand, Plant>
 {
     private readonly IPlantRepository _plants;
 
@@ -210,9 +238,13 @@ internal sealed class UnassignPlanterFromPlantHandler : IRequestHandler<Unassign
         _plants = plants ?? throw new ArgumentNullException(nameof(plants));
     }
 
-    public async Task<Plant> Handle(UnassignPlanterFromPlantCommand request, CancellationToken cancellationToken)
+    public async Task<Plant> Handle(
+        UnassignPlanterFromPlantCommand request,
+        CancellationToken cancellationToken
+    )
     {
-        if (request is null) throw new ArgumentNullException(nameof(request));
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
 
         var resolved = await ResolvePlantAsync(request.Selector, cancellationToken);
 
@@ -220,7 +252,13 @@ internal sealed class UnassignPlanterFromPlantHandler : IRequestHandler<Unassign
 
         var normalizedPlanterId = (request.PlanterId ?? string.Empty).Trim();
         var planters = (updated.AssignedPlanters ?? new List<string>())
-            .Where(p => !string.Equals((p ?? string.Empty).Trim(), normalizedPlanterId, StringComparison.OrdinalIgnoreCase))
+            .Where(p =>
+                !string.Equals(
+                    (p ?? string.Empty).Trim(),
+                    normalizedPlanterId,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
             .Select(p => p.Trim())
             .Where(p => p.Length > 0)
             .ToList();
@@ -236,7 +274,10 @@ internal sealed class UnassignPlanterFromPlantHandler : IRequestHandler<Unassign
         return updated;
     }
 
-    private async Task<Plant> ResolvePlantAsync(string selector, CancellationToken cancellationToken)
+    private async Task<Plant> ResolvePlantAsync(
+        string selector,
+        CancellationToken cancellationToken
+    )
     {
         var sel = (selector ?? string.Empty).Trim();
         if (sel.Length == 0)
@@ -256,11 +297,15 @@ internal sealed class UnassignPlanterFromPlantHandler : IRequestHandler<Unassign
             throw new PlantNotFoundException(selector ?? string.Empty);
         }
 
-        throw new PlantAmbiguousSelectorException(selector ?? string.Empty, matches.Select(p => p.Key).ToArray());
+        throw new PlantAmbiguousSelectorException(
+            selector ?? string.Empty,
+            matches.Select(p => p.Key).ToArray()
+        );
     }
 }
 
-public sealed record HarvestPlantCommand(string Selector, bool Force, bool DryRun) : IRequest<Plant>;
+public sealed record HarvestPlantCommand(string Selector, bool Force, bool DryRun)
+    : IRequest<Plant>;
 
 internal sealed class HarvestPlantHandler : IRequestHandler<HarvestPlantCommand, Plant>
 {
@@ -271,16 +316,25 @@ internal sealed class HarvestPlantHandler : IRequestHandler<HarvestPlantCommand,
         _plants = plants ?? throw new ArgumentNullException(nameof(plants));
     }
 
-    public async Task<Plant> Handle(HarvestPlantCommand request, CancellationToken cancellationToken)
+    public async Task<Plant> Handle(
+        HarvestPlantCommand request,
+        CancellationToken cancellationToken
+    )
     {
-        if (request is null) throw new ArgumentNullException(nameof(request));
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
 
         var resolved = await ResolvePlantAsync(request.Selector, cancellationToken);
         var updated = AssignPlanterToPlantHandler.Clone(resolved);
 
-        if (!request.Force && !string.Equals(updated.Status, "harvestable", StringComparison.OrdinalIgnoreCase))
+        if (
+            !request.Force
+            && !string.Equals(updated.Status, "harvestable", StringComparison.OrdinalIgnoreCase)
+        )
         {
-            throw new InvalidOperationException($"Plant is not harvestable (status={updated.Status}).");
+            throw new InvalidOperationException(
+                $"Plant is not harvestable (status={updated.Status})."
+            );
         }
 
         updated.Status = "harvested";
@@ -294,7 +348,10 @@ internal sealed class HarvestPlantHandler : IRequestHandler<HarvestPlantCommand,
         return updated;
     }
 
-    private async Task<Plant> ResolvePlantAsync(string selector, CancellationToken cancellationToken)
+    private async Task<Plant> ResolvePlantAsync(
+        string selector,
+        CancellationToken cancellationToken
+    )
     {
         var sel = (selector ?? string.Empty).Trim();
         if (sel.Length == 0)
@@ -314,11 +371,15 @@ internal sealed class HarvestPlantHandler : IRequestHandler<HarvestPlantCommand,
             throw new PlantNotFoundException(selector ?? string.Empty);
         }
 
-        throw new PlantAmbiguousSelectorException(selector ?? string.Empty, matches.Select(p => p.Key).ToArray());
+        throw new PlantAmbiguousSelectorException(
+            selector ?? string.Empty,
+            matches.Select(p => p.Key).ToArray()
+        );
     }
 }
 
-public sealed record ArchivePlantCommand(string Selector, bool Force, bool DryRun) : IRequest<Plant>;
+public sealed record ArchivePlantCommand(string Selector, bool Force, bool DryRun)
+    : IRequest<Plant>;
 
 internal sealed class ArchivePlantHandler : IRequestHandler<ArchivePlantCommand, Plant>
 {
@@ -329,16 +390,25 @@ internal sealed class ArchivePlantHandler : IRequestHandler<ArchivePlantCommand,
         _plants = plants ?? throw new ArgumentNullException(nameof(plants));
     }
 
-    public async Task<Plant> Handle(ArchivePlantCommand request, CancellationToken cancellationToken)
+    public async Task<Plant> Handle(
+        ArchivePlantCommand request,
+        CancellationToken cancellationToken
+    )
     {
-        if (request is null) throw new ArgumentNullException(nameof(request));
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
 
         var resolved = await ResolvePlantAsync(request.Selector, cancellationToken);
         var updated = AssignPlanterToPlantHandler.Clone(resolved);
 
-        if (!request.Force && !string.Equals(updated.Status, "harvested", StringComparison.OrdinalIgnoreCase))
+        if (
+            !request.Force
+            && !string.Equals(updated.Status, "harvested", StringComparison.OrdinalIgnoreCase)
+        )
         {
-            throw new InvalidOperationException($"Plant is not harvested (status={updated.Status}).");
+            throw new InvalidOperationException(
+                $"Plant is not harvested (status={updated.Status})."
+            );
         }
 
         updated.Status = "archived";
@@ -352,7 +422,10 @@ internal sealed class ArchivePlantHandler : IRequestHandler<ArchivePlantCommand,
         return updated;
     }
 
-    private async Task<Plant> ResolvePlantAsync(string selector, CancellationToken cancellationToken)
+    private async Task<Plant> ResolvePlantAsync(
+        string selector,
+        CancellationToken cancellationToken
+    )
     {
         var sel = (selector ?? string.Empty).Trim();
         if (sel.Length == 0)
@@ -372,7 +445,9 @@ internal sealed class ArchivePlantHandler : IRequestHandler<ArchivePlantCommand,
             throw new PlantNotFoundException(selector ?? string.Empty);
         }
 
-        throw new PlantAmbiguousSelectorException(selector ?? string.Empty, matches.Select(p => p.Key).ToArray());
+        throw new PlantAmbiguousSelectorException(
+            selector ?? string.Empty,
+            matches.Select(p => p.Key).ToArray()
+        );
     }
 }
-

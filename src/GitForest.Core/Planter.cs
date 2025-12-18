@@ -12,4 +12,3 @@ public class Planter
     public List<string> AssignedPlants { get; set; } = new();
     public bool IsActive { get; set; } = false;
 }
-

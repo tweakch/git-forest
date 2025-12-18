@@ -13,14 +13,19 @@ public sealed class FileSystemPlannerRepository : AbstractPlannerRepository
         _paths = new FileSystemForestPaths(forestDir);
     }
 
-    public override Task<Planner?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    public override Task<Planner?> GetByIdAsync(
+        string id,
+        CancellationToken cancellationToken = default
+    )
     {
         _ = cancellationToken;
-        if (string.IsNullOrWhiteSpace(id)) return Task.FromResult<Planner?>(null);
+        if (string.IsNullOrWhiteSpace(id))
+            return Task.FromResult<Planner?>(null);
 
         var plannerId = id.Trim();
         var plannerYaml = _paths.PlannerYamlPath(plannerId);
-        if (!File.Exists(plannerYaml)) return Task.FromResult<Planner?>(null);
+        if (!File.Exists(plannerYaml))
+            return Task.FromResult<Planner?>(null);
 
         var yaml = FileSystemRepositoryFs.ReadAllTextUtf8(plannerYaml);
         var model = PlannerYamlLite.Parse(yaml);
@@ -41,7 +46,10 @@ public sealed class FileSystemPlannerRepository : AbstractPlannerRepository
 
         Directory.CreateDirectory(dir);
         var model = PlannerFileMapper.ToFileModel(entity);
-        FileSystemRepositoryFs.WriteAllTextUtf8(_paths.PlannerYamlPath(model.Id), PlannerYamlLite.Serialize(model));
+        FileSystemRepositoryFs.WriteAllTextUtf8(
+            _paths.PlannerYamlPath(model.Id),
+            PlannerYamlLite.Serialize(model)
+        );
         return Task.CompletedTask;
     }
 
@@ -53,15 +61,20 @@ public sealed class FileSystemPlannerRepository : AbstractPlannerRepository
         Directory.CreateDirectory(_paths.PlannersDir);
         Directory.CreateDirectory(_paths.PlannerDir(GetTrimmedId(entity)));
         var model = PlannerFileMapper.ToFileModel(entity);
-        FileSystemRepositoryFs.WriteAllTextUtf8(_paths.PlannerYamlPath(model.Id), PlannerYamlLite.Serialize(model));
+        FileSystemRepositoryFs.WriteAllTextUtf8(
+            _paths.PlannerYamlPath(model.Id),
+            PlannerYamlLite.Serialize(model)
+        );
         return Task.CompletedTask;
     }
 
     public override Task DeleteAsync(Planner entity, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
-        if (entity is null) throw new ArgumentNullException(nameof(entity));
-        if (string.IsNullOrWhiteSpace(entity.Id)) return Task.CompletedTask;
+        if (entity is null)
+            throw new ArgumentNullException(nameof(entity));
+        if (string.IsNullOrWhiteSpace(entity.Id))
+            return Task.CompletedTask;
 
         var dir = _paths.PlannerDir(entity.Id.Trim());
         FileSystemRepositoryFs.DeleteDirectoryIfExists(dir);
@@ -78,7 +91,7 @@ public sealed class FileSystemPlannerRepository : AbstractPlannerRepository
             {
                 var model = PlannerYamlLite.Parse(yaml);
                 return PlannerFileMapper.ToDomain(model, plannerId);
-            });
+            }
+        );
     }
 }
-

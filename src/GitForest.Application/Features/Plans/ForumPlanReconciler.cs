@@ -18,7 +18,11 @@ public sealed class ForumPlanReconciler : IPlanReconciler
     private readonly IPlantRepository _plants;
     private readonly IReconciliationForumRouter _forums;
 
-    public ForumPlanReconciler(IPlanRepository plans, IPlantRepository plants, IReconciliationForumRouter forums)
+    public ForumPlanReconciler(
+        IPlanRepository plans,
+        IPlantRepository plants,
+        IReconciliationForumRouter forums
+    )
     {
         _plans = plans ?? throw new ArgumentNullException(nameof(plans));
         _plants = plants ?? throw new ArgumentNullException(nameof(plants));
@@ -29,7 +33,8 @@ public sealed class ForumPlanReconciler : IPlanReconciler
         string planId,
         bool dryRun,
         string? forum = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         if (string.IsNullOrWhiteSpace(planId))
         {
@@ -51,7 +56,8 @@ public sealed class ForumPlanReconciler : IPlanReconciler
             Plan: plan,
             RawPlanYaml: null,
             ExistingPlants: existingPlants,
-            Repository: string.IsNullOrWhiteSpace(plan.Repository) ? null : plan.Repository);
+            Repository: string.IsNullOrWhiteSpace(plan.Repository) ? null : plan.Repository
+        );
 
         var strategy = await _forums.RunAsync(context, forum, cancellationToken);
         var desired = NormalizeDesiredPlants(id, strategy?.DesiredPlants);
@@ -83,7 +89,7 @@ public sealed class ForumPlanReconciler : IPlanReconciler
                         AssignedPlanters = d.AssignedPlanters.ToList(),
                         Branches = new List<string>(),
                         CreatedDate = now,
-                        LastActivityDate = null
+                        LastActivityDate = null,
                     };
 
                     await _plants.AddAsync(plant, cancellationToken);
@@ -112,19 +118,37 @@ public sealed class ForumPlanReconciler : IPlanReconciler
                 changed = true;
             }
 
-            if (!string.Equals(existing.PlannerId ?? string.Empty, normalizedPlannerId, StringComparison.Ordinal))
+            if (
+                !string.Equals(
+                    existing.PlannerId ?? string.Empty,
+                    normalizedPlannerId,
+                    StringComparison.Ordinal
+                )
+            )
             {
                 existing.PlannerId = normalizedPlannerId;
                 changed = true;
             }
 
-            if (!string.Equals(existing.Title ?? string.Empty, normalizedTitle, StringComparison.Ordinal))
+            if (
+                !string.Equals(
+                    existing.Title ?? string.Empty,
+                    normalizedTitle,
+                    StringComparison.Ordinal
+                )
+            )
             {
                 existing.Title = normalizedTitle;
                 changed = true;
             }
 
-            if (!string.Equals(existing.Description ?? string.Empty, normalizedDescription, StringComparison.Ordinal))
+            if (
+                !string.Equals(
+                    existing.Description ?? string.Empty,
+                    normalizedDescription,
+                    StringComparison.Ordinal
+                )
+            )
             {
                 existing.Description = normalizedDescription;
                 changed = true;
@@ -149,7 +173,10 @@ public sealed class ForumPlanReconciler : IPlanReconciler
         return (planId: id, plantsCreated: created, plantsUpdated: updated);
     }
 
-    private static IReadOnlyList<NormalizedDesiredPlant> NormalizeDesiredPlants(string planId, IReadOnlyList<DesiredPlant>? desiredPlants)
+    private static IReadOnlyList<NormalizedDesiredPlant> NormalizeDesiredPlants(
+        string planId,
+        IReadOnlyList<DesiredPlant>? desiredPlants
+    )
     {
         var id = (planId ?? string.Empty).Trim();
         if (id.Length == 0)
@@ -216,26 +243,33 @@ public sealed class ForumPlanReconciler : IPlanReconciler
                 .Distinct(StringComparer.Ordinal)
                 .ToList();
 
-            normalized.Add(new NormalizedDesiredPlant(
-                Key: key,
-                Slug: slug,
-                Title: title,
-                Description: description,
-                PlannerId: plannerId,
-                AssignedPlanters: assigned
-            ));
+            normalized.Add(
+                new NormalizedDesiredPlant(
+                    Key: key,
+                    Slug: slug,
+                    Title: title,
+                    Description: description,
+                    PlannerId: plannerId,
+                    AssignedPlanters: assigned
+                )
+            );
         }
 
-        normalized.Sort(static (a, b) =>
-        {
-            var c = string.CompareOrdinal(a.Slug, b.Slug);
-            if (c != 0) return c;
-            c = string.CompareOrdinal(a.Title, b.Title);
-            if (c != 0) return c;
-            c = string.CompareOrdinal(a.PlannerId, b.PlannerId);
-            if (c != 0) return c;
-            return string.CompareOrdinal(a.Key, b.Key);
-        });
+        normalized.Sort(
+            static (a, b) =>
+            {
+                var c = string.CompareOrdinal(a.Slug, b.Slug);
+                if (c != 0)
+                    return c;
+                c = string.CompareOrdinal(a.Title, b.Title);
+                if (c != 0)
+                    return c;
+                c = string.CompareOrdinal(a.PlannerId, b.PlannerId);
+                if (c != 0)
+                    return c;
+                return string.CompareOrdinal(a.Key, b.Key);
+            }
+        );
 
         // Resolve slug collisions deterministically (affects Key).
         var usedSlugs = new HashSet<string>(StringComparer.Ordinal);
@@ -263,16 +297,15 @@ public sealed class ForumPlanReconciler : IPlanReconciler
             usedSlugs.Add(finalSlug);
             if (!string.Equals(finalSlug, item.Slug, StringComparison.Ordinal))
             {
-                normalized[i] = item with
-                {
-                    Slug = finalSlug,
-                    Key = $"{id}:{finalSlug}"
-                };
+                normalized[i] = item with { Slug = finalSlug, Key = $"{id}:{finalSlug}" };
             }
             else
             {
                 // Ensure key matches the possibly normalized slug.
-                normalized[i] = item with { Key = $"{id}:{finalSlug}" };
+                normalized[i] = item with
+                {
+                    Key = $"{id}:{finalSlug}",
+                };
             }
         }
 
@@ -296,7 +329,9 @@ public sealed class ForumPlanReconciler : IPlanReconciler
 
         for (var i = 0; i < a.Count; i++)
         {
-            if (!string.Equals(a[i] ?? string.Empty, b[i] ?? string.Empty, StringComparison.Ordinal))
+            if (
+                !string.Equals(a[i] ?? string.Empty, b[i] ?? string.Empty, StringComparison.Ordinal)
+            )
             {
                 return false;
             }
@@ -345,6 +380,6 @@ public sealed class ForumPlanReconciler : IPlanReconciler
         string Title,
         string Description,
         string PlannerId,
-        IReadOnlyList<string> AssignedPlanters);
+        IReadOnlyList<string> AssignedPlanters
+    );
 }
-

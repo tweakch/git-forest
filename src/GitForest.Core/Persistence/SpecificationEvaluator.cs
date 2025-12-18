@@ -11,20 +11,24 @@ public static class SpecificationEvaluator
 {
     public static IEnumerable<T> Apply<T>(IEnumerable<T> source, ISpecification<T> specification)
     {
-        if (source is null) throw new ArgumentNullException(nameof(source));
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
+        if (source is null)
+            throw new ArgumentNullException(nameof(source));
+        if (specification is null)
+            throw new ArgumentNullException(nameof(specification));
 
         IEnumerable<T> query = source;
 
         // Where
-        var whereExpressionsObj = GetPropertyValue(specification, "WhereExpressions") as System.Collections.IEnumerable;
+        var whereExpressionsObj =
+            GetPropertyValue(specification, "WhereExpressions") as System.Collections.IEnumerable;
         if (whereExpressionsObj is not null)
         {
             foreach (var whereExprInfo in whereExpressionsObj)
             {
-                var predicateObj = GetPropertyValue(whereExprInfo, "Filter")
-                                   ?? GetPropertyValue(whereExprInfo, "Predicate")
-                                   ?? GetPropertyValue(whereExprInfo, "Criteria");
+                var predicateObj =
+                    GetPropertyValue(whereExprInfo, "Filter")
+                    ?? GetPropertyValue(whereExprInfo, "Predicate")
+                    ?? GetPropertyValue(whereExprInfo, "Criteria");
                 var predicate = CompilePredicate<T>(predicateObj);
                 if (predicate is not null)
                 {
@@ -34,33 +38,40 @@ public static class SpecificationEvaluator
         }
 
         // Ordering
-        var orderExpressionsObj = GetPropertyValue(specification, "OrderExpressions") as System.Collections.IEnumerable;
+        var orderExpressionsObj =
+            GetPropertyValue(specification, "OrderExpressions") as System.Collections.IEnumerable;
         if (orderExpressionsObj is not null)
         {
             IOrderedEnumerable<T>? ordered = null;
             foreach (var orderExprInfo in orderExpressionsObj)
             {
-                var keySelectorObj = GetPropertyValue(orderExprInfo, "KeySelector")
-                                     ?? GetPropertyValue(orderExprInfo, "KeySelectorExpression")
-                                     ?? GetPropertyValue(orderExprInfo, "Expression");
+                var keySelectorObj =
+                    GetPropertyValue(orderExprInfo, "KeySelector")
+                    ?? GetPropertyValue(orderExprInfo, "KeySelectorExpression")
+                    ?? GetPropertyValue(orderExprInfo, "Expression");
                 var keySelector = CompileKeySelector<T>(keySelectorObj);
                 if (keySelector is null)
                 {
                     continue;
                 }
 
-                var orderTypeObj = GetPropertyValue(orderExprInfo, "OrderType")
-                                   ?? GetPropertyValue(orderExprInfo, "OrderTypeEnum");
+                var orderTypeObj =
+                    GetPropertyValue(orderExprInfo, "OrderType")
+                    ?? GetPropertyValue(orderExprInfo, "OrderTypeEnum");
                 var orderTypeText = orderTypeObj?.ToString() ?? string.Empty;
                 var descending = orderTypeText.Contains("Desc", StringComparison.OrdinalIgnoreCase);
 
                 if (ordered is null)
                 {
-                    ordered = descending ? query.OrderByDescending(keySelector) : query.OrderBy(keySelector);
+                    ordered = descending
+                        ? query.OrderByDescending(keySelector)
+                        : query.OrderBy(keySelector);
                 }
                 else
                 {
-                    ordered = descending ? ordered.ThenByDescending(keySelector) : ordered.ThenBy(keySelector);
+                    ordered = descending
+                        ? ordered.ThenByDescending(keySelector)
+                        : ordered.ThenBy(keySelector);
                 }
             }
 
@@ -105,10 +116,15 @@ public static class SpecificationEvaluator
         return query;
     }
 
-    public static IEnumerable<TResult> Apply<T, TResult>(IEnumerable<T> source, ISpecification<T, TResult> specification)
+    public static IEnumerable<TResult> Apply<T, TResult>(
+        IEnumerable<T> source,
+        ISpecification<T, TResult> specification
+    )
     {
-        if (source is null) throw new ArgumentNullException(nameof(source));
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
+        if (source is null)
+            throw new ArgumentNullException(nameof(source));
+        if (specification is null)
+            throw new ArgumentNullException(nameof(specification));
 
         var filtered = Apply(source, (ISpecification<T>)specification);
 
@@ -136,7 +152,8 @@ public static class SpecificationEvaluator
 
     private static object? GetPropertyValue(object? instance, string propertyName)
     {
-        if (instance is null) return null;
+        if (instance is null)
+            return null;
         var prop = instance.GetType().GetProperty(propertyName);
         return prop?.GetValue(instance);
     }
@@ -144,15 +161,19 @@ public static class SpecificationEvaluator
     private static int? GetIntPropertyValue(object instance, string propertyName)
     {
         var obj = GetPropertyValue(instance, propertyName);
-        if (obj is null) return null;
-        if (obj is int i) return i;
-        if (int.TryParse(obj.ToString(), out var parsed)) return parsed;
+        if (obj is null)
+            return null;
+        if (obj is int i)
+            return i;
+        if (int.TryParse(obj.ToString(), out var parsed))
+            return parsed;
         return null;
     }
 
     private static Func<T, bool>? CompilePredicate<T>(object? predicateObj)
     {
-        if (predicateObj is null) return null;
+        if (predicateObj is null)
+            return null;
 
         if (predicateObj is Expression<Func<T, bool>> typed)
         {
@@ -170,7 +191,8 @@ public static class SpecificationEvaluator
 
     private static Func<T, object?>? CompileKeySelector<T>(object? keySelectorObj)
     {
-        if (keySelectorObj is null) return null;
+        if (keySelectorObj is null)
+            return null;
 
         if (keySelectorObj is LambdaExpression lambda)
         {

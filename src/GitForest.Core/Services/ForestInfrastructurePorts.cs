@@ -21,7 +21,10 @@ public interface ILockStatusProvider
 /// </summary>
 public interface IPlanInstaller
 {
-    Task<(string planId, string version)> InstallAsync(string source, CancellationToken cancellationToken = default);
+    Task<(string planId, string version)> InstallAsync(
+        string source,
+        CancellationToken cancellationToken = default
+    );
 }
 
 /// <summary>
@@ -33,6 +36,6 @@ public interface IPlanReconciler
         string planId,
         bool dryRun,
         string? forum = null,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 }
-

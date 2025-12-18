@@ -16,9 +16,13 @@ internal sealed class ListPlansHandler : IRequestHandler<ListPlansQuery, IReadOn
         _plans = plans ?? throw new ArgumentNullException(nameof(plans));
     }
 
-    public Task<IReadOnlyList<Plan>> Handle(ListPlansQuery request, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<Plan>> Handle(
+        ListPlansQuery request,
+        CancellationToken cancellationToken
+    )
     {
-        if (request is null) throw new ArgumentNullException(nameof(request));
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
         return _plans.ListAsync(new AllPlansSpec(), cancellationToken);
     }
 }
@@ -36,10 +40,11 @@ internal sealed class GetPlanByIdHandler : IRequestHandler<GetPlanByIdQuery, Pla
 
     public Task<Plan?> Handle(GetPlanByIdQuery request, CancellationToken cancellationToken)
     {
-        if (request is null) throw new ArgumentNullException(nameof(request));
-        if (string.IsNullOrWhiteSpace(request.PlanId)) return Task.FromResult<Plan?>(null);
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
+        if (string.IsNullOrWhiteSpace(request.PlanId))
+            return Task.FromResult<Plan?>(null);
 
         return _plans.GetBySpecAsync(new PlanByIdSpec(request.PlanId.Trim()), cancellationToken);
     }
 }
-

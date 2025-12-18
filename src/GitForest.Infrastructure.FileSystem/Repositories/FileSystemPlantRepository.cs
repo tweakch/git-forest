@@ -13,7 +13,10 @@ public sealed class FileSystemPlantRepository : AbstractPlantRepository
         _paths = new FileSystemForestPaths(forestDir);
     }
 
-    public override Task<Plant?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    public override Task<Plant?> GetByIdAsync(
+        string id,
+        CancellationToken cancellationToken = default
+    )
     {
         _ = cancellationToken;
         if (string.IsNullOrWhiteSpace(id))
@@ -68,8 +71,10 @@ public sealed class FileSystemPlantRepository : AbstractPlantRepository
     public override Task DeleteAsync(Plant entity, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
-        if (entity is null) throw new ArgumentNullException(nameof(entity));
-        if (string.IsNullOrWhiteSpace(entity.Key)) return Task.CompletedTask;
+        if (entity is null)
+            throw new ArgumentNullException(nameof(entity));
+        if (string.IsNullOrWhiteSpace(entity.Key))
+            return Task.CompletedTask;
 
         var dir = _paths.PlantDirFromKey(entity.Key.Trim());
         FileSystemRepositoryFs.DeleteDirectoryIfExists(dir);
@@ -86,7 +91,7 @@ public sealed class FileSystemPlantRepository : AbstractPlantRepository
             {
                 var model = PlantYamlLite.Parse(yaml);
                 return PlantFileMapper.ToDomain(model);
-            });
+            }
+        );
     }
 }
-

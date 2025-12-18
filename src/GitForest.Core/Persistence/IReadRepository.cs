@@ -10,13 +10,23 @@ public interface IReadRepository<T, in TId>
 {
     Task<T?> GetByIdAsync(TId id, CancellationToken cancellationToken = default);
 
-    Task<T?> GetBySpecAsync(ISpecification<T> specification, CancellationToken cancellationToken = default);
+    Task<T?> GetBySpecAsync(
+        ISpecification<T> specification,
+        CancellationToken cancellationToken = default
+    );
 
-    Task<TResult?> GetBySpecAsync<TResult>(ISpecification<T, TResult> specification, CancellationToken cancellationToken = default);
+    Task<TResult?> GetBySpecAsync<TResult>(
+        ISpecification<T, TResult> specification,
+        CancellationToken cancellationToken = default
+    );
 
-    Task<IReadOnlyList<T>> ListAsync(ISpecification<T> specification, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<T>> ListAsync(
+        ISpecification<T> specification,
+        CancellationToken cancellationToken = default
+    );
 
-    Task<IReadOnlyList<TResult>> ListAsync<TResult>(ISpecification<T, TResult> specification, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<TResult>> ListAsync<TResult>(
+        ISpecification<T, TResult> specification,
+        CancellationToken cancellationToken = default
+    );
 }
-
-

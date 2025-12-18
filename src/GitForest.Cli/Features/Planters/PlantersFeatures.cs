@@ -1,16 +1,21 @@
 using System.Text;
-using MediatR;
 using GitForest.Infrastructure.FileSystem.Serialization;
+using MediatR;
 
 namespace GitForest.Cli.Features.Planters;
 
-public sealed record ListPlantersQuery(bool IncludeBuiltin, bool IncludeCustom) : IRequest<IReadOnlyList<PlanterRow>>;
+public sealed record ListPlantersQuery(bool IncludeBuiltin, bool IncludeCustom)
+    : IRequest<IReadOnlyList<PlanterRow>>;
 
 public sealed record PlanterRow(string Id, string Kind, string[] Plans);
 
-internal sealed class ListPlantersHandler : IRequestHandler<ListPlantersQuery, IReadOnlyList<PlanterRow>>
+internal sealed class ListPlantersHandler
+    : IRequestHandler<ListPlantersQuery, IReadOnlyList<PlanterRow>>
 {
-    public Task<IReadOnlyList<PlanterRow>> Handle(ListPlantersQuery request, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<PlanterRow>> Handle(
+        ListPlantersQuery request,
+        CancellationToken cancellationToken
+    )
     {
         _ = cancellationToken;
 
@@ -23,7 +28,9 @@ internal sealed class ListPlantersHandler : IRequestHandler<ListPlantersQuery, I
             var plans = ForestStore.ListPlans(forestDir);
 
             // Aggregate unique planters across installed plans, also tracking which plan(s) reference each planter.
-            var planters = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+            var planters = new Dictionary<string, HashSet<string>>(
+                StringComparer.OrdinalIgnoreCase
+            );
             foreach (var installed in plans)
             {
                 if (string.IsNullOrWhiteSpace(installed.Id))
@@ -52,7 +59,9 @@ internal sealed class ListPlantersHandler : IRequestHandler<ListPlantersQuery, I
                         var planterId = rawPlanterId.Trim();
                         if (!planters.TryGetValue(planterId, out var referencedByPlans))
                         {
-                            referencedByPlans = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                            referencedByPlans = new HashSet<string>(
+                                StringComparer.OrdinalIgnoreCase
+                            );
                             planters[planterId] = referencedByPlans;
                         }
 
@@ -65,12 +74,15 @@ internal sealed class ListPlantersHandler : IRequestHandler<ListPlantersQuery, I
                 }
             }
 
-            rows.AddRange(planters
-                .Select(kvp => new PlanterRow(
-                    Id: kvp.Key,
-                    Kind: "builtin",
-                    Plans: kvp.Value.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray()))
-                .OrderBy(x => x.Id, StringComparer.OrdinalIgnoreCase));
+            rows.AddRange(
+                planters
+                    .Select(kvp => new PlanterRow(
+                        Id: kvp.Key,
+                        Kind: "builtin",
+                        Plans: kvp.Value.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray()
+                    ))
+                    .OrderBy(x => x.Id, StringComparer.OrdinalIgnoreCase)
+            );
         }
 
         if (request.IncludeCustom)
@@ -84,18 +96,25 @@ internal sealed class ListPlantersHandler : IRequestHandler<ListPlantersQuery, I
                     var id = Path.GetFileName(dir);
                     if (!string.IsNullOrWhiteSpace(id))
                     {
-                        rows.Add(new PlanterRow(Id: id.Trim(), Kind: "custom", Plans: Array.Empty<string>()));
+                        rows.Add(
+                            new PlanterRow(
+                                Id: id.Trim(),
+                                Kind: "custom",
+                                Plans: Array.Empty<string>()
+                            )
+                        );
                     }
                 }
             }
         }
 
         // De-duplicate: if a custom planter shares the same id as a builtin, keep builtin.
-        var merged = rows
-            .GroupBy(r => r.Id, StringComparer.OrdinalIgnoreCase)
+        var merged = rows.GroupBy(r => r.Id, StringComparer.OrdinalIgnoreCase)
             .Select(g =>
             {
-                var builtinRow = g.FirstOrDefault(x => string.Equals(x.Kind, "builtin", StringComparison.OrdinalIgnoreCase));
+                var builtinRow = g.FirstOrDefault(x =>
+                    string.Equals(x.Kind, "builtin", StringComparison.OrdinalIgnoreCase)
+                );
                 return builtinRow ?? g.First();
             })
             .OrderBy(x => x.Id, StringComparer.OrdinalIgnoreCase)
@@ -111,7 +130,10 @@ public sealed record PlanterInfoResult(bool Exists, string Id, string Kind, stri
 
 internal sealed class GetPlanterHandler : IRequestHandler<GetPlanterQuery, PlanterInfoResult>
 {
-    public Task<PlanterInfoResult> Handle(GetPlanterQuery request, CancellationToken cancellationToken)
+    public Task<PlanterInfoResult> Handle(
+        GetPlanterQuery request,
+        CancellationToken cancellationToken
+    )
     {
         _ = cancellationToken;
         var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
@@ -119,7 +141,10 @@ internal sealed class GetPlanterHandler : IRequestHandler<GetPlanterQuery, Plant
         return Task.FromResult(new PlanterInfoResult(info.Exists, info.Id, info.Kind, info.Plans));
     }
 
-    internal static (bool Exists, string Id, string Kind, string[] Plans) GetPlanterInfo(string forestDir, string planterId)
+    internal static (bool Exists, string Id, string Kind, string[] Plans) GetPlanterInfo(
+        string forestDir,
+        string planterId
+    )
     {
         var id = (planterId ?? string.Empty).Trim();
         if (id.Length == 0)
@@ -149,7 +174,13 @@ internal sealed class GetPlanterHandler : IRequestHandler<GetPlanterQuery, Plant
                 var parsed = PlanYamlLite.Parse(yaml);
                 foreach (var raw in parsed.Planters ?? Array.Empty<string>())
                 {
-                    if (string.Equals((raw ?? string.Empty).Trim(), id, StringComparison.OrdinalIgnoreCase))
+                    if (
+                        string.Equals(
+                            (raw ?? string.Empty).Trim(),
+                            id,
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
                     {
                         plans.Add(planId);
                     }
@@ -165,7 +196,12 @@ internal sealed class GetPlanterHandler : IRequestHandler<GetPlanterQuery, Plant
         var isBuiltin = plans.Count > 0;
         var exists = isBuiltin || isCustom;
         var kind = isBuiltin ? "builtin" : (isCustom ? "custom" : string.Empty);
-        return (exists, id, kind, plans.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray());
+        return (
+            exists,
+            id,
+            kind,
+            plans.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray()
+        );
     }
 }
 
@@ -174,7 +210,8 @@ public sealed record PlantWithPlanterCommand(
     string Selector,
     string BranchOption,
     bool Yes,
-    bool DryRun) : IRequest<PlantWithPlanterResult>;
+    bool DryRun
+) : IRequest<PlantWithPlanterResult>;
 
 public sealed record PlantWithPlanterResult(string PlantKey, string BranchName, bool DryRun);
 
@@ -182,7 +219,8 @@ public sealed class PlanterNotFoundException : Exception
 {
     public string PlanterId { get; }
 
-    public PlanterNotFoundException(string planterId) : base($"Planter not found: '{planterId}'.")
+    public PlanterNotFoundException(string planterId)
+        : base($"Planter not found: '{planterId}'.")
     {
         PlanterId = planterId;
     }
@@ -192,15 +230,20 @@ public sealed class ConfirmationRequiredException : Exception
 {
     public string BranchName { get; }
 
-    public ConfirmationRequiredException(string branchName) : base("Confirmation required.")
+    public ConfirmationRequiredException(string branchName)
+        : base("Confirmation required.")
     {
         BranchName = branchName;
     }
 }
 
-internal sealed class PlantWithPlanterHandler : IRequestHandler<PlantWithPlanterCommand, PlantWithPlanterResult>
+internal sealed class PlantWithPlanterHandler
+    : IRequestHandler<PlantWithPlanterCommand, PlantWithPlanterResult>
 {
-    public Task<PlantWithPlanterResult> Handle(PlantWithPlanterCommand request, CancellationToken cancellationToken)
+    public Task<PlantWithPlanterResult> Handle(
+        PlantWithPlanterCommand request,
+        CancellationToken cancellationToken
+    )
     {
         _ = cancellationToken;
 
@@ -215,28 +258,46 @@ internal sealed class PlantWithPlanterHandler : IRequestHandler<PlantWithPlanter
         var plant = ForestStore.ResolvePlant(forestDir, request.Selector);
         var branchName = ComputeBranchName(request.PlanterId, plant.Key, request.BranchOption);
 
-        var updated = ForestStore.UpdatePlant(forestDir, request.Selector, p =>
-        {
-            var planters = (p.AssignedPlanters ?? Array.Empty<string>()).ToList();
-            if (!planters.Any(x => string.Equals(x, request.PlanterId, StringComparison.OrdinalIgnoreCase)))
+        var updated = ForestStore.UpdatePlant(
+            forestDir,
+            request.Selector,
+            p =>
             {
-                planters.Add(request.PlanterId);
-            }
+                var planters = (p.AssignedPlanters ?? Array.Empty<string>()).ToList();
+                if (
+                    !planters.Any(x =>
+                        string.Equals(x, request.PlanterId, StringComparison.OrdinalIgnoreCase)
+                    )
+                )
+                {
+                    planters.Add(request.PlanterId);
+                }
 
-            var branches = (p.Branches ?? Array.Empty<string>()).ToList();
-            if (!branches.Any(x => string.Equals(x, branchName, StringComparison.OrdinalIgnoreCase)))
-            {
-                branches.Add(branchName);
-            }
+                var branches = (p.Branches ?? Array.Empty<string>()).ToList();
+                if (
+                    !branches.Any(x =>
+                        string.Equals(x, branchName, StringComparison.OrdinalIgnoreCase)
+                    )
+                )
+                {
+                    branches.Add(branchName);
+                }
 
-            var status = p.Status;
-            if (string.Equals(status, "planned", StringComparison.OrdinalIgnoreCase))
-            {
-                status = "planted";
-            }
+                var status = p.Status;
+                if (string.Equals(status, "planned", StringComparison.OrdinalIgnoreCase))
+                {
+                    status = "planted";
+                }
 
-            return p with { AssignedPlanters = planters, Branches = branches, Status = status };
-        }, request.DryRun);
+                return p with
+                {
+                    AssignedPlanters = planters,
+                    Branches = branches,
+                    Status = status,
+                };
+            },
+            request.DryRun
+        );
 
         if (!request.DryRun)
         {
@@ -249,7 +310,13 @@ internal sealed class PlantWithPlanterHandler : IRequestHandler<PlantWithPlanter
             GitRunner.CheckoutBranch(branchName, createIfMissing: true, workingDirectory: repoRoot);
         }
 
-        return Task.FromResult(new PlantWithPlanterResult(PlantKey: updated.Key, BranchName: branchName, DryRun: request.DryRun));
+        return Task.FromResult(
+            new PlantWithPlanterResult(
+                PlantKey: updated.Key,
+                BranchName: branchName,
+                DryRun: request.DryRun
+            )
+        );
     }
 
     private static string ComputeBranchName(string planterId, string plantKey, string? branchOption)
@@ -299,29 +366,42 @@ public sealed record GrowWithPlanterCommand(
     string PlanterId,
     string Selector,
     string Mode,
-    bool DryRun) : IRequest<GrowWithPlanterResult>;
+    bool DryRun
+) : IRequest<GrowWithPlanterResult>;
 
-public sealed record GrowWithPlanterResult(string PlantKey, string BranchName, string Mode, bool DryRun);
+public sealed record GrowWithPlanterResult(
+    string PlantKey,
+    string BranchName,
+    string Mode,
+    bool DryRun
+);
 
 public sealed class InvalidModeException : Exception
 {
     public string Mode { get; }
 
-    public InvalidModeException(string mode) : base("Invalid --mode. Expected: propose|apply")
+    public InvalidModeException(string mode)
+        : base("Invalid --mode. Expected: propose|apply")
     {
         Mode = mode;
     }
 }
 
-internal sealed class GrowWithPlanterHandler : IRequestHandler<GrowWithPlanterCommand, GrowWithPlanterResult>
+internal sealed class GrowWithPlanterHandler
+    : IRequestHandler<GrowWithPlanterCommand, GrowWithPlanterResult>
 {
-    public Task<GrowWithPlanterResult> Handle(GrowWithPlanterCommand request, CancellationToken cancellationToken)
+    public Task<GrowWithPlanterResult> Handle(
+        GrowWithPlanterCommand request,
+        CancellationToken cancellationToken
+    )
     {
         _ = cancellationToken;
 
         var mode = (request.Mode ?? "apply").Trim();
-        if (!string.Equals(mode, "apply", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(mode, "propose", StringComparison.OrdinalIgnoreCase))
+        if (
+            !string.Equals(mode, "apply", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(mode, "propose", StringComparison.OrdinalIgnoreCase)
+        )
         {
             throw new InvalidModeException(mode);
         }
@@ -344,22 +424,40 @@ internal sealed class GrowWithPlanterHandler : IRequestHandler<GrowWithPlanterCo
         // Mark growing (apply mode only) before we attempt the work.
         if (!request.DryRun && string.Equals(mode, "apply", StringComparison.OrdinalIgnoreCase))
         {
-            _ = ForestStore.UpdatePlant(forestDir, request.Selector, p =>
-            {
-                var planters = (p.AssignedPlanters ?? Array.Empty<string>()).ToList();
-                if (!planters.Any(x => string.Equals(x, request.PlanterId, StringComparison.OrdinalIgnoreCase)))
+            _ = ForestStore.UpdatePlant(
+                forestDir,
+                request.Selector,
+                p =>
                 {
-                    planters.Add(request.PlanterId);
-                }
+                    var planters = (p.AssignedPlanters ?? Array.Empty<string>()).ToList();
+                    if (
+                        !planters.Any(x =>
+                            string.Equals(x, request.PlanterId, StringComparison.OrdinalIgnoreCase)
+                        )
+                    )
+                    {
+                        planters.Add(request.PlanterId);
+                    }
 
-                var branches = (p.Branches ?? Array.Empty<string>()).ToList();
-                if (!branches.Any(x => string.Equals(x, branchName, StringComparison.OrdinalIgnoreCase)))
-                {
-                    branches.Add(branchName);
-                }
+                    var branches = (p.Branches ?? Array.Empty<string>()).ToList();
+                    if (
+                        !branches.Any(x =>
+                            string.Equals(x, branchName, StringComparison.OrdinalIgnoreCase)
+                        )
+                    )
+                    {
+                        branches.Add(branchName);
+                    }
 
-                return p with { AssignedPlanters = planters, Branches = branches, Status = "growing" };
-            }, dryRun: false);
+                    return p with
+                    {
+                        AssignedPlanters = planters,
+                        Branches = branches,
+                        Status = "growing",
+                    };
+                },
+                dryRun: false
+            );
         }
 
         if (string.Equals(mode, "apply", StringComparison.OrdinalIgnoreCase))
@@ -367,9 +465,17 @@ internal sealed class GrowWithPlanterHandler : IRequestHandler<GrowWithPlanterCo
             if (!request.DryRun)
             {
                 var repoRoot = GitRunner.GetRepoRoot();
-                GitRunner.CheckoutBranch(branchName, createIfMissing: true, workingDirectory: repoRoot);
+                GitRunner.CheckoutBranch(
+                    branchName,
+                    createIfMissing: true,
+                    workingDirectory: repoRoot
+                );
 
-                ApplyDeterministicGrowth(repoRoot, plantKey: plant.Key, planterId: request.PlanterId);
+                ApplyDeterministicGrowth(
+                    repoRoot,
+                    plantKey: plant.Key,
+                    planterId: request.PlanterId
+                );
 
                 if (GitRunner.HasUncommittedChanges(repoRoot))
                 {
@@ -379,29 +485,49 @@ internal sealed class GrowWithPlanterHandler : IRequestHandler<GrowWithPlanterCo
             }
         }
 
-        var final = ForestStore.UpdatePlant(forestDir, request.Selector, p =>
-        {
-            var planters = (p.AssignedPlanters ?? Array.Empty<string>()).ToList();
-            if (!planters.Any(x => string.Equals(x, request.PlanterId, StringComparison.OrdinalIgnoreCase)))
+        var final = ForestStore.UpdatePlant(
+            forestDir,
+            request.Selector,
+            p =>
             {
-                planters.Add(request.PlanterId);
-            }
+                var planters = (p.AssignedPlanters ?? Array.Empty<string>()).ToList();
+                if (
+                    !planters.Any(x =>
+                        string.Equals(x, request.PlanterId, StringComparison.OrdinalIgnoreCase)
+                    )
+                )
+                {
+                    planters.Add(request.PlanterId);
+                }
 
-            var branches = (p.Branches ?? Array.Empty<string>()).ToList();
-            if (!branches.Any(x => string.Equals(x, branchName, StringComparison.OrdinalIgnoreCase)))
-            {
-                branches.Add(branchName);
-            }
+                var branches = (p.Branches ?? Array.Empty<string>()).ToList();
+                if (
+                    !branches.Any(x =>
+                        string.Equals(x, branchName, StringComparison.OrdinalIgnoreCase)
+                    )
+                )
+                {
+                    branches.Add(branchName);
+                }
 
-            return p with
-            {
-                AssignedPlanters = planters,
-                Branches = branches,
-                Status = "harvestable"
-            };
-        }, request.DryRun);
+                return p with
+                {
+                    AssignedPlanters = planters,
+                    Branches = branches,
+                    Status = "harvestable",
+                };
+            },
+            request.DryRun
+        );
 
-        return Task.FromResult(new GrowWithPlanterResult(PlantKey: final.Key, BranchName: branchName, Mode: mode, DryRun: request.DryRun));
+        return Task.FromResult(
+            new GrowWithPlanterResult(
+                PlantKey: final.Key,
+                BranchName: branchName,
+                Mode: mode,
+                DryRun: request.DryRun
+            )
+        );
     }
 
     private static string ComputeBranchName(string planterId, string plantKey, string? branchOption)
@@ -462,8 +588,12 @@ internal sealed class GrowWithPlanterHandler : IRequestHandler<GrowWithPlanterCo
             return;
         }
 
-        var updated = content.TrimEnd() + Environment.NewLine + Environment.NewLine + marker + Environment.NewLine;
+        var updated =
+            content.TrimEnd()
+            + Environment.NewLine
+            + Environment.NewLine
+            + marker
+            + Environment.NewLine;
         File.WriteAllText(readmePath, updated, Encoding.UTF8);
     }
 }
-

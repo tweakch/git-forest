@@ -13,7 +13,10 @@ public sealed class FileSystemPlanRepository : AbstractPlanRepository
         _paths = new FileSystemForestPaths(forestDir);
     }
 
-    public override Task<Plan?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    public override Task<Plan?> GetByIdAsync(
+        string id,
+        CancellationToken cancellationToken = default
+    )
     {
         _ = cancellationToken;
         if (string.IsNullOrWhiteSpace(id))
@@ -36,7 +39,9 @@ public sealed class FileSystemPlanRepository : AbstractPlanRepository
         var source = PlanFileMapper.TryReadPlanSource(installJsonPath);
         var installedDate = installedAt ?? File.GetLastWriteTimeUtc(planYamlPath);
 
-        return Task.FromResult<Plan?>(PlanFileMapper.ToDomain(parsed, planId, source, installedDate));
+        return Task.FromResult<Plan?>(
+            PlanFileMapper.ToDomain(parsed, planId, source, installedDate)
+        );
     }
 
     public override Task AddAsync(Plan entity, CancellationToken cancellationToken = default)
@@ -57,7 +62,8 @@ public sealed class FileSystemPlanRepository : AbstractPlanRepository
 
         FileSystemRepositoryFs.WriteAllTextUtf8(
             _paths.PlanInstallJsonPath(planId),
-            PlanFileMapper.SerializeInstallJsonForAdd(planId, entity));
+            PlanFileMapper.SerializeInstallJsonForAdd(planId, entity)
+        );
 
         return Task.CompletedTask;
     }
@@ -77,8 +83,10 @@ public sealed class FileSystemPlanRepository : AbstractPlanRepository
     public override Task DeleteAsync(Plan entity, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
-        if (entity is null) throw new ArgumentNullException(nameof(entity));
-        if (string.IsNullOrWhiteSpace(entity.Id)) return Task.CompletedTask;
+        if (entity is null)
+            throw new ArgumentNullException(nameof(entity));
+        if (string.IsNullOrWhiteSpace(entity.Id))
+            return Task.CompletedTask;
 
         var dir = _paths.PlanDir(entity.Id.Trim());
         FileSystemRepositoryFs.DeleteDirectoryIfExists(dir);
@@ -103,7 +111,7 @@ public sealed class FileSystemPlanRepository : AbstractPlanRepository
                 var installedDate = installedAt ?? File.GetLastWriteTimeUtc(planYamlPath);
 
                 return PlanFileMapper.ToDomain(parsed, planId, source, installedDate);
-            });
+            }
+        );
     }
 }
-

@@ -25,32 +25,34 @@ public class OrleansRepositoryDevTests
     {
         // Create host with Orleans silo for testing
         var builder = Host.CreateDefaultBuilder();
-        
-        builder.UseOrleans((context, siloBuilder) =>
-        {
-            siloBuilder.UseLocalhostClustering();
-            siloBuilder.AddMemoryGrainStorage("Default");
-        });
-        
+
+        builder.UseOrleans(
+            (context, siloBuilder) =>
+            {
+                siloBuilder.UseLocalhostClustering();
+                siloBuilder.AddMemoryGrainStorage("Default");
+            }
+        );
+
         builder.ConfigureServices(services =>
         {
             services.AddSerializer(builder =>
             {
                 builder.AddJsonSerializer(isSupported: _ => true);
             });
-            
+
             // Register repositories
             services.AddSingleton<IPlanRepository, OrleansPlansRepository>();
             services.AddSingleton<IPlantRepository, OrleansPlantRepository>();
             services.AddSingleton<IPlanterRepository, OrleansPlanterRepository>();
             services.AddSingleton<IPlannerRepository, OrleansPlannerRepository>();
         });
-        
+
         _host = builder.Build();
         await _host.StartAsync();
-        
+
         _services = _host.Services;
-        
+
         // Wait for Orleans to be ready
         await Task.Delay(1000);
     }
@@ -74,7 +76,7 @@ public class OrleansRepositoryDevTests
         {
             Id = "test-plan-dev",
             Version = "1.0.0",
-            Author = "Test Author"
+            Author = "Test Author",
         };
 
         // Act
@@ -99,30 +101,30 @@ public class OrleansRepositoryDevTests
             Slug = "test-plant-dev",
             PlanId = "test-plan",
             Title = "Test Plant",
-            Status = "planned"
+            Status = "planned",
         };
 
         // Act - Add
         await repository.AddAsync(plant);
         var retrieved = await repository.GetByIdAsync("test-plan:test-plant-dev");
-        
+
         // Assert - Add
         Assert.That(retrieved, Is.Not.Null);
         Assert.That(retrieved!.Key, Is.EqualTo("test-plan:test-plant-dev"));
-        
+
         // Act - Update
         retrieved.Status = "planted";
         await repository.UpdateAsync(retrieved);
         var updated = await repository.GetByIdAsync("test-plan:test-plant-dev");
-        
+
         // Assert - Update
         Assert.That(updated, Is.Not.Null);
         Assert.That(updated!.Status, Is.EqualTo("planted"));
-        
+
         // Act - Delete
         await repository.DeleteAsync(updated);
         var deleted = await repository.GetByIdAsync("test-plan:test-plant-dev");
-        
+
         // Assert - Delete
         Assert.That(deleted, Is.Null);
     }
@@ -136,18 +138,20 @@ public class OrleansRepositoryDevTests
         {
             Id = "concurrent-planter-dev",
             Name = "Concurrent Planter",
-            Type = "builtin"
+            Type = "builtin",
         };
         var planter2 = new Planter
         {
             Id = "concurrent-planter-dev",
             Name = "Duplicate Planter",
-            Type = "builtin"
+            Type = "builtin",
         };
 
         // Act & Assert
         await repository.AddAsync(planter1);
-        Assert.ThrowsAsync<InvalidOperationException>(async () => await repository.AddAsync(planter2));
+        Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await repository.AddAsync(planter2)
+        );
     }
 
     [Test]
@@ -159,19 +163,19 @@ public class OrleansRepositoryDevTests
         {
             Id = "planner-1-dev",
             Name = "Planner 1",
-            PlanId = "plan-1"
+            PlanId = "plan-1",
         };
         var planner2 = new Planner
         {
             Id = "planner-2-dev",
             Name = "Planner 2",
-            PlanId = "plan-2"
+            PlanId = "plan-2",
         };
 
         // Act
         await repository.AddAsync(planner1);
         await repository.AddAsync(planner2);
-        
+
         var spec = new Ardalis.Specification.Specification<Planner>();
         var all = await repository.ListAsync(spec);
 

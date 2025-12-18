@@ -5,11 +5,13 @@ using MediatR;
 
 namespace GitForest.Application.Features.Planters;
 
-public sealed record ListPlantersQuery(bool IncludeBuiltin, bool IncludeCustom) : IRequest<IReadOnlyList<PlanterRow>>;
+public sealed record ListPlantersQuery(bool IncludeBuiltin, bool IncludeCustom)
+    : IRequest<IReadOnlyList<PlanterRow>>;
 
 public sealed record PlanterRow(string Id, string Kind, string[] Plans);
 
-internal sealed class ListPlantersHandler : IRequestHandler<ListPlantersQuery, IReadOnlyList<PlanterRow>>
+internal sealed class ListPlantersHandler
+    : IRequestHandler<ListPlantersQuery, IReadOnlyList<PlanterRow>>
 {
     private readonly IPlanRepository _plans;
     private readonly IPlanterRepository _planters;
@@ -20,9 +22,13 @@ internal sealed class ListPlantersHandler : IRequestHandler<ListPlantersQuery, I
         _planters = planters ?? throw new ArgumentNullException(nameof(planters));
     }
 
-    public async Task<IReadOnlyList<PlanterRow>> Handle(ListPlantersQuery request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<PlanterRow>> Handle(
+        ListPlantersQuery request,
+        CancellationToken cancellationToken
+    )
     {
-        if (request is null) throw new ArgumentNullException(nameof(request));
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
 
         var rows = new List<PlanterRow>();
 
@@ -33,12 +39,14 @@ internal sealed class ListPlantersHandler : IRequestHandler<ListPlantersQuery, I
             foreach (var plan in installed)
             {
                 var planId = (plan.Id ?? string.Empty).Trim();
-                if (planId.Length == 0) continue;
+                if (planId.Length == 0)
+                    continue;
 
                 foreach (var rawPlanterId in plan.Planters ?? new List<string>())
                 {
                     var planterId = (rawPlanterId ?? string.Empty).Trim();
-                    if (planterId.Length == 0) continue;
+                    if (planterId.Length == 0)
+                        continue;
 
                     if (!builtinById.TryGetValue(planterId, out var referencedBy))
                     {
@@ -50,12 +58,15 @@ internal sealed class ListPlantersHandler : IRequestHandler<ListPlantersQuery, I
                 }
             }
 
-            rows.AddRange(builtinById
-                .Select(kvp => new PlanterRow(
-                    Id: kvp.Key,
-                    Kind: "builtin",
-                    Plans: kvp.Value.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray()))
-                .OrderBy(x => x.Id, StringComparer.OrdinalIgnoreCase));
+            rows.AddRange(
+                builtinById
+                    .Select(kvp => new PlanterRow(
+                        Id: kvp.Key,
+                        Kind: "builtin",
+                        Plans: kvp.Value.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray()
+                    ))
+                    .OrderBy(x => x.Id, StringComparer.OrdinalIgnoreCase)
+            );
         }
 
         if (request.IncludeCustom)
@@ -65,18 +76,20 @@ internal sealed class ListPlantersHandler : IRequestHandler<ListPlantersQuery, I
             foreach (var planter in custom)
             {
                 var id = (planter.Id ?? string.Empty).Trim();
-                if (id.Length == 0) continue;
+                if (id.Length == 0)
+                    continue;
 
                 rows.Add(new PlanterRow(Id: id, Kind: "custom", Plans: Array.Empty<string>()));
             }
         }
 
         // De-duplicate: if a custom planter shares the same id as a builtin, keep builtin.
-        var merged = rows
-            .GroupBy(r => r.Id, StringComparer.OrdinalIgnoreCase)
+        var merged = rows.GroupBy(r => r.Id, StringComparer.OrdinalIgnoreCase)
             .Select(g =>
             {
-                var builtinRow = g.FirstOrDefault(x => string.Equals(x.Kind, "builtin", StringComparison.OrdinalIgnoreCase));
+                var builtinRow = g.FirstOrDefault(x =>
+                    string.Equals(x.Kind, "builtin", StringComparison.OrdinalIgnoreCase)
+                );
                 return builtinRow ?? g.First();
             })
             .OrderBy(x => x.Id, StringComparer.OrdinalIgnoreCase)
@@ -101,9 +114,13 @@ internal sealed class GetPlanterHandler : IRequestHandler<GetPlanterQuery, Plant
         _planters = planters ?? throw new ArgumentNullException(nameof(planters));
     }
 
-    public async Task<PlanterInfoResult> Handle(GetPlanterQuery request, CancellationToken cancellationToken)
+    public async Task<PlanterInfoResult> Handle(
+        GetPlanterQuery request,
+        CancellationToken cancellationToken
+    )
     {
-        if (request is null) throw new ArgumentNullException(nameof(request));
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
 
         var id = (request.PlanterId ?? string.Empty).Trim();
         if (id.Length == 0)
@@ -116,11 +133,18 @@ internal sealed class GetPlanterHandler : IRequestHandler<GetPlanterQuery, Plant
         foreach (var plan in installedPlans)
         {
             var planId = (plan.Id ?? string.Empty).Trim();
-            if (planId.Length == 0) continue;
+            if (planId.Length == 0)
+                continue;
 
             foreach (var raw in plan.Planters ?? new List<string>())
             {
-                if (string.Equals((raw ?? string.Empty).Trim(), id, StringComparison.OrdinalIgnoreCase))
+                if (
+                    string.Equals(
+                        (raw ?? string.Empty).Trim(),
+                        id,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
                 {
                     plans.Add(planId);
                 }
@@ -136,7 +160,7 @@ internal sealed class GetPlanterHandler : IRequestHandler<GetPlanterQuery, Plant
             Exists: exists,
             Id: id,
             Kind: kind,
-            Plans: plans.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray());
+            Plans: plans.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray()
+        );
     }
 }
-

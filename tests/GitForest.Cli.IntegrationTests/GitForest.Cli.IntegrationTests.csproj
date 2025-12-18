@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <IsPackable>false</IsPackable>
@@ -19,5 +18,4 @@
   <ItemGroup>
     <None Include="workflows\\master-workflow.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
-
 </Project>

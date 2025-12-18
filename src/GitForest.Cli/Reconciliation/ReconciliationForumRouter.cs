@@ -9,16 +9,25 @@ public sealed class ReconciliationForumRouter : IReconciliationForumRouter
     private readonly IReconciliationForum _fileForum;
     private readonly IReconciliationForum _aiForum;
 
-    public ReconciliationForumRouter(ForestConfig config, IReconciliationForum fileForum, IReconciliationForum aiForum)
+    public ReconciliationForumRouter(
+        ForestConfig config,
+        IReconciliationForum fileForum,
+        IReconciliationForum aiForum
+    )
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _fileForum = fileForum ?? throw new ArgumentNullException(nameof(fileForum));
         _aiForum = aiForum ?? throw new ArgumentNullException(nameof(aiForum));
     }
 
-    public Task<ReconciliationStrategy> RunAsync(ReconcileContext context, string? forumOverride, CancellationToken cancellationToken = default)
+    public Task<ReconciliationStrategy> RunAsync(
+        ReconcileContext context,
+        string? forumOverride,
+        CancellationToken cancellationToken = default
+    )
     {
-        if (context is null) throw new ArgumentNullException(nameof(context));
+        if (context is null)
+            throw new ArgumentNullException(nameof(context));
 
         var requested = NormalizeForum(forumOverride);
         var configured = NormalizeForum(_config.Reconcile?.Forum);
@@ -40,4 +49,3 @@ public sealed class ReconciliationForumRouter : IReconciliationForumRouter
         return v is "ai" or "file" ? v : null;
     }
 }
-

@@ -27,16 +27,18 @@ public class PlantIndexGrain : Grain, IPlantIndexGrain
 
     public async Task AddIdAsync(string id)
     {
-        if (string.IsNullOrWhiteSpace(id)) return;
-        
+        if (string.IsNullOrWhiteSpace(id))
+            return;
+
         _state.State.Add(id.Trim());
         await _state.WriteStateAsync();
     }
 
     public async Task RemoveIdAsync(string id)
     {
-        if (string.IsNullOrWhiteSpace(id)) return;
-        
+        if (string.IsNullOrWhiteSpace(id))
+            return;
+
         _state.State.Remove(id.Trim());
         await _state.WriteStateAsync();
     }

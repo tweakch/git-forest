@@ -7,7 +7,7 @@ public sealed class Output
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
-        WriteIndented = false
+        WriteIndented = false,
     };
 
     private readonly TextWriter _out;
@@ -47,16 +47,16 @@ public sealed class Output
 
     public void WriteJsonError(string code, string message, object? details = null)
     {
-        WriteJson(new
-        {
-            error = new
+        WriteJson(
+            new
             {
-                code,
-                message,
-                details
+                error = new
+                {
+                    code,
+                    message,
+                    details,
+                },
             }
-        });
+        );
     }
 }
-
-

@@ -9,4 +9,3 @@ public sealed class AllPlannersSpec : Specification<Planner>
         Query.OrderBy(p => p.Id);
     }
 }
-

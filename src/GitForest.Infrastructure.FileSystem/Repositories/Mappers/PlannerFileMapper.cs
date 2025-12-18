@@ -8,7 +8,8 @@ internal static class PlannerFileMapper
 {
     public static PlannerFileModel ToFileModel(Planner planner)
     {
-        if (planner is null) throw new ArgumentNullException(nameof(planner));
+        if (planner is null)
+            throw new ArgumentNullException(nameof(planner));
 
         var id = planner.Id.Trim();
 
@@ -24,7 +25,9 @@ internal static class PlannerFileMapper
                 }
                 catch
                 {
-                    using var doc = JsonDocument.Parse(JsonSerializer.Serialize(kv.Value?.ToString() ?? string.Empty));
+                    using var doc = JsonDocument.Parse(
+                        JsonSerializer.Serialize(kv.Value?.ToString() ?? string.Empty)
+                    );
                     config[kv.Key] = doc.RootElement.Clone();
                 }
             }
@@ -35,7 +38,8 @@ internal static class PlannerFileMapper
             Name: planner.Name ?? string.Empty,
             PlanId: planner.PlanId ?? string.Empty,
             Type: planner.Type ?? string.Empty,
-            Configuration: config);
+            Configuration: config
+        );
     }
 
     public static Planner ToDomain(PlannerFileModel model, string fallbackId)
@@ -49,7 +53,7 @@ internal static class PlannerFileMapper
                 JsonValueKind.Number => kv.Value.TryGetInt64(out var l) ? l : kv.Value.GetDouble(),
                 JsonValueKind.True => true,
                 JsonValueKind.False => false,
-                _ => kv.Value.GetRawText()
+                _ => kv.Value.GetRawText(),
             };
         }
 
@@ -59,9 +63,7 @@ internal static class PlannerFileMapper
             Name = model.Name ?? string.Empty,
             PlanId = model.PlanId ?? string.Empty,
             Type = model.Type ?? string.Empty,
-            Configuration = config
+            Configuration = config,
         };
     }
 }
-
-

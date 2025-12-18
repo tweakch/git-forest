@@ -7,16 +7,17 @@ public sealed record LlmConfig(
     string Model,
     string BaseUrl,
     string ApiKeyEnvVar,
-    double Temperature);
+    double Temperature
+);
 
-public sealed record ReconcileConfig(
-    string Forum);
+public sealed record ReconcileConfig(string Forum);
 
 public sealed record ForestConfig(
     string PersistenceProvider,
     int LocksTimeoutSeconds,
     ReconcileConfig Reconcile,
-    LlmConfig Llm);
+    LlmConfig Llm
+);
 
 public static class ForestConfigReader
 {
@@ -33,20 +34,24 @@ public static class ForestConfigReader
     {
         "file",
         "memory",
-        "orleans"
+        "orleans",
     };
 
-    private static readonly HashSet<string> AllowedLlmProviders = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> AllowedLlmProviders = new(
+        StringComparer.OrdinalIgnoreCase
+    )
     {
         "mock",
         "openai",
-        "ollama"
+        "ollama",
     };
 
-    private static readonly HashSet<string> AllowedReconcileForums = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> AllowedReconcileForums = new(
+        StringComparer.OrdinalIgnoreCase
+    )
     {
         "file",
-        "ai"
+        "ai",
     };
 
     public static ForestConfig ReadEffective(string forestDir)
@@ -66,7 +71,9 @@ public static class ForestConfigReader
                 Model: DefaultLlmModel,
                 BaseUrl: DefaultLlmBaseUrl,
                 ApiKeyEnvVar: DefaultLlmApiKeyEnvVar,
-                Temperature: DefaultLlmTemperature));
+                Temperature: DefaultLlmTemperature
+            )
+        );
     }
 
     public static ForestConfig? TryRead(string forestDir)
@@ -149,8 +156,10 @@ public static class ForestConfigReader
                 continue;
             }
 
-            if (currentSection.Equals("persistence", StringComparison.OrdinalIgnoreCase) &&
-                nestedKey.Equals("provider", StringComparison.OrdinalIgnoreCase))
+            if (
+                currentSection.Equals("persistence", StringComparison.OrdinalIgnoreCase)
+                && nestedKey.Equals("provider", StringComparison.OrdinalIgnoreCase)
+            )
             {
                 var candidate = nestedValue.Trim();
                 if (AllowedProviders.Contains(candidate))
@@ -161,9 +170,13 @@ public static class ForestConfigReader
                 continue;
             }
 
-            if (currentSection.Equals("locks", StringComparison.OrdinalIgnoreCase) &&
-                (nestedKey.Equals("timeoutSeconds", StringComparison.OrdinalIgnoreCase) ||
-                 nestedKey.Equals("timeout_seconds", StringComparison.OrdinalIgnoreCase)))
+            if (
+                currentSection.Equals("locks", StringComparison.OrdinalIgnoreCase)
+                && (
+                    nestedKey.Equals("timeoutSeconds", StringComparison.OrdinalIgnoreCase)
+                    || nestedKey.Equals("timeout_seconds", StringComparison.OrdinalIgnoreCase)
+                )
+            )
             {
                 if (int.TryParse(nestedValue.Trim(), out var seconds) && seconds > 0)
                 {
@@ -173,8 +186,10 @@ public static class ForestConfigReader
                 continue;
             }
 
-            if (currentSection.Equals("reconcile", StringComparison.OrdinalIgnoreCase) &&
-                nestedKey.Equals("forum", StringComparison.OrdinalIgnoreCase))
+            if (
+                currentSection.Equals("reconcile", StringComparison.OrdinalIgnoreCase)
+                && nestedKey.Equals("forum", StringComparison.OrdinalIgnoreCase)
+            )
             {
                 var candidate = nestedValue.Trim();
                 if (AllowedReconcileForums.Contains(candidate))
@@ -209,8 +224,10 @@ public static class ForestConfigReader
                     continue;
                 }
 
-                if (nestedKey.Equals("baseUrl", StringComparison.OrdinalIgnoreCase) ||
-                    nestedKey.Equals("base_url", StringComparison.OrdinalIgnoreCase))
+                if (
+                    nestedKey.Equals("baseUrl", StringComparison.OrdinalIgnoreCase)
+                    || nestedKey.Equals("base_url", StringComparison.OrdinalIgnoreCase)
+                )
                 {
                     var candidate = nestedValue.Trim();
                     if (candidate.Length > 0)
@@ -221,8 +238,10 @@ public static class ForestConfigReader
                     continue;
                 }
 
-                if (nestedKey.Equals("apiKeyEnvVar", StringComparison.OrdinalIgnoreCase) ||
-                    nestedKey.Equals("api_key_env_var", StringComparison.OrdinalIgnoreCase))
+                if (
+                    nestedKey.Equals("apiKeyEnvVar", StringComparison.OrdinalIgnoreCase)
+                    || nestedKey.Equals("api_key_env_var", StringComparison.OrdinalIgnoreCase)
+                )
                 {
                     var candidate = nestedValue.Trim();
                     if (candidate.Length > 0)
@@ -252,7 +271,9 @@ public static class ForestConfigReader
                 Model: llmModel,
                 BaseUrl: llmBaseUrl,
                 ApiKeyEnvVar: llmApiKeyEnvVar,
-                Temperature: llmTemperature));
+                Temperature: llmTemperature
+            )
+        );
     }
 
     private static bool TryParseKeyValue(string line, out string key, out string value)
@@ -280,7 +301,10 @@ public static class ForestConfigReader
 
     private static string Unquote(string value)
     {
-        if (value.Length >= 2 && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\'')))
+        if (
+            value.Length >= 2
+            && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\''))
+        )
         {
             return value[1..^1];
         }
@@ -296,4 +320,3 @@ public static class ForestConfigReader
             .Split('\n');
     }
 }
-

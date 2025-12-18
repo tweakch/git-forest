@@ -22,18 +22,29 @@ public sealed class OpenAiCompatibleAgentChatClient : IAgentChatClient
         string baseUrl,
         string apiKeyEnvVar,
         string defaultModel,
-        double defaultTemperature)
+        double defaultTemperature
+    )
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-        _baseUrl = string.IsNullOrWhiteSpace(baseUrl) ? throw new ArgumentException("Base URL must be provided.", nameof(baseUrl)) : baseUrl.Trim().TrimEnd('/');
-        _apiKeyEnvVar = string.IsNullOrWhiteSpace(apiKeyEnvVar) ? "OPENAI_API_KEY" : apiKeyEnvVar.Trim();
-        _defaultModel = string.IsNullOrWhiteSpace(defaultModel) ? "gpt-4o-mini" : defaultModel.Trim();
+        _baseUrl = string.IsNullOrWhiteSpace(baseUrl)
+            ? throw new ArgumentException("Base URL must be provided.", nameof(baseUrl))
+            : baseUrl.Trim().TrimEnd('/');
+        _apiKeyEnvVar = string.IsNullOrWhiteSpace(apiKeyEnvVar)
+            ? "OPENAI_API_KEY"
+            : apiKeyEnvVar.Trim();
+        _defaultModel = string.IsNullOrWhiteSpace(defaultModel)
+            ? "gpt-4o-mini"
+            : defaultModel.Trim();
         _defaultTemperature = defaultTemperature;
     }
 
-    public async Task<AgentChatResponse> ChatAsync(AgentChatRequest request, CancellationToken cancellationToken = default)
+    public async Task<AgentChatResponse> ChatAsync(
+        AgentChatRequest request,
+        CancellationToken cancellationToken = default
+    )
     {
-        if (request is null) throw new ArgumentNullException(nameof(request));
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
 
         var model = string.IsNullOrWhiteSpace(request.Model) ? _defaultModel : request.Model.Trim();
         var temperature = request.Temperature ?? _defaultTemperature;
@@ -52,20 +63,26 @@ public sealed class OpenAiCompatibleAgentChatClient : IAgentChatClient
             messages = new[]
             {
                 new { role = "system", content = request.SystemPrompt ?? string.Empty },
-                new { role = "user", content = request.UserPrompt ?? string.Empty }
-            }
+                new { role = "user", content = request.UserPrompt ?? string.Empty },
+            },
         };
 
         message.Content = new StringContent(
-            JsonSerializer.Serialize(payload, new JsonSerializerOptions(JsonSerializerDefaults.Web)),
+            JsonSerializer.Serialize(
+                payload,
+                new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            ),
             Encoding.UTF8,
-            "application/json");
+            "application/json"
+        );
 
         using var response = await _httpClient.SendAsync(message, cancellationToken);
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
-            throw new HttpRequestException($"LLM request failed ({(int)response.StatusCode}): {body}");
+            throw new HttpRequestException(
+                $"LLM request failed ({(int)response.StatusCode}): {body}"
+            );
         }
 
         // Try to extract choices[0].message.content
@@ -73,13 +90,17 @@ public sealed class OpenAiCompatibleAgentChatClient : IAgentChatClient
         {
             using var doc = JsonDocument.Parse(body);
             var root = doc.RootElement;
-            if (root.TryGetProperty("choices", out var choices) &&
-                choices.ValueKind == JsonValueKind.Array &&
-                choices.GetArrayLength() > 0)
+            if (
+                root.TryGetProperty("choices", out var choices)
+                && choices.ValueKind == JsonValueKind.Array
+                && choices.GetArrayLength() > 0
+            )
             {
                 var first = choices[0];
-                if (first.TryGetProperty("message", out var msg) &&
-                    msg.TryGetProperty("content", out var content))
+                if (
+                    first.TryGetProperty("message", out var msg)
+                    && msg.TryGetProperty("content", out var content)
+                )
                 {
                     var text = content.GetString() ?? string.Empty;
                     return new AgentChatResponse(RawContent: text, Json: null);
@@ -94,5 +115,3 @@ public sealed class OpenAiCompatibleAgentChatClient : IAgentChatClient
         return new AgentChatResponse(RawContent: body, Json: null);
     }
 }
-
-

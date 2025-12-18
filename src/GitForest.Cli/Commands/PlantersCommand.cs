@@ -1,6 +1,6 @@
 using System.CommandLine;
-using GitForest.Cli;
 using GitForest.Application.Features.Planters;
+using GitForest.Cli;
 using MediatR;
 
 namespace GitForest.Cli.Commands;
@@ -14,74 +14,101 @@ public static class PlantersCommand
         var listCommand = new Command("list", "List planters");
         var builtinOption = new Option<bool>("--builtin")
         {
-            Description = "Show only built-in planters"
+            Description = "Show only built-in planters",
         };
         var customOption = new Option<bool>("--custom")
         {
-            Description = "Show only custom planters"
+            Description = "Show only custom planters",
         };
         listCommand.Options.Add(builtinOption);
         listCommand.Options.Add(customOption);
 
-        listCommand.SetAction(async (parseResult, token) =>
-        {
-            var output = parseResult.GetOutput(cliOptions);
-            var builtin = parseResult.GetValue(builtinOption);
-            var custom = parseResult.GetValue(customOption);
-
-            try
+        listCommand.SetAction(
+            async (parseResult, token) =>
             {
-                var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
-                if (!ForestStore.IsInitialized(forestDir))
-                {
-                    throw new ForestStore.ForestNotInitializedException(forestDir);
-                }
+                var output = parseResult.GetOutput(cliOptions);
+                var builtin = parseResult.GetValue(builtinOption);
+                var custom = parseResult.GetValue(customOption);
 
-                // By default (no flags), show both.
-                var includeBuiltin = !builtin && !custom || builtin;
-                var includeCustom = !builtin && !custom || custom;
-                var merged = (await mediator.Send(new ListPlantersQuery(IncludeBuiltin: includeBuiltin, IncludeCustom: includeCustom), token)).ToArray();
+                try
+                {
+                    var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
+                    if (!ForestStore.IsInitialized(forestDir))
+                    {
+                        throw new ForestStore.ForestNotInitializedException(forestDir);
+                    }
 
-                if (output.Json)
-                {
-                    output.WriteJson(new
+                    // By default (no flags), show both.
+                    var includeBuiltin = !builtin && !custom || builtin;
+                    var includeCustom = !builtin && !custom || custom;
+                    var merged = (
+                        await mediator.Send(
+                            new ListPlantersQuery(
+                                IncludeBuiltin: includeBuiltin,
+                                IncludeCustom: includeCustom
+                            ),
+                            token
+                        )
+                    ).ToArray();
+
+                    if (output.Json)
                     {
-                        planters = merged.Select(r => new { id = r.Id, kind = r.Kind, plans = r.Plans }).ToArray()
-                    });
-                }
-                else
-                {
-                    if (merged.Length == 0)
-                    {
-                        output.WriteLine("No planters configured");
+                        output.WriteJson(
+                            new
+                            {
+                                planters = merged
+                                    .Select(r => new
+                                    {
+                                        id = r.Id,
+                                        kind = r.Kind,
+                                        plans = r.Plans,
+                                    })
+                                    .ToArray(),
+                            }
+                        );
                     }
                     else
                     {
-                        output.WriteLine($"{PadRight("Id", 30)} {PadRight("Kind", 8)} {PadRight("Plans", 30)}");
-                        foreach (var row in merged)
+                        if (merged.Length == 0)
                         {
-                            var plansText = row.Plans.Length == 0 ? "-" : string.Join(",", row.Plans);
-                            output.WriteLine($"{PadRight(row.Id, 30)} {PadRight(row.Kind, 8)} {PadRight(Truncate(plansText, 30), 30)}");
+                            output.WriteLine("No planters configured");
+                        }
+                        else
+                        {
+                            output.WriteLine(
+                                $"{PadRight("Id", 30)} {PadRight("Kind", 8)} {PadRight("Plans", 30)}"
+                            );
+                            foreach (var row in merged)
+                            {
+                                var plansText =
+                                    row.Plans.Length == 0 ? "-" : string.Join(",", row.Plans);
+                                output.WriteLine(
+                                    $"{PadRight(row.Id, 30)} {PadRight(row.Kind, 8)} {PadRight(Truncate(plansText, 30), 30)}"
+                                );
+                            }
                         }
                     }
-                }
 
-                return ExitCodes.Success;
-            }
-            catch (ForestStore.ForestNotInitializedException)
-            {
-                if (output.Json)
-                {
-                    output.WriteJsonError(code: "forest_not_initialized", message: "Forest not initialized");
+                    return ExitCodes.Success;
                 }
-                else
+                catch (ForestStore.ForestNotInitializedException)
                 {
-                    output.WriteErrorLine("Error: forest not initialized");
-                }
+                    if (output.Json)
+                    {
+                        output.WriteJsonError(
+                            code: "forest_not_initialized",
+                            message: "Forest not initialized"
+                        );
+                    }
+                    else
+                    {
+                        output.WriteErrorLine("Error: forest not initialized");
+                    }
 
-                return ExitCodes.ForestNotInitialized;
+                    return ExitCodes.ForestNotInitialized;
+                }
             }
-        });
+        );
 
         plantersCommand.Subcommands.Add(listCommand);
         return plantersCommand;
@@ -99,5 +126,3 @@ public static class PlantersCommand
         return value.Length <= max ? value : value[..Math.Max(0, max - 3)] + "...";
     }
 }
-
-

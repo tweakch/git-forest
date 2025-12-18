@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <ItemGroup>
     <ProjectReference Include="..\GitForest.Core\GitForest.Core.csproj" />
     <ProjectReference Include="..\GitForest.Mediator\GitForest.Mediator.csproj" />
@@ -10,5 +9,4 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
 </Project>

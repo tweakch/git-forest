@@ -6,7 +6,10 @@ namespace GitForest.Core.Services;
 /// </summary>
 public interface IAgentChatClient
 {
-    Task<AgentChatResponse> ChatAsync(AgentChatRequest request, CancellationToken cancellationToken = default);
+    Task<AgentChatResponse> ChatAsync(
+        AgentChatRequest request,
+        CancellationToken cancellationToken = default
+    );
 }
 
 /// <summary>
@@ -15,7 +18,10 @@ public interface IAgentChatClient
 /// </summary>
 public interface IReconciliationForum
 {
-    Task<ReconciliationStrategy> RunAsync(ReconcileContext context, CancellationToken cancellationToken = default);
+    Task<ReconciliationStrategy> RunAsync(
+        ReconcileContext context,
+        CancellationToken cancellationToken = default
+    );
 }
 
 /// <summary>
@@ -41,10 +47,7 @@ public sealed record AgentChatRequest(
 /// </summary>
 /// <param name="RawContent">Raw assistant message content (may contain JSON).</param>
 /// <param name="Json">Optional extracted JSON payload if the response is structured.</param>
-public sealed record AgentChatResponse(
-    string RawContent,
-    string? Json = null
-);
+public sealed record AgentChatResponse(string RawContent, string? Json = null);
 
 /// <summary>
 /// Context passed into reconciliation. This is intentionally persistence-agnostic.
@@ -91,5 +94,3 @@ public sealed record ReconciliationStrategy(
     string? Summary = null,
     IReadOnlyDictionary<string, string>? Metadata = null
 );
-
-

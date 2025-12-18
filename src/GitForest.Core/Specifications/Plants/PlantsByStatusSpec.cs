@@ -6,9 +6,6 @@ public sealed class PlantsByStatusSpec : Specification<Plant>
 {
     public PlantsByStatusSpec(string status)
     {
-        Query.Where(p => p.Status == status)
-             .OrderBy(p => p.Key);
+        Query.Where(p => p.Status == status).OrderBy(p => p.Key);
     }
 }
-
-

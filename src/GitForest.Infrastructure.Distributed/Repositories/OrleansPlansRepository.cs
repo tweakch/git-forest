@@ -7,7 +7,9 @@ namespace GitForest.Infrastructure.Distributed.Repositories;
 /// <summary>
 /// Orleans-based repository implementation for Plan entities
 /// </summary>
-public sealed class OrleansPlansRepository : AbstractRepositoryWithSpecs<Plan, string>, IPlanRepository
+public sealed class OrleansPlansRepository
+    : AbstractRepositoryWithSpecs<Plan, string>,
+        IPlanRepository
 {
     private readonly IGrainFactory _grainFactory;
 
@@ -16,9 +18,13 @@ public sealed class OrleansPlansRepository : AbstractRepositoryWithSpecs<Plan, s
         _grainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
     }
 
-    public override async Task<Plan?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    public override async Task<Plan?> GetByIdAsync(
+        string id,
+        CancellationToken cancellationToken = default
+    )
     {
-        if (string.IsNullOrWhiteSpace(id)) return null;
+        if (string.IsNullOrWhiteSpace(id))
+            return null;
 
         var grain = _grainFactory.GetGrain<IPlanGrain>(id.Trim());
         return await grain.GetAsync();
@@ -26,12 +32,14 @@ public sealed class OrleansPlansRepository : AbstractRepositoryWithSpecs<Plan, s
 
     public override async Task AddAsync(Plan entity, CancellationToken cancellationToken = default)
     {
-        if (entity is null) throw new ArgumentNullException(nameof(entity));
-        if (string.IsNullOrWhiteSpace(entity.Id)) throw new ArgumentException("Plan.Id must be provided.", nameof(entity));
+        if (entity is null)
+            throw new ArgumentNullException(nameof(entity));
+        if (string.IsNullOrWhiteSpace(entity.Id))
+            throw new ArgumentException("Plan.Id must be provided.", nameof(entity));
 
         var id = entity.Id.Trim();
         var grain = _grainFactory.GetGrain<IPlanGrain>(id);
-        
+
         var existing = await grain.GetAsync();
         if (existing is not null)
         {
@@ -44,20 +52,30 @@ public sealed class OrleansPlansRepository : AbstractRepositoryWithSpecs<Plan, s
         await indexGrain.AddIdAsync(id);
     }
 
-    public override async Task UpdateAsync(Plan entity, CancellationToken cancellationToken = default)
+    public override async Task UpdateAsync(
+        Plan entity,
+        CancellationToken cancellationToken = default
+    )
     {
-        if (entity is null) throw new ArgumentNullException(nameof(entity));
-        if (string.IsNullOrWhiteSpace(entity.Id)) throw new ArgumentException("Plan.Id must be provided.", nameof(entity));
+        if (entity is null)
+            throw new ArgumentNullException(nameof(entity));
+        if (string.IsNullOrWhiteSpace(entity.Id))
+            throw new ArgumentException("Plan.Id must be provided.", nameof(entity));
 
         var id = entity.Id.Trim();
         var grain = _grainFactory.GetGrain<IPlanGrain>(id);
         await grain.SetAsync(entity);
     }
 
-    public override async Task DeleteAsync(Plan entity, CancellationToken cancellationToken = default)
+    public override async Task DeleteAsync(
+        Plan entity,
+        CancellationToken cancellationToken = default
+    )
     {
-        if (entity is null) throw new ArgumentNullException(nameof(entity));
-        if (string.IsNullOrWhiteSpace(entity.Id)) return;
+        if (entity is null)
+            throw new ArgumentNullException(nameof(entity));
+        if (string.IsNullOrWhiteSpace(entity.Id))
+            return;
 
         var id = entity.Id.Trim();
         var grain = _grainFactory.GetGrain<IPlanGrain>(id);
@@ -67,10 +85,13 @@ public sealed class OrleansPlansRepository : AbstractRepositoryWithSpecs<Plan, s
         await indexGrain.RemoveIdAsync(id);
     }
 
-    protected override Task<IReadOnlyList<Plan>> LoadAllAsync(CancellationToken cancellationToken = default)
-        => GetAllAsync(cancellationToken);
+    protected override Task<IReadOnlyList<Plan>> LoadAllAsync(
+        CancellationToken cancellationToken = default
+    ) => GetAllAsync(cancellationToken);
 
-    private async Task<IReadOnlyList<Plan>> GetAllAsync(CancellationToken cancellationToken = default)
+    private async Task<IReadOnlyList<Plan>> GetAllAsync(
+        CancellationToken cancellationToken = default
+    )
     {
         var indexGrain = _grainFactory.GetGrain<IPlanIndexGrain>(0);
         var ids = await indexGrain.GetAllIdsAsync();

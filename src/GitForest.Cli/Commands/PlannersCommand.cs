@@ -1,6 +1,6 @@
 using System.CommandLine;
-using GitForest.Cli;
 using GitForest.Application.Features.Planners;
+using GitForest.Cli;
 using MediatR;
 
 namespace GitForest.Cli.Commands;
@@ -12,67 +12,77 @@ public static class PlannersCommand
         var plannersCommand = new Command("planners", "Manage planners");
 
         var listCommand = new Command("list", "List planners");
-        var planFilterOption = new Option<string?>("--plan")
-        {
-            Description = "Filter by plan ID"
-        };
+        var planFilterOption = new Option<string?>("--plan") { Description = "Filter by plan ID" };
         listCommand.Options.Add(planFilterOption);
 
-        listCommand.SetAction(async (parseResult, token) =>
-        {
-            var output = parseResult.GetOutput(cliOptions);
-            var plan = parseResult.GetValue(planFilterOption);
-
-            try
+        listCommand.SetAction(
+            async (parseResult, token) =>
             {
-                var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
-                if (!ForestStore.IsInitialized(forestDir))
-                {
-                    throw new ForestStore.ForestNotInitializedException(forestDir);
-                }
+                var output = parseResult.GetOutput(cliOptions);
+                var plan = parseResult.GetValue(planFilterOption);
 
-                var rows = (await mediator.Send(new ListPlannersQuery(PlanFilter: plan), token)).ToArray();
+                try
+                {
+                    var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
+                    if (!ForestStore.IsInitialized(forestDir))
+                    {
+                        throw new ForestStore.ForestNotInitializedException(forestDir);
+                    }
 
-                if (output.Json)
-                {
-                    output.WriteJson(new
+                    var rows = (
+                        await mediator.Send(new ListPlannersQuery(PlanFilter: plan), token)
+                    ).ToArray();
+
+                    if (output.Json)
                     {
-                        planners = rows.Select(r => new { id = r.Id, plans = r.Plans }).ToArray()
-                    });
-                }
-                else
-                {
-                    if (rows.Length == 0)
-                    {
-                        output.WriteLine("No planners configured");
+                        output.WriteJson(
+                            new
+                            {
+                                planners = rows.Select(r => new { id = r.Id, plans = r.Plans })
+                                    .ToArray(),
+                            }
+                        );
                     }
                     else
                     {
-                        output.WriteLine($"{PadRight("Id", 30)} {PadRight("Plans", 30)}");
-                        foreach (var row in rows)
+                        if (rows.Length == 0)
                         {
-                            var plansText = row.Plans.Length == 0 ? "-" : string.Join(",", row.Plans);
-                            output.WriteLine($"{PadRight(row.Id, 30)} {PadRight(Truncate(plansText, 30), 30)}");
+                            output.WriteLine("No planners configured");
+                        }
+                        else
+                        {
+                            output.WriteLine($"{PadRight("Id", 30)} {PadRight("Plans", 30)}");
+                            foreach (var row in rows)
+                            {
+                                var plansText =
+                                    row.Plans.Length == 0 ? "-" : string.Join(",", row.Plans);
+                                output.WriteLine(
+                                    $"{PadRight(row.Id, 30)} {PadRight(Truncate(plansText, 30), 30)}"
+                                );
+                            }
                         }
                     }
-                }
 
-                return ExitCodes.Success;
-            }
-            catch (ForestStore.ForestNotInitializedException)
-            {
-                if (output.Json)
-                {
-                    output.WriteJsonError(code: "forest_not_initialized", message: "Forest not initialized");
+                    return ExitCodes.Success;
                 }
-                else
+                catch (ForestStore.ForestNotInitializedException)
                 {
-                    output.WriteErrorLine("Error: forest not initialized");
-                }
+                    if (output.Json)
+                    {
+                        output.WriteJsonError(
+                            code: "forest_not_initialized",
+                            message: "Forest not initialized"
+                        );
+                    }
+                    else
+                    {
+                        output.WriteErrorLine("Error: forest not initialized");
+                    }
 
-                return ExitCodes.ForestNotInitialized;
+                    return ExitCodes.ForestNotInitialized;
+                }
             }
-        });
+        );
 
         plannersCommand.Subcommands.Add(listCommand);
         return plannersCommand;
@@ -90,5 +100,3 @@ public static class PlannersCommand
         return value.Length <= max ? value : value[..Math.Max(0, max - 3)] + "...";
     }
 }
-
-

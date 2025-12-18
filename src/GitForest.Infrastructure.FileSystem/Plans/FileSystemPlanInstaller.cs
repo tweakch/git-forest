@@ -17,7 +17,10 @@ public sealed class FileSystemPlanInstaller : IPlanInstaller
         _forestDir = forestDir ?? string.Empty;
     }
 
-    public Task<(string planId, string version)> InstallAsync(string source, CancellationToken cancellationToken = default)
+    public Task<(string planId, string version)> InstallAsync(
+        string source,
+        CancellationToken cancellationToken = default
+    )
     {
         _ = cancellationToken;
         if (string.IsNullOrWhiteSpace(source))
@@ -28,7 +31,9 @@ public sealed class FileSystemPlanInstaller : IPlanInstaller
         var resolvedSource = source;
         if (!Path.IsPathRooted(resolvedSource))
         {
-            resolvedSource = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, resolvedSource));
+            resolvedSource = Path.GetFullPath(
+                Path.Combine(Environment.CurrentDirectory, resolvedSource)
+            );
         }
 
         if (!File.Exists(resolvedSource))
@@ -41,7 +46,9 @@ public sealed class FileSystemPlanInstaller : IPlanInstaller
 
         if (string.IsNullOrWhiteSpace(plan.Id))
         {
-            throw new InvalidDataException($"Plan YAML at '{resolvedSource}' is missing required top-level 'id'.");
+            throw new InvalidDataException(
+                $"Plan YAML at '{resolvedSource}' is missing required top-level 'id'."
+            );
         }
 
         var forestDir = _forestDir.Trim();
@@ -71,9 +78,16 @@ public sealed class FileSystemPlanInstaller : IPlanInstaller
             homepage = plan.Homepage,
             source,
             installedAt,
-            sha256
+            sha256,
         };
-        File.WriteAllText(installMetadataPath, JsonSerializer.Serialize(metadata, new JsonSerializerOptions(JsonSerializerDefaults.Web)), Encoding.UTF8);
+        File.WriteAllText(
+            installMetadataPath,
+            JsonSerializer.Serialize(
+                metadata,
+                new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            ),
+            Encoding.UTF8
+        );
 
         return Task.FromResult((planId: planId, version: plan.Version ?? string.Empty));
     }
@@ -82,7 +96,8 @@ public sealed class FileSystemPlanInstaller : IPlanInstaller
         string forestDir,
         string planId,
         IReadOnlyList<string> plannerIds,
-        IReadOnlyList<string> planterIds)
+        IReadOnlyList<string> planterIds
+    )
     {
         var plannersDir = Path.Combine(forestDir, "planners");
         var plantersDir = Path.Combine(forestDir, "planters");
@@ -103,7 +118,8 @@ public sealed class FileSystemPlanInstaller : IPlanInstaller
                 Name: string.Empty,
                 PlanId: planId,
                 Type: "llm",
-                Configuration: new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase));
+                Configuration: new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase)
+            );
 
             File.WriteAllText(path, PlannerYamlLite.Serialize(model), Encoding.UTF8);
         }
@@ -125,7 +141,8 @@ public sealed class FileSystemPlanInstaller : IPlanInstaller
                 Type: "builtin",
                 Origin: "plan",
                 AssignedPlants: Array.Empty<string>(),
-                IsActive: false);
+                IsActive: false
+            );
 
             File.WriteAllText(path, PlanterYamlLite.Serialize(model), Encoding.UTF8);
         }
@@ -169,4 +186,3 @@ public sealed class FileSystemPlanInstaller : IPlanInstaller
         return sb.ToString();
     }
 }
-

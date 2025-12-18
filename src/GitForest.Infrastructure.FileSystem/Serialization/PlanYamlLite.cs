@@ -19,7 +19,8 @@ public static class PlanYamlLite
         string Homepage,
         IReadOnlyList<string> Planners,
         IReadOnlyList<string> Planters,
-        IReadOnlyList<string> PlantTemplateNames);
+        IReadOnlyList<string> PlantTemplateNames
+    );
 
     public static ParsedPlan Parse(string yaml)
     {
@@ -53,18 +54,62 @@ public static class PlanYamlLite
                 inPlantTemplates = false;
                 currentList = null;
 
-                if (TryParseTopLevelScalar(line, "id", out var v)) { id = v; continue; }
-                if (TryParseTopLevelScalar(line, "name", out v)) { name = v; continue; }
-                if (TryParseTopLevelScalar(line, "version", out v)) { version = v; continue; }
-                if (TryParseTopLevelScalar(line, "category", out v)) { category = v; continue; }
-                if (TryParseTopLevelScalar(line, "author", out v)) { author = v; continue; }
-                if (TryParseTopLevelScalar(line, "license", out v)) { license = v; continue; }
-                if (TryParseTopLevelScalar(line, "repository", out v)) { repository = v; continue; }
-                if (TryParseTopLevelScalar(line, "homepage", out v)) { homepage = v; continue; }
+                if (TryParseTopLevelScalar(line, "id", out var v))
+                {
+                    id = v;
+                    continue;
+                }
+                if (TryParseTopLevelScalar(line, "name", out v))
+                {
+                    name = v;
+                    continue;
+                }
+                if (TryParseTopLevelScalar(line, "version", out v))
+                {
+                    version = v;
+                    continue;
+                }
+                if (TryParseTopLevelScalar(line, "category", out v))
+                {
+                    category = v;
+                    continue;
+                }
+                if (TryParseTopLevelScalar(line, "author", out v))
+                {
+                    author = v;
+                    continue;
+                }
+                if (TryParseTopLevelScalar(line, "license", out v))
+                {
+                    license = v;
+                    continue;
+                }
+                if (TryParseTopLevelScalar(line, "repository", out v))
+                {
+                    repository = v;
+                    continue;
+                }
+                if (TryParseTopLevelScalar(line, "homepage", out v))
+                {
+                    homepage = v;
+                    continue;
+                }
 
-                if (IsTopLevelKey(line, "planners")) { currentList = "planners"; continue; }
-                if (IsTopLevelKey(line, "planters")) { currentList = "planters"; continue; }
-                if (IsTopLevelKey(line, "plant_templates")) { inPlantTemplates = true; continue; }
+                if (IsTopLevelKey(line, "planners"))
+                {
+                    currentList = "planners";
+                    continue;
+                }
+                if (IsTopLevelKey(line, "planters"))
+                {
+                    currentList = "planters";
+                    continue;
+                }
+                if (IsTopLevelKey(line, "plant_templates"))
+                {
+                    inPlantTemplates = true;
+                    continue;
+                }
 
                 continue;
             }
@@ -73,8 +118,10 @@ public static class PlanYamlLite
             {
                 if (TryParseListItem(line, out var item))
                 {
-                    if (currentList == "planners") planners.Add(item);
-                    if (currentList == "planters") planters.Add(item);
+                    if (currentList == "planners")
+                        planners.Add(item);
+                    if (currentList == "planters")
+                        planters.Add(item);
                 }
 
                 continue;
@@ -92,7 +139,10 @@ public static class PlanYamlLite
                     trimmed = trimmed[2..].TrimStart();
                 }
 
-                if (TryParseTopLevelScalar(trimmed, "name", out var tname) && !string.IsNullOrWhiteSpace(tname))
+                if (
+                    TryParseTopLevelScalar(trimmed, "name", out var tname)
+                    && !string.IsNullOrWhiteSpace(tname)
+                )
                 {
                     templateNames.Add(tname);
                 }
@@ -110,7 +160,8 @@ public static class PlanYamlLite
             Homepage: homepage,
             Planners: planners,
             Planters: planters,
-            PlantTemplateNames: templateNames);
+            PlantTemplateNames: templateNames
+        );
     }
 
     public static string SerializeMinimal(
@@ -121,15 +172,21 @@ public static class PlanYamlLite
         string repository,
         string homepage,
         IReadOnlyList<string> planners,
-        IReadOnlyList<string> planters)
+        IReadOnlyList<string> planters
+    )
     {
         var sb = new StringBuilder();
         sb.Append("id: ").Append(id ?? string.Empty).AppendLine();
-        if (!string.IsNullOrWhiteSpace(version)) sb.Append("version: ").Append(version.Trim()).AppendLine();
-        if (!string.IsNullOrWhiteSpace(author)) sb.Append("author: ").Append(EscapeScalar(author.Trim())).AppendLine();
-        if (!string.IsNullOrWhiteSpace(license)) sb.Append("license: ").Append(EscapeScalar(license.Trim())).AppendLine();
-        if (!string.IsNullOrWhiteSpace(repository)) sb.Append("repository: ").Append(EscapeScalar(repository.Trim())).AppendLine();
-        if (!string.IsNullOrWhiteSpace(homepage)) sb.Append("homepage: ").Append(EscapeScalar(homepage.Trim())).AppendLine();
+        if (!string.IsNullOrWhiteSpace(version))
+            sb.Append("version: ").Append(version.Trim()).AppendLine();
+        if (!string.IsNullOrWhiteSpace(author))
+            sb.Append("author: ").Append(EscapeScalar(author.Trim())).AppendLine();
+        if (!string.IsNullOrWhiteSpace(license))
+            sb.Append("license: ").Append(EscapeScalar(license.Trim())).AppendLine();
+        if (!string.IsNullOrWhiteSpace(repository))
+            sb.Append("repository: ").Append(EscapeScalar(repository.Trim())).AppendLine();
+        if (!string.IsNullOrWhiteSpace(homepage))
+            sb.Append("homepage: ").Append(EscapeScalar(homepage.Trim())).AppendLine();
 
         sb.AppendLine("planners:");
         foreach (var p in planners ?? Array.Empty<string>())
@@ -167,7 +224,10 @@ public static class PlanYamlLite
 
         value = line[(key.Length + 1)..].Trim();
         // Drop wrapping quotes if present.
-        if (value.Length >= 2 && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\'')))
+        if (
+            value.Length >= 2
+            && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\''))
+        )
         {
             value = value[1..^1];
         }
@@ -185,7 +245,10 @@ public static class PlanYamlLite
         }
 
         value = trimmed[2..].Trim();
-        if (value.Length >= 2 && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\'')))
+        if (
+            value.Length >= 2
+            && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\''))
+        )
         {
             value = value[1..^1];
         }
@@ -204,15 +267,20 @@ public static class PlanYamlLite
     private static string EscapeScalar(string value)
     {
         var v = value ?? string.Empty;
-        if (v.Contains(':') || v.Contains('#') || v.Contains('"') || v.Contains('\'') || v.Contains('\\'))
+        if (
+            v.Contains(':')
+            || v.Contains('#')
+            || v.Contains('"')
+            || v.Contains('\'')
+            || v.Contains('\\')
+        )
         {
             // YAML double-quoted scalar (minimal escaping)
-            var escaped = v.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal);
+            var escaped = v.Replace("\\", "\\\\", StringComparison.Ordinal)
+                .Replace("\"", "\\\"", StringComparison.Ordinal);
             return $"\"{escaped}\"";
         }
 
         return v;
     }
 }
-
-

@@ -9,4 +9,3 @@ public sealed class AllPlantersSpec : Specification<Planter>
         Query.OrderBy(p => p.Id);
     }
 }
-

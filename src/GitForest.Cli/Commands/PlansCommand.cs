@@ -19,11 +19,8 @@ public static class PlansCommand
 
                 try
                 {
-                    var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
-                    if (!ForestStore.IsInitialized(forestDir))
-                    {
-                        throw new ForestStore.ForestNotInitializedException(forestDir);
-                    }
+                    var forestDir = ForestStore.GetDefaultForestDir();
+                    ForestStore.EnsureInitialized(forestDir);
 
                     var plans = await mediator.Send(new AppPlans.ListPlansQuery(), token);
                     if (output.Json)
@@ -131,11 +128,8 @@ public static class PlansCommand
 
                 try
                 {
-                    var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
-                    if (!ForestStore.IsInitialized(forestDir))
-                    {
-                        throw new ForestStore.ForestNotInitializedException(forestDir);
-                    }
+                    var forestDir = ForestStore.GetDefaultForestDir();
+                    ForestStore.EnsureInitialized(forestDir);
 
                     var installed = await mediator.Send(
                         new AppPlans.InstallPlanCommand(Source: source),

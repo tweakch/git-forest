@@ -1,4 +1,5 @@
 using System.CommandLine;
+using GitForest.Cli;
 using GitForest.Cli.Features.Planters;
 using MediatR;
 
@@ -30,20 +31,7 @@ public static class PlanterCommand
                     );
                     if (!info.Exists)
                     {
-                        if (output.Json)
-                        {
-                            output.WriteJsonError(
-                                code: "planter_not_found",
-                                message: "Planter not found",
-                                details: new { planterId }
-                            );
-                        }
-                        else
-                        {
-                            output.WriteErrorLine($"Planter '{planterId}': not found");
-                        }
-
-                        return ExitCodes.PlanterNotFound;
+                        return WritePlanterNotFound(output, planterId);
                     }
 
                     if (output.Json)
@@ -75,20 +63,7 @@ public static class PlanterCommand
                 {
                     // For single-planter lookup, treat missing forest as "not found" (keeps CLI usable in fresh repos
                     // and matches the smoke-test contract).
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "planter_not_found",
-                            message: "Planter not found",
-                            details: new { planterId }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Planter '{planterId}': not found");
-                    }
-
-                    return ExitCodes.PlanterNotFound;
+                    return WritePlanterNotFound(output, planterId);
                 }
             }
         );
@@ -160,115 +135,27 @@ public static class PlanterCommand
                 }
                 catch (PlanterNotFoundException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "planter_not_found",
-                            message: "Planter not found",
-                            details: new { planterId }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Planter '{planterId}': not found");
-                    }
-
-                    return ExitCodes.PlanterNotFound;
+                    return WritePlanterNotFound(output, planterId);
                 }
                 catch (ConfirmationRequiredException ex)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "confirmation_required",
-                            message: "Use --yes to create/check out a git branch.",
-                            details: new { branch = ex.BranchName }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: confirmation required. Re-run with --yes.");
-                    }
-
-                    return ExitCodes.InvalidArguments;
+                    return WriteConfirmationRequired(output, ex.BranchName);
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "forest_not_initialized",
-                            message: "Forest not initialized"
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: forest not initialized");
-                    }
-
-                    return ExitCodes.ForestNotInitialized;
+                    return WriteForestNotInitialized(output);
                 }
                 catch (ForestStore.PlantNotFoundException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_not_found",
-                            message: "Plant not found",
-                            details: new { selector }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Plant '{selector}': not found");
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantNotFound(output, selector);
                 }
                 catch (ForestStore.PlantAmbiguousSelectorException ex)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_ambiguous",
-                            message: "Plant selector is ambiguous",
-                            details: new { selector = ex.Selector, matches = ex.Matches }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine(
-                            $"Plant '{ex.Selector}': ambiguous; matched {ex.Matches.Length} plants"
-                        );
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantAmbiguous(output, ex.Selector, ex.Matches);
                 }
                 catch (GitRunner.GitRunnerException ex)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "git_failed",
-                            message: ex.Message,
-                            details: new
-                            {
-                                exitCode = ex.ExitCode,
-                                stdout = ex.StdOut,
-                                stderr = ex.StdErr,
-                            }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Error: {ex.Message}");
-                        if (!string.IsNullOrWhiteSpace(ex.StdErr))
-                        {
-                            output.WriteErrorLine(ex.StdErr.Trim());
-                        }
-                    }
-
-                    return ExitCodes.GitOperationFailed;
+                    return WriteGitFailed(output, ex);
                 }
             }
         );
@@ -329,115 +216,27 @@ public static class PlanterCommand
                 }
                 catch (PlanterNotFoundException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "planter_not_found",
-                            message: "Planter not found",
-                            details: new { planterId }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Planter '{planterId}': not found");
-                    }
-
-                    return ExitCodes.PlanterNotFound;
+                    return WritePlanterNotFound(output, planterId);
                 }
                 catch (InvalidModeException ex)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "invalid_arguments",
-                            message: ex.Message,
-                            details: new { mode = ex.Mode }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: invalid --mode. Expected: propose|apply");
-                    }
-
-                    return ExitCodes.InvalidArguments;
+                    return WriteInvalidMode(output, ex.Mode);
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "forest_not_initialized",
-                            message: "Forest not initialized"
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: forest not initialized");
-                    }
-
-                    return ExitCodes.ForestNotInitialized;
+                    return WriteForestNotInitialized(output);
                 }
                 catch (ForestStore.PlantNotFoundException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_not_found",
-                            message: "Plant not found",
-                            details: new { selector }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Plant '{selector}': not found");
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantNotFound(output, selector);
                 }
                 catch (ForestStore.PlantAmbiguousSelectorException ex)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_ambiguous",
-                            message: "Plant selector is ambiguous",
-                            details: new { selector = ex.Selector, matches = ex.Matches }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine(
-                            $"Plant '{ex.Selector}': ambiguous; matched {ex.Matches.Length} plants"
-                        );
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantAmbiguous(output, ex.Selector, ex.Matches);
                 }
                 catch (GitRunner.GitRunnerException ex)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "git_failed",
-                            message: ex.Message,
-                            details: new
-                            {
-                                exitCode = ex.ExitCode,
-                                stdout = ex.StdOut,
-                                stderr = ex.StdErr,
-                            }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Error: {ex.Message}");
-                        if (!string.IsNullOrWhiteSpace(ex.StdErr))
-                        {
-                            output.WriteErrorLine(ex.StdErr.Trim());
-                        }
-                    }
-
-                    return ExitCodes.GitOperationFailed;
+                    return WriteGitFailed(output, ex);
                 }
             }
         );
@@ -446,5 +245,136 @@ public static class PlanterCommand
         planterCommand.Subcommands.Add(plantCommand);
         planterCommand.Subcommands.Add(growCommand);
         return planterCommand;
+    }
+
+    private static int WriteForestNotInitialized(Output output)
+    {
+        if (output.Json)
+        {
+            output.WriteJsonError(code: "forest_not_initialized", message: "Forest not initialized");
+        }
+        else
+        {
+            output.WriteErrorLine("Error: forest not initialized");
+        }
+
+        return ExitCodes.ForestNotInitialized;
+    }
+
+    private static int WritePlanterNotFound(Output output, string planterId)
+    {
+        if (output.Json)
+        {
+            output.WriteJsonError(
+                code: "planter_not_found",
+                message: "Planter not found",
+                details: new { planterId }
+            );
+        }
+        else
+        {
+            output.WriteErrorLine($"Planter '{planterId}': not found");
+        }
+
+        return ExitCodes.PlanterNotFound;
+    }
+
+    private static int WritePlantNotFound(Output output, string selector)
+    {
+        if (output.Json)
+        {
+            output.WriteJsonError(
+                code: "plant_not_found",
+                message: "Plant not found",
+                details: new { selector }
+            );
+        }
+        else
+        {
+            output.WriteErrorLine($"Plant '{selector}': not found");
+        }
+
+        return ExitCodes.PlantNotFoundOrAmbiguous;
+    }
+
+    private static int WritePlantAmbiguous(Output output, string selector, string[] matches)
+    {
+        if (output.Json)
+        {
+            output.WriteJsonError(
+                code: "plant_ambiguous",
+                message: "Plant selector is ambiguous",
+                details: new { selector, matches }
+            );
+        }
+        else
+        {
+            output.WriteErrorLine($"Plant '{selector}': ambiguous; matched {matches.Length} plants");
+        }
+
+        return ExitCodes.PlantNotFoundOrAmbiguous;
+    }
+
+    private static int WriteGitFailed(Output output, GitRunner.GitRunnerException ex)
+    {
+        if (output.Json)
+        {
+            output.WriteJsonError(
+                code: "git_failed",
+                message: ex.Message,
+                details: new
+                {
+                    exitCode = ex.ExitCode,
+                    stdout = ex.StdOut,
+                    stderr = ex.StdErr,
+                }
+            );
+        }
+        else
+        {
+            output.WriteErrorLine($"Error: {ex.Message}");
+            if (!string.IsNullOrWhiteSpace(ex.StdErr))
+            {
+                output.WriteErrorLine(ex.StdErr.Trim());
+            }
+        }
+
+        return ExitCodes.GitOperationFailed;
+    }
+
+    private static int WriteConfirmationRequired(Output output, string branchName)
+    {
+        if (output.Json)
+        {
+            output.WriteJsonError(
+                code: "confirmation_required",
+                message: "Use --yes to create/check out a git branch.",
+                details: new { branch = branchName }
+            );
+        }
+        else
+        {
+            output.WriteErrorLine("Error: confirmation required. Re-run with --yes.");
+        }
+
+        return ExitCodes.InvalidArguments;
+    }
+
+    private static int WriteInvalidMode(Output output, string mode)
+    {
+        if (output.Json)
+        {
+            output.WriteJsonError(
+                code: "invalid_arguments",
+                message: "Invalid --mode. Expected: propose|apply",
+                details: new { mode }
+            );
+        }
+        else
+        {
+            output.WriteErrorLine("Error: invalid --mode. Expected: propose|apply");
+        }
+
+        return ExitCodes.InvalidArguments;
     }
 }

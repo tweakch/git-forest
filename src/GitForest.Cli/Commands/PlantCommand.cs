@@ -72,62 +72,20 @@ public static class PlantCommand
                 {
                     // For single-plant lookup, treat missing forest as "not found" (keeps CLI usable
                     // in fresh repos and matches the smoke-test contract).
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_not_found",
-                            message: "Plant not found",
-                            details: new { selector }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Plant '{selector}': not found");
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantNotFound(output, selector);
                 }
                 catch (ForestStore.PlantNotFoundException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_not_found",
-                            message: "Plant not found",
-                            details: new { selector }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Plant '{selector}': not found");
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantNotFound(output, selector);
                 }
                 catch (ForestStore.PlantAmbiguousSelectorException ex)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_ambiguous",
-                            message: "Plant selector is ambiguous",
-                            details: new { selector = ex.Selector, matches = ex.Matches }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine(
-                            $"Plant '{ex.Selector}': ambiguous; matched {ex.Matches.Length} plants:"
-                        );
-                        foreach (
-                            var key in ex.Matches.OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
-                        )
-                        {
-                            output.WriteErrorLine($"- {key}");
-                        }
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantAmbiguous(
+                        output,
+                        selector: ex.Selector,
+                        matches: ex.Matches,
+                        printMatches: true
+                    );
                 }
             }
         );
@@ -153,11 +111,8 @@ public static class PlantCommand
                 var dryRun = parseResult.GetValue(dryRunOption);
                 try
                 {
-                    var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
-                    if (!ForestStore.IsInitialized(forestDir))
-                    {
-                        throw new ForestStore.ForestNotInitializedException(forestDir);
-                    }
+                    var forestDir = ForestStore.GetDefaultForestDir();
+                    ForestStore.EnsureInitialized(forestDir);
 
                     var updated = await mediator.Send(
                         new AppPlantCmd.AssignPlanterToPlantCommand(
@@ -194,55 +149,20 @@ public static class PlantCommand
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "forest_not_initialized",
-                            message: "Forest not initialized"
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: forest not initialized");
-                    }
-
-                    return ExitCodes.ForestNotInitialized;
+                    return WriteForestNotInitialized(output);
                 }
                 catch (AppPlantCmd.PlantNotFoundException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_not_found",
-                            message: "Plant not found",
-                            details: new { selector }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Plant '{selector}': not found");
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantNotFound(output, selector);
                 }
                 catch (AppPlantCmd.PlantAmbiguousSelectorException ex)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_ambiguous",
-                            message: "Plant selector is ambiguous",
-                            details: new { selector = ex.Selector, matches = ex.Matches }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine(
-                            $"Plant '{ex.Selector}': ambiguous; matched {ex.Matches.Length} plants"
-                        );
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantAmbiguous(
+                        output,
+                        selector: ex.Selector,
+                        matches: ex.Matches,
+                        printMatches: false
+                    );
                 }
             }
         );
@@ -259,11 +179,8 @@ public static class PlantCommand
                 var dryRun = parseResult.GetValue(dryRunOption);
                 try
                 {
-                    var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
-                    if (!ForestStore.IsInitialized(forestDir))
-                    {
-                        throw new ForestStore.ForestNotInitializedException(forestDir);
-                    }
+                    var forestDir = ForestStore.GetDefaultForestDir();
+                    ForestStore.EnsureInitialized(forestDir);
 
                     var updated = await mediator.Send(
                         new AppPlantCmd.UnassignPlanterFromPlantCommand(
@@ -300,55 +217,20 @@ public static class PlantCommand
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "forest_not_initialized",
-                            message: "Forest not initialized"
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: forest not initialized");
-                    }
-
-                    return ExitCodes.ForestNotInitialized;
+                    return WriteForestNotInitialized(output);
                 }
                 catch (AppPlantCmd.PlantNotFoundException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_not_found",
-                            message: "Plant not found",
-                            details: new { selector }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Plant '{selector}': not found");
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantNotFound(output, selector);
                 }
                 catch (AppPlantCmd.PlantAmbiguousSelectorException ex)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_ambiguous",
-                            message: "Plant selector is ambiguous",
-                            details: new { selector = ex.Selector, matches = ex.Matches }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine(
-                            $"Plant '{ex.Selector}': ambiguous; matched {ex.Matches.Length} plants"
-                        );
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantAmbiguous(
+                        output,
+                        selector: ex.Selector,
+                        matches: ex.Matches,
+                        printMatches: false
+                    );
                 }
             }
         );
@@ -394,55 +276,20 @@ public static class PlantCommand
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "forest_not_initialized",
-                            message: "Forest not initialized"
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: forest not initialized");
-                    }
-
-                    return ExitCodes.ForestNotInitialized;
+                    return WriteForestNotInitialized(output);
                 }
                 catch (ForestStore.PlantNotFoundException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_not_found",
-                            message: "Plant not found",
-                            details: new { selector }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Plant '{selector}': not found");
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantNotFound(output, selector);
                 }
                 catch (ForestStore.PlantAmbiguousSelectorException ex)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_ambiguous",
-                            message: "Plant selector is ambiguous",
-                            details: new { selector = ex.Selector, matches = ex.Matches }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine(
-                            $"Plant '{ex.Selector}': ambiguous; matched {ex.Matches.Length} plants"
-                        );
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantAmbiguous(
+                        output,
+                        selector: ex.Selector,
+                        matches: ex.Matches,
+                        printMatches: false
+                    );
                 }
             }
         );
@@ -466,11 +313,8 @@ public static class PlantCommand
 
                 try
                 {
-                    var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
-                    if (!ForestStore.IsInitialized(forestDir))
-                    {
-                        throw new ForestStore.ForestNotInitializedException(forestDir);
-                    }
+                    var forestDir = ForestStore.GetDefaultForestDir();
+                    ForestStore.EnsureInitialized(forestDir);
 
                     var updated = await mediator.Send(
                         new AppPlantCmd.HarvestPlantCommand(
@@ -520,55 +364,20 @@ public static class PlantCommand
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "forest_not_initialized",
-                            message: "Forest not initialized"
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: forest not initialized");
-                    }
-
-                    return ExitCodes.ForestNotInitialized;
+                    return WriteForestNotInitialized(output);
                 }
                 catch (AppPlantCmd.PlantNotFoundException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_not_found",
-                            message: "Plant not found",
-                            details: new { selector }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Plant '{selector}': not found");
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantNotFound(output, selector);
                 }
                 catch (AppPlantCmd.PlantAmbiguousSelectorException ex)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_ambiguous",
-                            message: "Plant selector is ambiguous",
-                            details: new { selector = ex.Selector, matches = ex.Matches }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine(
-                            $"Plant '{ex.Selector}': ambiguous; matched {ex.Matches.Length} plants"
-                        );
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantAmbiguous(
+                        output,
+                        selector: ex.Selector,
+                        matches: ex.Matches,
+                        printMatches: false
+                    );
                 }
             }
         );
@@ -586,11 +395,8 @@ public static class PlantCommand
 
                 try
                 {
-                    var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
-                    if (!ForestStore.IsInitialized(forestDir))
-                    {
-                        throw new ForestStore.ForestNotInitializedException(forestDir);
-                    }
+                    var forestDir = ForestStore.GetDefaultForestDir();
+                    ForestStore.EnsureInitialized(forestDir);
 
                     var updated = await mediator.Send(
                         new AppPlantCmd.ArchivePlantCommand(
@@ -640,55 +446,20 @@ public static class PlantCommand
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "forest_not_initialized",
-                            message: "Forest not initialized"
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: forest not initialized");
-                    }
-
-                    return ExitCodes.ForestNotInitialized;
+                    return WriteForestNotInitialized(output);
                 }
                 catch (AppPlantCmd.PlantNotFoundException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_not_found",
-                            message: "Plant not found",
-                            details: new { selector }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Plant '{selector}': not found");
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantNotFound(output, selector);
                 }
                 catch (AppPlantCmd.PlantAmbiguousSelectorException ex)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plant_ambiguous",
-                            message: "Plant selector is ambiguous",
-                            details: new { selector = ex.Selector, matches = ex.Matches }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine(
-                            $"Plant '{ex.Selector}': ambiguous; matched {ex.Matches.Length} plants"
-                        );
-                    }
-
-                    return ExitCodes.PlantNotFoundOrAmbiguous;
+                    return WritePlantAmbiguous(
+                        output,
+                        selector: ex.Selector,
+                        matches: ex.Matches,
+                        printMatches: false
+                    );
                 }
             }
         );
@@ -700,5 +471,67 @@ public static class PlantCommand
         plantCommand.Subcommands.Add(harvestCommand);
         plantCommand.Subcommands.Add(archiveCommand);
         return plantCommand;
+    }
+
+    private static int WriteForestNotInitialized(Output output)
+    {
+        if (output.Json)
+        {
+            output.WriteJsonError(code: "forest_not_initialized", message: "Forest not initialized");
+        }
+        else
+        {
+            output.WriteErrorLine("Error: forest not initialized");
+        }
+
+        return ExitCodes.ForestNotInitialized;
+    }
+
+    private static int WritePlantNotFound(Output output, string selector)
+    {
+        if (output.Json)
+        {
+            output.WriteJsonError(
+                code: "plant_not_found",
+                message: "Plant not found",
+                details: new { selector }
+            );
+        }
+        else
+        {
+            output.WriteErrorLine($"Plant '{selector}': not found");
+        }
+
+        return ExitCodes.PlantNotFoundOrAmbiguous;
+    }
+
+    private static int WritePlantAmbiguous(
+        Output output,
+        string selector,
+        string[] matches,
+        bool printMatches
+    )
+    {
+        if (output.Json)
+        {
+            output.WriteJsonError(
+                code: "plant_ambiguous",
+                message: "Plant selector is ambiguous",
+                details: new { selector, matches }
+            );
+        }
+        else
+        {
+            output.WriteErrorLine($"Plant '{selector}': ambiguous; matched {matches.Length} plants");
+            if (printMatches)
+            {
+                foreach (var key in matches.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
+                {
+                    output.WriteErrorLine($"- {key}");
+                }
+            }
+        }
+
+        return ExitCodes.PlantNotFoundOrAmbiguous;
     }
 }

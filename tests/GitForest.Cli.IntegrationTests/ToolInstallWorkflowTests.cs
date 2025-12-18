@@ -35,7 +35,22 @@ public sealed class ToolInstallWorkflowTests
 
         try
         {
-            // 0) Build once (so pack can be --no-build/--no-restore)
+            // 0) Restore + build once (so pack can be --no-build/--no-restore)
+            // Restore can be slow on cold machines / CI, so keep it explicit and with a larger timeout.
+            var restore = await ProcessRunner.RunAsync(
+                fileName: "dotnet",
+                arguments:
+                [
+                    "restore",
+                    cliProject,
+                    "--nologo"
+                ],
+                workingDirectory: repoRoot,
+                environmentVariables: dotnetEnv,
+                timeout: TimeSpan.FromMinutes(10));
+
+            Assert.That(restore.ExitCode, Is.EqualTo(0), () => $"dotnet restore failed.\nSTDOUT:\n{restore.StdOut}\nSTDERR:\n{restore.StdErr}");
+
             var build = await ProcessRunner.RunAsync(
                 fileName: "dotnet",
                 arguments:
@@ -44,11 +59,12 @@ public sealed class ToolInstallWorkflowTests
                     cliProject,
                     "--configuration",
                     "Release",
+                    "--no-restore",
                     "--nologo"
                 ],
                 workingDirectory: repoRoot,
                 environmentVariables: dotnetEnv,
-                timeout: TimeSpan.FromMinutes(5));
+                timeout: TimeSpan.FromMinutes(10));
 
             Assert.That(build.ExitCode, Is.EqualTo(0), () => $"dotnet build failed.\nSTDOUT:\n{build.StdOut}\nSTDERR:\n{build.StdErr}");
 
@@ -69,7 +85,7 @@ public sealed class ToolInstallWorkflowTests
                 ],
                 workingDirectory: repoRoot,
                 environmentVariables: dotnetEnv,
-                timeout: TimeSpan.FromMinutes(5));
+                timeout: TimeSpan.FromMinutes(10));
 
             Assert.That(pack.ExitCode, Is.EqualTo(0), () => $"dotnet pack failed.\nSTDOUT:\n{pack.StdOut}\nSTDERR:\n{pack.StdErr}");
 

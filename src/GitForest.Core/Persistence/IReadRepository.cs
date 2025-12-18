@@ -19,3 +19,4 @@ public interface IReadRepository<T, in TId>
     Task<IReadOnlyList<TResult>> ListAsync<TResult>(ISpecification<T, TResult> specification, CancellationToken cancellationToken = default);
 }
 
+

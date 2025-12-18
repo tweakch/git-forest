@@ -1,6 +1,3 @@
-using Ardalis.Specification;
-using GitForest.Core.Persistence;
-
 namespace GitForest.Infrastructure.Memory;
 
 internal sealed class InMemoryRepositoryBase<TEntity>
@@ -99,18 +96,6 @@ internal sealed class InMemoryRepositoryBase<TEntity>
         return Task.CompletedTask;
     }
 
-    public Task<TEntity?> GetBySpecAsync(ISpecification<TEntity> specification, CancellationToken cancellationToken = default)
-        => GetBySpecInternalAsync(specification, cancellationToken);
-
-    public Task<TResult?> GetBySpecAsync<TResult>(ISpecification<TEntity, TResult> specification, CancellationToken cancellationToken = default)
-        => GetBySpecInternalAsync(specification, cancellationToken);
-
-    public Task<IReadOnlyList<TEntity>> ListAsync(ISpecification<TEntity> specification, CancellationToken cancellationToken = default)
-        => ListBySpecInternalAsync(specification, cancellationToken);
-
-    public Task<IReadOnlyList<TResult>> ListAsync<TResult>(ISpecification<TEntity, TResult> specification, CancellationToken cancellationToken = default)
-        => ListBySpecInternalAsync(specification, cancellationToken);
-
     private string GetTrimmedKey(TEntity entity)
     {
         var key = _keySelector(entity);
@@ -118,48 +103,13 @@ internal sealed class InMemoryRepositoryBase<TEntity>
         return (key ?? string.Empty).Trim();
     }
 
-    private List<TEntity> Snapshot()
+    internal List<TEntity> Snapshot()
     {
         lock (_gate)
         {
             return _items.Values.ToList();
         }
     }
-
-    private Task<TResult?> GetBySpecInternalAsync<TResult>(ISpecification<TEntity, TResult> specification, CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
-
-        var all = Snapshot();
-        return Task.FromResult(SpecificationEvaluator.Apply(all, specification).FirstOrDefault());
-    }
-
-    private Task<TEntity?> GetBySpecInternalAsync(ISpecification<TEntity> specification, CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
-
-        var all = Snapshot();
-        return Task.FromResult(SpecificationEvaluator.Apply(all, specification).FirstOrDefault());
-    }
-
-    private Task<IReadOnlyList<TResult>> ListBySpecInternalAsync<TResult>(ISpecification<TEntity, TResult> specification, CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
-
-        var all = Snapshot();
-        return Task.FromResult((IReadOnlyList<TResult>)SpecificationEvaluator.Apply(all, specification).ToList());
-    }
-
-    private Task<IReadOnlyList<TEntity>> ListBySpecInternalAsync(ISpecification<TEntity> specification, CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-        if (specification is null) throw new ArgumentNullException(nameof(specification));
-
-        var all = Snapshot();
-        return Task.FromResult((IReadOnlyList<TEntity>)SpecificationEvaluator.Apply(all, specification).ToList());
-    }
 }
+
 

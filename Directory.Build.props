@@ -1,0 +1,7 @@
+<Project>
+  <!--
+    MSBuild automatically imports Directory.Build.props for all projects under this folder.
+    Keep the actual shared properties in build.props so it's obvious/portable.
+  -->
+  <Import Project="build.props" Condition="Exists('build.props')" />
+</Project>

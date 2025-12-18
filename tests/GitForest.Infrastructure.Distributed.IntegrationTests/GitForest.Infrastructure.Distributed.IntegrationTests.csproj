@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
     <PackageReference Include="Microsoft.Orleans.Server" Version="9.1.0" />
     <PackageReference Include="Microsoft.Orleans.Persistence.Memory" Version="9.1.0" />

@@ -1,4 +1,3 @@
-using GitForest.Cli;
 using MediatR;
 
 namespace GitForest.Cli.Features.Config;
@@ -38,6 +37,12 @@ internal sealed class ShowConfigHandler : IRequestHandler<ShowConfigQuery, ShowC
                         BaseUrl: string.Empty,
                         ApiKeyEnvVar: string.Empty,
                         Temperature: 0
+                    ),
+                    Orleans: new OrleansConfig(
+                        ClusterId: string.Empty,
+                        ServiceId: string.Empty,
+                        GatewayHost: string.Empty,
+                        GatewayPort: 0
                     )
                 );
         }

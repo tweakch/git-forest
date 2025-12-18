@@ -61,3 +61,4 @@ public sealed class DeterministicMockAgentChatClient : IAgentChatClient
         return Task.FromResult(new AgentChatResponse(RawContent: json, Json: json));
     }
 }
+

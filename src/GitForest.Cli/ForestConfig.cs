@@ -12,16 +12,24 @@ public sealed record LlmConfig(
 
 public sealed record ReconcileConfig(string Forum);
 
+public sealed record OrleansConfig(
+    string ClusterId,
+    string ServiceId,
+    string GatewayHost,
+    int GatewayPort
+);
+
 public sealed record ForestConfig(
     string PersistenceProvider,
     int LocksTimeoutSeconds,
     ReconcileConfig Reconcile,
-    LlmConfig Llm
+    LlmConfig Llm,
+    OrleansConfig Orleans
 );
 
 public static class ForestConfigReader
 {
-    public const string DefaultPersistenceProvider = "file";
+    public const string DefaultPersistenceProvider = "orleans";
     public const int DefaultLocksTimeoutSeconds = 15;
     public const string DefaultReconcileForum = "file";
     public const string DefaultLlmProvider = "mock";
@@ -29,6 +37,10 @@ public static class ForestConfigReader
     public const string DefaultLlmBaseUrl = "https://api.openai.com/v1";
     public const string DefaultLlmApiKeyEnvVar = "OPENAI_API_KEY";
     public const double DefaultLlmTemperature = 0;
+    public const string DefaultOrleansClusterId = "gitforest";
+    public const string DefaultOrleansServiceId = "gitforest";
+    public const string DefaultOrleansGatewayHost = "localhost";
+    public const int DefaultOrleansGatewayPort = 30000;
 
     private static readonly HashSet<string> AllowedProviders = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -72,6 +84,12 @@ public static class ForestConfigReader
                 BaseUrl: DefaultLlmBaseUrl,
                 ApiKeyEnvVar: DefaultLlmApiKeyEnvVar,
                 Temperature: DefaultLlmTemperature
+            ),
+            Orleans: new OrleansConfig(
+                ClusterId: DefaultOrleansClusterId,
+                ServiceId: DefaultOrleansServiceId,
+                GatewayHost: DefaultOrleansGatewayHost,
+                GatewayPort: DefaultOrleansGatewayPort
             )
         );
     }
@@ -113,6 +131,10 @@ public static class ForestConfigReader
         var llmBaseUrl = DefaultLlmBaseUrl;
         var llmApiKeyEnvVar = DefaultLlmApiKeyEnvVar;
         var llmTemperature = DefaultLlmTemperature;
+        var orleansClusterId = DefaultOrleansClusterId;
+        var orleansServiceId = DefaultOrleansServiceId;
+        var orleansGatewayHost = DefaultOrleansGatewayHost;
+        var orleansGatewayPort = DefaultOrleansGatewayPort;
 
         var lines = SplitLines(yaml);
         string? currentSection = null;
@@ -260,6 +282,58 @@ public static class ForestConfigReader
                     }
                 }
             }
+
+            if (currentSection.Equals("orleans", StringComparison.OrdinalIgnoreCase))
+            {
+                if (nestedKey.Equals("clusterId", StringComparison.OrdinalIgnoreCase))
+                {
+                    var candidate = nestedValue.Trim();
+                    if (candidate.Length > 0)
+                    {
+                        orleansClusterId = candidate;
+                    }
+
+                    continue;
+                }
+
+                if (nestedKey.Equals("serviceId", StringComparison.OrdinalIgnoreCase))
+                {
+                    var candidate = nestedValue.Trim();
+                    if (candidate.Length > 0)
+                    {
+                        orleansServiceId = candidate;
+                    }
+
+                    continue;
+                }
+
+                if (
+                    nestedKey.Equals("gatewayHost", StringComparison.OrdinalIgnoreCase)
+                    || nestedKey.Equals("gateway_host", StringComparison.OrdinalIgnoreCase)
+                )
+                {
+                    var candidate = nestedValue.Trim();
+                    if (candidate.Length > 0)
+                    {
+                        orleansGatewayHost = candidate;
+                    }
+
+                    continue;
+                }
+
+                if (
+                    nestedKey.Equals("gatewayPort", StringComparison.OrdinalIgnoreCase)
+                    || nestedKey.Equals("gateway_port", StringComparison.OrdinalIgnoreCase)
+                )
+                {
+                    if (int.TryParse(nestedValue.Trim(), out var p) && p > 0 && p <= 65535)
+                    {
+                        orleansGatewayPort = p;
+                    }
+
+                    continue;
+                }
+            }
         }
 
         return new ForestConfig(
@@ -272,6 +346,12 @@ public static class ForestConfigReader
                 BaseUrl: llmBaseUrl,
                 ApiKeyEnvVar: llmApiKeyEnvVar,
                 Temperature: llmTemperature
+            ),
+            Orleans: new OrleansConfig(
+                ClusterId: orleansClusterId,
+                ServiceId: orleansServiceId,
+                GatewayHost: orleansGatewayHost,
+                GatewayPort: orleansGatewayPort
             )
         );
     }

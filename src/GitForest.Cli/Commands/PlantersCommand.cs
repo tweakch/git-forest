@@ -1,6 +1,5 @@
 using System.CommandLine;
 using GitForest.Application.Features.Planters;
-using GitForest.Cli;
 using MediatR;
 
 namespace GitForest.Cli.Commands;

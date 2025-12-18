@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitForest.AppHost", "src\Gi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitForest.Infrastructure.Distributed.IntegrationTests", "tests\GitForest.Infrastructure.Distributed.IntegrationTests\GitForest.Infrastructure.Distributed.IntegrationTests.csproj", "{FFE1D2F6-A698-426D-B7DC-157A0115D143}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitForest.OrleansSilo", "src\GitForest.OrleansSilo\GitForest.OrleansSilo.csproj", "{1C4052E2-39AB-4EBF-9999-839366F68025}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -185,6 +187,18 @@ Global
 		{FFE1D2F6-A698-426D-B7DC-157A0115D143}.Release|x64.Build.0 = Release|Any CPU
 		{FFE1D2F6-A698-426D-B7DC-157A0115D143}.Release|x86.ActiveCfg = Release|Any CPU
 		{FFE1D2F6-A698-426D-B7DC-157A0115D143}.Release|x86.Build.0 = Release|Any CPU
+		{1C4052E2-39AB-4EBF-9999-839366F68025}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C4052E2-39AB-4EBF-9999-839366F68025}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C4052E2-39AB-4EBF-9999-839366F68025}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1C4052E2-39AB-4EBF-9999-839366F68025}.Debug|x64.Build.0 = Debug|Any CPU
+		{1C4052E2-39AB-4EBF-9999-839366F68025}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1C4052E2-39AB-4EBF-9999-839366F68025}.Debug|x86.Build.0 = Debug|Any CPU
+		{1C4052E2-39AB-4EBF-9999-839366F68025}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C4052E2-39AB-4EBF-9999-839366F68025}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C4052E2-39AB-4EBF-9999-839366F68025}.Release|x64.ActiveCfg = Release|Any CPU
+		{1C4052E2-39AB-4EBF-9999-839366F68025}.Release|x64.Build.0 = Release|Any CPU
+		{1C4052E2-39AB-4EBF-9999-839366F68025}.Release|x86.ActiveCfg = Release|Any CPU
+		{1C4052E2-39AB-4EBF-9999-839366F68025}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -202,5 +216,6 @@ Global
 		{9A8DA404-BEE5-41F5-9837-20FDD9FACC6E} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{5FFA2261-40DD-4C61-85AF-14896D4C44E1} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{FFE1D2F6-A698-426D-B7DC-157A0115D143} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{1C4052E2-39AB-4EBF-9999-839366F68025} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

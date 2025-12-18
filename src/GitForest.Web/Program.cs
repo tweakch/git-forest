@@ -6,9 +6,7 @@ using GitForest.Infrastructure.FileSystem.Forest;
 using GitForest.Infrastructure.FileSystem.Llm;
 using GitForest.Infrastructure.FileSystem.Plans;
 using GitForest.Infrastructure.FileSystem.Repositories;
-using GitForest.Infrastructure.Memory;
 using GitForest.Web.Components;
-using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,7 +77,9 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseHsts();
 }
+app.UseHttpsRedirection();
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseAntiforgery();
 

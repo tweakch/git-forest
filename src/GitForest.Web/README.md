@@ -30,7 +30,7 @@ The application will start and be available at `http://localhost:5000` (or the U
 ### Using a specific port:
 
 ```bash
-dotnet run --urls "http://localhost:8080"
+dotnet run --urls "https://localhost:8080"
 ```
 
 ## Features

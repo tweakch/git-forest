@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "https": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:18888",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_ENVIRONMENT": "Development",
+        "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:18888",
+        "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:24317",
+        "ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL": "https://localhost:24318"
+      }
+    }
+  }
+}

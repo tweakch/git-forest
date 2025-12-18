@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using GitForest.Cli;
 using NUnit.Framework;
 
 namespace GitForest.Cli.Tests;

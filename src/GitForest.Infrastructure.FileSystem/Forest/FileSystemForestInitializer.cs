@@ -39,12 +39,17 @@ public sealed class FileSystemForestInitializer : IForestInitializer
         if (!File.Exists(configYamlPath))
         {
             // Keep defaults aligned with ForestConfigReader:
-            // persistence.provider=file, locks.timeoutSeconds=15, llm.provider=mock
+            // persistence.provider=orleans, locks.timeoutSeconds=15, llm.provider=mock
             File.WriteAllText(
                 configYamlPath,
                 $"# Repo-level git-forest config{Environment.NewLine}"
-                    + $"persistence:{Environment.NewLine}  provider: file{Environment.NewLine}"
+                    + $"persistence:{Environment.NewLine}  provider: orleans{Environment.NewLine}"
                     + $"locks:{Environment.NewLine}  timeoutSeconds: 15{Environment.NewLine}"
+                    + $"orleans:{Environment.NewLine}"
+                    + $"  clusterId: gitforest{Environment.NewLine}"
+                    + $"  serviceId: gitforest{Environment.NewLine}"
+                    + $"  gatewayHost: localhost{Environment.NewLine}"
+                    + $"  gatewayPort: 30000{Environment.NewLine}"
                     + $"llm:{Environment.NewLine}"
                     + $"  provider: mock{Environment.NewLine}"
                     + $"  model: gpt-4o-mini{Environment.NewLine}"

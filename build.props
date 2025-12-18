@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <!-- Repo-wide defaults; individual projects can override as needed. -->
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Repeatable builds across machines/CI -->
+    <Deterministic>true</Deterministic>
+
+    <!-- Align with current compiler; keep conservative (no preview required). -->
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+</Project>

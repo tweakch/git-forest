@@ -16,22 +16,31 @@ public sealed record ForestStatusResult(
     string[] PlantersActive,
     string[] PlannersAvailable,
     string[] PlannersActive,
-    string LockStatus);
+    string LockStatus
+);
 
-internal sealed class GetForestStatusHandler : IRequestHandler<GetForestStatusQuery, ForestStatusResult>
+internal sealed class GetForestStatusHandler
+    : IRequestHandler<GetForestStatusQuery, ForestStatusResult>
 {
     private readonly IPlanRepository _plans;
     private readonly IPlantRepository _plants;
     private readonly ILockStatusProvider _lockStatus;
 
-    public GetForestStatusHandler(IPlanRepository plans, IPlantRepository plants, ILockStatusProvider lockStatus)
+    public GetForestStatusHandler(
+        IPlanRepository plans,
+        IPlantRepository plants,
+        ILockStatusProvider lockStatus
+    )
     {
         _plans = plans ?? throw new ArgumentNullException(nameof(plans));
         _plants = plants ?? throw new ArgumentNullException(nameof(plants));
         _lockStatus = lockStatus ?? throw new ArgumentNullException(nameof(lockStatus));
     }
 
-    public async Task<ForestStatusResult> Handle(GetForestStatusQuery request, CancellationToken cancellationToken)
+    public async Task<ForestStatusResult> Handle(
+        GetForestStatusQuery request,
+        CancellationToken cancellationToken
+    )
     {
         _ = request;
 
@@ -88,7 +97,7 @@ internal sealed class GetForestStatusHandler : IRequestHandler<GetForestStatusQu
             PlantersActive: plantersActive,
             PlannersAvailable: plannersAvailable,
             PlannersActive: plannersActive,
-            LockStatus: lockStatus);
+            LockStatus: lockStatus
+        );
     }
 }
-

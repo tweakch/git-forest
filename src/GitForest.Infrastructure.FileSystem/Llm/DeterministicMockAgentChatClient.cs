@@ -20,13 +20,18 @@ public sealed class DeterministicMockAgentChatClient : IAgentChatClient
         _defaultTemperature = defaultTemperature;
     }
 
-    public Task<AgentChatResponse> ChatAsync(AgentChatRequest request, CancellationToken cancellationToken = default)
+    public Task<AgentChatResponse> ChatAsync(
+        AgentChatRequest request,
+        CancellationToken cancellationToken = default
+    )
     {
         _ = cancellationToken;
-        if (request is null) throw new ArgumentNullException(nameof(request));
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
 
         // Deterministically hash key request fields.
-        var fingerprint = $"{request.AgentId}\n{request.SystemPrompt}\n{request.UserPrompt}\n{request.Model ?? _defaultModel}\n{request.Temperature ?? _defaultTemperature}";
+        var fingerprint =
+            $"{request.AgentId}\n{request.SystemPrompt}\n{request.UserPrompt}\n{request.Model ?? _defaultModel}\n{request.Temperature ?? _defaultTemperature}";
         var bytes = Encoding.UTF8.GetBytes(fingerprint);
         var hash = SHA256.HashData(bytes);
         var hex = Convert.ToHexString(hash).ToLowerInvariant();
@@ -41,14 +46,18 @@ public sealed class DeterministicMockAgentChatClient : IAgentChatClient
             {
                 ["provider"] = "mock",
                 ["model"] = request.Model ?? _defaultModel,
-                ["temperature"] = (request.Temperature ?? _defaultTemperature).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture),
-                ["fingerprint"] = shortId
-            }
+                ["temperature"] = (request.Temperature ?? _defaultTemperature).ToString(
+                    "0.###",
+                    System.Globalization.CultureInfo.InvariantCulture
+                ),
+                ["fingerprint"] = shortId,
+            },
         };
 
-        var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        var json = JsonSerializer.Serialize(
+            payload,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web)
+        );
         return Task.FromResult(new AgentChatResponse(RawContent: json, Json: json));
     }
 }
-
-

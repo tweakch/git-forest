@@ -18,10 +18,14 @@ public sealed class FileSystemReconciliationForum : IReconciliationForum
         _paths = new FileSystemForestPaths(forestDir);
     }
 
-    public Task<ReconciliationStrategy> RunAsync(ReconcileContext context, CancellationToken cancellationToken = default)
+    public Task<ReconciliationStrategy> RunAsync(
+        ReconcileContext context,
+        CancellationToken cancellationToken = default
+    )
     {
         _ = cancellationToken;
-        if (context is null) throw new ArgumentNullException(nameof(context));
+        if (context is null)
+            throw new ArgumentNullException(nameof(context));
         if (string.IsNullOrWhiteSpace(context.PlanId))
         {
             return Task.FromResult(new ReconciliationStrategy(Array.Empty<DesiredPlant>()));
@@ -37,8 +41,12 @@ public sealed class FileSystemReconciliationForum : IReconciliationForum
         var planYaml = File.ReadAllText(planYamlPath, Encoding.UTF8);
         var parsed = PlanYamlLite.Parse(planYaml);
 
-        var templates = parsed.PlantTemplateNames.Count > 0 ? parsed.PlantTemplateNames : new List<string> { "default-plant" };
-        var planners = parsed.Planners.Count > 0 ? parsed.Planners : new List<string> { "default-planner" };
+        var templates =
+            parsed.PlantTemplateNames.Count > 0
+                ? parsed.PlantTemplateNames
+                : new List<string> { "default-plant" };
+        var planners =
+            parsed.Planners.Count > 0 ? parsed.Planners : new List<string> { "default-planner" };
         var planters = parsed.Planters.Count > 0 ? parsed.Planters : new List<string>();
 
         var desired = new List<DesiredPlant>(templates.Count);
@@ -48,16 +56,20 @@ public sealed class FileSystemReconciliationForum : IReconciliationForum
             var key = $"{planId}:{slug}";
 
             var plannerId = planners[i % planners.Count];
-            var assignedPlanters = planters.Count > 0 ? new[] { planters[i % planters.Count] } : Array.Empty<string>();
+            var assignedPlanters =
+                planters.Count > 0 ? new[] { planters[i % planters.Count] } : Array.Empty<string>();
 
             var title = $"{parsed.Name}".Trim() == string.Empty ? slug : $"{parsed.Name}: {slug}";
-            desired.Add(new DesiredPlant(
-                Key: key,
-                Slug: slug,
-                Title: title,
-                Description: string.Empty,
-                PlannerId: plannerId,
-                AssignedPlanters: assignedPlanters));
+            desired.Add(
+                new DesiredPlant(
+                    Key: key,
+                    Slug: slug,
+                    Title: title,
+                    Description: string.Empty,
+                    PlannerId: plannerId,
+                    AssignedPlanters: assignedPlanters
+                )
+            );
         }
 
         return Task.FromResult(new ReconciliationStrategy(desired));
@@ -97,5 +109,3 @@ public sealed class FileSystemReconciliationForum : IReconciliationForum
         return slug.Length == 0 ? "untitled" : slug;
     }
 }
-
-

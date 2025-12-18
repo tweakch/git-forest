@@ -5,7 +5,8 @@ using MediatR;
 
 namespace GitForest.Application.Features.Plants;
 
-public sealed record ListPlantsQuery(string? Status, string? PlanId) : IRequest<IReadOnlyList<Plant>>;
+public sealed record ListPlantsQuery(string? Status, string? PlanId)
+    : IRequest<IReadOnlyList<Plant>>;
 
 internal sealed class ListPlantsHandler : IRequestHandler<ListPlantsQuery, IReadOnlyList<Plant>>
 {
@@ -16,9 +17,13 @@ internal sealed class ListPlantsHandler : IRequestHandler<ListPlantsQuery, IRead
         _plants = plants ?? throw new ArgumentNullException(nameof(plants));
     }
 
-    public async Task<IReadOnlyList<Plant>> Handle(ListPlantsQuery request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Plant>> Handle(
+        ListPlantsQuery request,
+        CancellationToken cancellationToken
+    )
     {
-        if (request is null) throw new ArgumentNullException(nameof(request));
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
 
         var status = string.IsNullOrWhiteSpace(request.Status) ? null : request.Status.Trim();
         var planId = string.IsNullOrWhiteSpace(request.PlanId) ? null : request.PlanId.Trim();
@@ -38,7 +43,10 @@ internal sealed class ListPlantsHandler : IRequestHandler<ListPlantsQuery, IRead
             return await _plants.ListAsync(new PlantsByPlanIdSpec(planId!), cancellationToken);
         }
 
-        return await _plants.ListAsync(new PlantsByPlanIdAndStatusSpec(planId!, status), cancellationToken);
+        return await _plants.ListAsync(
+            new PlantsByPlanIdAndStatusSpec(planId!, status),
+            cancellationToken
+        );
     }
 }
 
@@ -55,10 +63,11 @@ internal sealed class GetPlantByKeyHandler : IRequestHandler<GetPlantByKeyQuery,
 
     public Task<Plant?> Handle(GetPlantByKeyQuery request, CancellationToken cancellationToken)
     {
-        if (request is null) throw new ArgumentNullException(nameof(request));
-        if (string.IsNullOrWhiteSpace(request.Key)) return Task.FromResult<Plant?>(null);
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
+        if (string.IsNullOrWhiteSpace(request.Key))
+            return Task.FromResult<Plant?>(null);
 
         return _plants.GetBySpecAsync(new PlantByKeySpec(request.Key.Trim()), cancellationToken);
     }
 }
-

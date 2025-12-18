@@ -26,32 +26,34 @@ public class OrleansRepositoryProdTests
     {
         // Create host with Orleans silo using persistent storage
         var builder = Host.CreateDefaultBuilder();
-        
-        builder.UseOrleans((context, siloBuilder) =>
-        {
-            siloBuilder.UseLocalhostClustering();
-            siloBuilder.AddMemoryGrainStorage("Default");
-        });
-        
+
+        builder.UseOrleans(
+            (context, siloBuilder) =>
+            {
+                siloBuilder.UseLocalhostClustering();
+                siloBuilder.AddMemoryGrainStorage("Default");
+            }
+        );
+
         builder.ConfigureServices(services =>
         {
             services.AddSerializer(builder =>
             {
                 builder.AddJsonSerializer(isSupported: _ => true);
             });
-            
+
             // Register repositories
             services.AddSingleton<IPlanRepository, OrleansPlansRepository>();
             services.AddSingleton<IPlantRepository, OrleansPlantRepository>();
             services.AddSingleton<IPlanterRepository, OrleansPlanterRepository>();
             services.AddSingleton<IPlannerRepository, OrleansPlannerRepository>();
         });
-        
+
         _host = builder.Build();
         await _host.StartAsync();
-        
+
         _services = _host.Services;
-        
+
         // Wait for Orleans to be ready
         await Task.Delay(1000);
     }
@@ -75,7 +77,7 @@ public class OrleansRepositoryProdTests
         {
             Id = "persistent-plan-prod",
             Version = "2.0.0",
-            Source = "This plan should persist"
+            Source = "This plan should persist",
         };
 
         // Act - Add and retrieve multiple times
@@ -101,20 +103,20 @@ public class OrleansRepositoryProdTests
             Slug = "evolving-plant",
             PlanId = "prod-plan",
             Title = "Evolving Plant",
-            Status = "planned"
+            Status = "planned",
         };
 
         // Act - Add and update status multiple times
         await repository.AddAsync(plant);
-        
+
         plant.Status = "planted";
         await repository.UpdateAsync(plant);
         var afterFirst = await repository.GetByIdAsync("prod-plan:evolving-plant");
-        
+
         plant.Status = "growing";
         await repository.UpdateAsync(plant);
         var afterSecond = await repository.GetByIdAsync("prod-plan:evolving-plant");
-        
+
         plant.Status = "harvestable";
         await repository.UpdateAsync(plant);
         var final = await repository.GetByIdAsync("prod-plan:evolving-plant");
@@ -135,9 +137,19 @@ public class OrleansRepositoryProdTests
         var plannerRepo = _services!.GetRequiredService<IPlannerRepository>();
 
         var plan = new Plan { Id = "multi-plan", Version = "1.0.0" };
-        var plant = new Plant { Key = "multi-plan:plant", Slug = "plant", PlanId = "multi-plan" };
+        var plant = new Plant
+        {
+            Key = "multi-plan:plant",
+            Slug = "plant",
+            PlanId = "multi-plan",
+        };
         var planter = new Planter { Id = "multi-planter", Name = "Multi Planter" };
-        var planner = new Planner { Id = "multi-planner", Name = "Multi Planner", PlanId = "multi-plan" };
+        var planner = new Planner
+        {
+            Id = "multi-planner",
+            Name = "Multi Planner",
+            PlanId = "multi-plan",
+        };
 
         // Act
         await planRepo.AddAsync(plan);
@@ -166,7 +178,7 @@ public class OrleansRepositoryProdTests
         {
             Id = "grain-activation-test",
             Version = "1.0.0",
-            Author = "Grain Test"
+            Author = "Grain Test",
         };
 
         // Act - Add, then retrieve after delay (simulating grain deactivation/reactivation)

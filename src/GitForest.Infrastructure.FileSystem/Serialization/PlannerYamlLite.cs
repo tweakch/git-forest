@@ -8,7 +8,8 @@ internal sealed record PlannerFileModel(
     string Name,
     string PlanId,
     string Type,
-    IReadOnlyDictionary<string, JsonElement> Configuration);
+    IReadOnlyDictionary<string, JsonElement> Configuration
+);
 
 internal static class PlannerYamlLite
 {
@@ -16,17 +17,29 @@ internal static class PlannerYamlLite
     {
         var sb = new StringBuilder();
         sb.Append("id: ").Append(planner.Id ?? string.Empty).AppendLine();
-        if (!string.IsNullOrWhiteSpace(planner.Name)) sb.Append("name: ").Append(EscapeScalar(planner.Name.Trim())).AppendLine();
-        if (!string.IsNullOrWhiteSpace(planner.PlanId)) sb.Append("plan_id: ").Append(planner.PlanId.Trim()).AppendLine();
-        if (!string.IsNullOrWhiteSpace(planner.Type)) sb.Append("type: ").Append(planner.Type.Trim()).AppendLine();
+        if (!string.IsNullOrWhiteSpace(planner.Name))
+            sb.Append("name: ").Append(EscapeScalar(planner.Name.Trim())).AppendLine();
+        if (!string.IsNullOrWhiteSpace(planner.PlanId))
+            sb.Append("plan_id: ").Append(planner.PlanId.Trim()).AppendLine();
+        if (!string.IsNullOrWhiteSpace(planner.Type))
+            sb.Append("type: ").Append(planner.Type.Trim()).AppendLine();
 
         if (planner.Configuration is not null && planner.Configuration.Count > 0)
         {
             sb.AppendLine("configuration:");
-            foreach (var kv in planner.Configuration.OrderBy(k => k.Key, StringComparer.OrdinalIgnoreCase))
+            foreach (
+                var kv in planner.Configuration.OrderBy(
+                    k => k.Key,
+                    StringComparer.OrdinalIgnoreCase
+                )
+            )
             {
                 // Store as a JSON scalar to keep it round-trippable without needing YAML parsing.
-                sb.Append("  ").Append(kv.Key).Append(": ").Append(EscapeScalar(kv.Value.GetRawText())).AppendLine();
+                sb.Append("  ")
+                    .Append(kv.Key)
+                    .Append(": ")
+                    .Append(EscapeScalar(kv.Value.GetRawText()))
+                    .AppendLine();
             }
         }
 
@@ -41,7 +54,10 @@ internal static class PlannerYamlLite
         var type = string.Empty;
         var config = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
 
-        var lines = (yaml ?? string.Empty).Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n').Split('\n');
+        var lines = (yaml ?? string.Empty)
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace('\r', '\n')
+            .Split('\n');
         var inConfig = false;
 
         foreach (var raw in lines)
@@ -55,11 +71,31 @@ internal static class PlannerYamlLite
             if (!char.IsWhiteSpace(line[0]))
             {
                 inConfig = false;
-                if (TryParseScalar(line, "id", out var v)) { id = v; continue; }
-                if (TryParseScalar(line, "name", out v)) { name = v; continue; }
-                if (TryParseScalar(line, "plan_id", out v)) { planId = v; continue; }
-                if (TryParseScalar(line, "type", out v)) { type = v; continue; }
-                if (line.StartsWith("configuration:", StringComparison.Ordinal)) { inConfig = true; continue; }
+                if (TryParseScalar(line, "id", out var v))
+                {
+                    id = v;
+                    continue;
+                }
+                if (TryParseScalar(line, "name", out v))
+                {
+                    name = v;
+                    continue;
+                }
+                if (TryParseScalar(line, "plan_id", out v))
+                {
+                    planId = v;
+                    continue;
+                }
+                if (TryParseScalar(line, "type", out v))
+                {
+                    type = v;
+                    continue;
+                }
+                if (line.StartsWith("configuration:", StringComparison.Ordinal))
+                {
+                    inConfig = true;
+                    continue;
+                }
                 continue;
             }
 
@@ -102,7 +138,8 @@ internal static class PlannerYamlLite
             Name: name,
             PlanId: planId,
             Type: type,
-            Configuration: config);
+            Configuration: config
+        );
     }
 
     private static bool TryParseScalar(string line, string key, out string value)
@@ -119,7 +156,10 @@ internal static class PlannerYamlLite
 
     private static string Unquote(string value)
     {
-        if (value.Length >= 2 && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\'')))
+        if (
+            value.Length >= 2
+            && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\''))
+        )
         {
             return value[1..^1];
         }
@@ -130,14 +170,19 @@ internal static class PlannerYamlLite
     private static string EscapeScalar(string value)
     {
         var v = value ?? string.Empty;
-        if (v.Contains(':') || v.Contains('#') || v.Contains('"') || v.Contains('\'') || v.Contains('\\'))
+        if (
+            v.Contains(':')
+            || v.Contains('#')
+            || v.Contains('"')
+            || v.Contains('\'')
+            || v.Contains('\\')
+        )
         {
-            var escaped = v.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal);
+            var escaped = v.Replace("\\", "\\\\", StringComparison.Ordinal)
+                .Replace("\"", "\\\"", StringComparison.Ordinal);
             return $"\"{escaped}\"";
         }
 
         return v;
     }
 }
-
-

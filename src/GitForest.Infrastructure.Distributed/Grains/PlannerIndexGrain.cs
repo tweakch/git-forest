@@ -9,7 +9,9 @@ public class PlannerIndexGrain : Grain, IPlannerIndexGrain
 {
     private readonly IPersistentState<HashSet<string>> _state;
 
-    public PlannerIndexGrain([PersistentState("plannerIndex")] IPersistentState<HashSet<string>> state)
+    public PlannerIndexGrain(
+        [PersistentState("plannerIndex")] IPersistentState<HashSet<string>> state
+    )
     {
         _state = state;
     }
@@ -27,16 +29,18 @@ public class PlannerIndexGrain : Grain, IPlannerIndexGrain
 
     public async Task AddIdAsync(string id)
     {
-        if (string.IsNullOrWhiteSpace(id)) return;
-        
+        if (string.IsNullOrWhiteSpace(id))
+            return;
+
         _state.State.Add(id.Trim());
         await _state.WriteStateAsync();
     }
 
     public async Task RemoveIdAsync(string id)
     {
-        if (string.IsNullOrWhiteSpace(id)) return;
-        
+        if (string.IsNullOrWhiteSpace(id))
+            return;
+
         _state.State.Remove(id.Trim());
         await _state.WriteStateAsync();
     }

@@ -8,7 +8,8 @@ internal sealed record PlanterFileModel(
     string Type,
     string Origin,
     IReadOnlyList<string> AssignedPlants,
-    bool IsActive);
+    bool IsActive
+);
 
 internal static class PlanterYamlLite
 {
@@ -16,9 +17,12 @@ internal static class PlanterYamlLite
     {
         var sb = new StringBuilder();
         sb.Append("id: ").Append(planter.Id ?? string.Empty).AppendLine();
-        if (!string.IsNullOrWhiteSpace(planter.Name)) sb.Append("name: ").Append(EscapeScalar(planter.Name.Trim())).AppendLine();
-        if (!string.IsNullOrWhiteSpace(planter.Type)) sb.Append("type: ").Append(planter.Type.Trim()).AppendLine();
-        if (!string.IsNullOrWhiteSpace(planter.Origin)) sb.Append("origin: ").Append(planter.Origin.Trim()).AppendLine();
+        if (!string.IsNullOrWhiteSpace(planter.Name))
+            sb.Append("name: ").Append(EscapeScalar(planter.Name.Trim())).AppendLine();
+        if (!string.IsNullOrWhiteSpace(planter.Type))
+            sb.Append("type: ").Append(planter.Type.Trim()).AppendLine();
+        if (!string.IsNullOrWhiteSpace(planter.Origin))
+            sb.Append("origin: ").Append(planter.Origin.Trim()).AppendLine();
         sb.Append("is_active: ").Append(planter.IsActive ? "true" : "false").AppendLine();
 
         sb.AppendLine("assigned_plants:");
@@ -42,7 +46,10 @@ internal static class PlanterYamlLite
         var isActive = false;
         var assigned = new List<string>();
 
-        var lines = (yaml ?? string.Empty).Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n').Split('\n');
+        var lines = (yaml ?? string.Empty)
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace('\r', '\n')
+            .Split('\n');
         var inAssigned = false;
 
         foreach (var raw in lines)
@@ -56,12 +63,36 @@ internal static class PlanterYamlLite
             if (!char.IsWhiteSpace(line[0]))
             {
                 inAssigned = false;
-                if (TryParseScalar(line, "id", out var v)) { id = v; continue; }
-                if (TryParseScalar(line, "name", out v)) { name = v; continue; }
-                if (TryParseScalar(line, "type", out v)) { type = v; continue; }
-                if (TryParseScalar(line, "origin", out v)) { origin = v; continue; }
-                if (TryParseScalar(line, "is_active", out v)) { isActive = v.Equals("true", StringComparison.OrdinalIgnoreCase); continue; }
-                if (line.StartsWith("assigned_plants:", StringComparison.Ordinal)) { inAssigned = true; continue; }
+                if (TryParseScalar(line, "id", out var v))
+                {
+                    id = v;
+                    continue;
+                }
+                if (TryParseScalar(line, "name", out v))
+                {
+                    name = v;
+                    continue;
+                }
+                if (TryParseScalar(line, "type", out v))
+                {
+                    type = v;
+                    continue;
+                }
+                if (TryParseScalar(line, "origin", out v))
+                {
+                    origin = v;
+                    continue;
+                }
+                if (TryParseScalar(line, "is_active", out v))
+                {
+                    isActive = v.Equals("true", StringComparison.OrdinalIgnoreCase);
+                    continue;
+                }
+                if (line.StartsWith("assigned_plants:", StringComparison.Ordinal))
+                {
+                    inAssigned = true;
+                    continue;
+                }
                 continue;
             }
 
@@ -85,7 +116,8 @@ internal static class PlanterYamlLite
             Type: string.IsNullOrWhiteSpace(type) ? "builtin" : type,
             Origin: string.IsNullOrWhiteSpace(origin) ? "plan" : origin,
             AssignedPlants: assigned,
-            IsActive: isActive);
+            IsActive: isActive
+        );
     }
 
     private static bool TryParseScalar(string line, string key, out string value)
@@ -102,7 +134,10 @@ internal static class PlanterYamlLite
 
     private static string Unquote(string value)
     {
-        if (value.Length >= 2 && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\'')))
+        if (
+            value.Length >= 2
+            && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\''))
+        )
         {
             return value[1..^1];
         }
@@ -113,14 +148,19 @@ internal static class PlanterYamlLite
     private static string EscapeScalar(string value)
     {
         var v = value ?? string.Empty;
-        if (v.Contains(':') || v.Contains('#') || v.Contains('"') || v.Contains('\'') || v.Contains('\\'))
+        if (
+            v.Contains(':')
+            || v.Contains('#')
+            || v.Contains('"')
+            || v.Contains('\'')
+            || v.Contains('\\')
+        )
         {
-            var escaped = v.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal);
+            var escaped = v.Replace("\\", "\\\\", StringComparison.Ordinal)
+                .Replace("\"", "\\\"", StringComparison.Ordinal);
             return $"\"{escaped}\"";
         }
 
         return v;
     }
 }
-
-

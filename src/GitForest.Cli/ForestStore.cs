@@ -13,14 +13,18 @@ internal static class ForestStore
 
     public static string GetForestDir(string? dirOptionValue, string? workingDirectory = null)
     {
-        var dir = string.IsNullOrWhiteSpace(dirOptionValue) ? DefaultForestDirName : dirOptionValue.Trim();
+        var dir = string.IsNullOrWhiteSpace(dirOptionValue)
+            ? DefaultForestDirName
+            : dirOptionValue.Trim();
 
         if (Path.IsPathRooted(dir))
         {
             return dir;
         }
 
-        var cwd = string.IsNullOrWhiteSpace(workingDirectory) ? Environment.CurrentDirectory : workingDirectory;
+        var cwd = string.IsNullOrWhiteSpace(workingDirectory)
+            ? Environment.CurrentDirectory
+            : workingDirectory;
         return Path.GetFullPath(Path.Combine(cwd, dir));
     }
 
@@ -53,7 +57,8 @@ internal static class ForestStore
             File.WriteAllText(
                 forestYamlPath,
                 $"version: v0{Environment.NewLine}initialized_at: {now}{Environment.NewLine}",
-                Encoding.UTF8);
+                Encoding.UTF8
+            );
         }
 
         var configYamlPath = Path.Combine(forestDir, "config.yaml");
@@ -61,16 +66,17 @@ internal static class ForestStore
         {
             File.WriteAllText(
                 configYamlPath,
-                $"# Repo-level git-forest config{Environment.NewLine}" +
-                $"persistence:{Environment.NewLine}  provider: {ForestConfigReader.DefaultPersistenceProvider}{Environment.NewLine}" +
-                $"locks:{Environment.NewLine}  timeoutSeconds: {ForestConfigReader.DefaultLocksTimeoutSeconds}{Environment.NewLine}" +
-                $"llm:{Environment.NewLine}" +
-                $"  provider: {ForestConfigReader.DefaultLlmProvider}{Environment.NewLine}" +
-                $"  model: {ForestConfigReader.DefaultLlmModel}{Environment.NewLine}" +
-                $"  baseUrl: {ForestConfigReader.DefaultLlmBaseUrl}{Environment.NewLine}" +
-                $"  apiKeyEnvVar: {ForestConfigReader.DefaultLlmApiKeyEnvVar}{Environment.NewLine}" +
-                $"  temperature: {ForestConfigReader.DefaultLlmTemperature}{Environment.NewLine}",
-                Encoding.UTF8);
+                $"# Repo-level git-forest config{Environment.NewLine}"
+                    + $"persistence:{Environment.NewLine}  provider: {ForestConfigReader.DefaultPersistenceProvider}{Environment.NewLine}"
+                    + $"locks:{Environment.NewLine}  timeoutSeconds: {ForestConfigReader.DefaultLocksTimeoutSeconds}{Environment.NewLine}"
+                    + $"llm:{Environment.NewLine}"
+                    + $"  provider: {ForestConfigReader.DefaultLlmProvider}{Environment.NewLine}"
+                    + $"  model: {ForestConfigReader.DefaultLlmModel}{Environment.NewLine}"
+                    + $"  baseUrl: {ForestConfigReader.DefaultLlmBaseUrl}{Environment.NewLine}"
+                    + $"  apiKeyEnvVar: {ForestConfigReader.DefaultLlmApiKeyEnvVar}{Environment.NewLine}"
+                    + $"  temperature: {ForestConfigReader.DefaultLlmTemperature}{Environment.NewLine}",
+                Encoding.UTF8
+            );
         }
 
         var lockPath = Path.Combine(forestDir, "lock");
@@ -95,7 +101,9 @@ internal static class ForestStore
         var resolvedSource = source;
         if (!Path.IsPathRooted(resolvedSource))
         {
-            resolvedSource = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, resolvedSource));
+            resolvedSource = Path.GetFullPath(
+                Path.Combine(Environment.CurrentDirectory, resolvedSource)
+            );
         }
 
         if (!File.Exists(resolvedSource))
@@ -108,7 +116,9 @@ internal static class ForestStore
 
         if (string.IsNullOrWhiteSpace(plan.Id))
         {
-            throw new InvalidDataException($"Plan YAML at '{resolvedSource}' is missing required top-level 'id'.");
+            throw new InvalidDataException(
+                $"Plan YAML at '{resolvedSource}' is missing required top-level 'id'."
+            );
         }
 
         var planDir = Path.Combine(forestDir, "plans", plan.Id);
@@ -133,9 +143,16 @@ internal static class ForestStore
             homepage = plan.Homepage,
             source = source,
             installedAt,
-            sha256
+            sha256,
         };
-        File.WriteAllText(installMetadataPath, JsonSerializer.Serialize(metadata, new JsonSerializerOptions(JsonSerializerDefaults.Web)), Encoding.UTF8);
+        File.WriteAllText(
+            installMetadataPath,
+            JsonSerializer.Serialize(
+                metadata,
+                new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            ),
+            Encoding.UTF8
+        );
 
         return new InstalledPlan(
             Id: plan.Id,
@@ -148,7 +165,8 @@ internal static class ForestStore
             Homepage: plan.Homepage,
             Source: source,
             InstalledAt: installedAt,
-            Sha256: sha256);
+            Sha256: sha256
+        );
     }
 
     public static IReadOnlyList<InstalledPlan> ListPlans(string forestDir)
@@ -185,7 +203,9 @@ internal static class ForestStore
             {
                 try
                 {
-                    using var doc = JsonDocument.Parse(File.ReadAllText(installJsonPath, Encoding.UTF8));
+                    using var doc = JsonDocument.Parse(
+                        File.ReadAllText(installJsonPath, Encoding.UTF8)
+                    );
                     if (doc.RootElement.TryGetProperty("source", out var src))
                     {
                         source = src.GetString() ?? string.Empty;
@@ -212,23 +232,24 @@ internal static class ForestStore
                 sha256 = ComputeSha256Hex(Encoding.UTF8.GetBytes(yaml));
             }
 
-            results.Add(new InstalledPlan(
-                Id: id,
-                Name: parsed.Name,
-                Version: parsed.Version,
-                Category: parsed.Category,
-                Author: parsed.Author,
-                License: parsed.License,
-                Repository: parsed.Repository,
-                Homepage: parsed.Homepage,
-                Source: source,
-                InstalledAt: installedAt,
-                Sha256: sha256));
+            results.Add(
+                new InstalledPlan(
+                    Id: id,
+                    Name: parsed.Name,
+                    Version: parsed.Version,
+                    Category: parsed.Category,
+                    Author: parsed.Author,
+                    License: parsed.License,
+                    Repository: parsed.Repository,
+                    Homepage: parsed.Homepage,
+                    Source: source,
+                    InstalledAt: installedAt,
+                    Sha256: sha256
+                )
+            );
         }
 
-        return results
-            .OrderBy(p => p.Id, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+        return results.OrderBy(p => p.Id, StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
     public static ReconcileResult ReconcilePlan(string forestDir, string planId, bool dryRun)
@@ -256,8 +277,12 @@ internal static class ForestStore
         var plantsDir = Path.Combine(forestDir, "plants");
         Directory.CreateDirectory(plantsDir);
 
-        var templates = plan.PlantTemplateNames.Count > 0 ? plan.PlantTemplateNames : new List<string> { "default-plant" };
-        var planners = plan.Planners.Count > 0 ? plan.Planners : new List<string> { "default-planner" };
+        var templates =
+            plan.PlantTemplateNames.Count > 0
+                ? plan.PlantTemplateNames
+                : new List<string> { "default-plant" };
+        var planners =
+            plan.Planners.Count > 0 ? plan.Planners : new List<string> { "default-planner" };
         var planters = plan.Planters.Count > 0 ? plan.Planters : new List<string>();
 
         var created = 0;
@@ -272,7 +297,8 @@ internal static class ForestStore
             var plantYamlPath = Path.Combine(plantDir, "plant.yaml");
 
             var plannerId = planners[i % planners.Count];
-            var assignedPlanters = planters.Count > 0 ? new[] { planters[i % planters.Count] } : Array.Empty<string>();
+            var assignedPlanters =
+                planters.Count > 0 ? new[] { planters[i % planters.Count] } : Array.Empty<string>();
 
             var now = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
             var plant = new PlantRecord(
@@ -284,14 +310,19 @@ internal static class ForestStore
                 AssignedPlanters: assignedPlanters,
                 Branches: Array.Empty<string>(),
                 CreatedAt: now,
-                UpdatedAt: null);
+                UpdatedAt: null
+            );
 
             if (!Directory.Exists(plantDir) || !File.Exists(plantYamlPath))
             {
                 if (!dryRun)
                 {
                     Directory.CreateDirectory(plantDir);
-                    File.WriteAllText(plantYamlPath, PlantYamlLite.Serialize(ToFileModel(plant)), Encoding.UTF8);
+                    File.WriteAllText(
+                        plantYamlPath,
+                        PlantYamlLite.Serialize(ToFileModel(plant)),
+                        Encoding.UTF8
+                    );
                 }
 
                 created++;
@@ -306,7 +337,11 @@ internal static class ForestStore
         return new ReconcileResult(planId, created, updated);
     }
 
-    public static IReadOnlyList<PlantRecord> ListPlants(string forestDir, string? statusFilter, string? planFilter)
+    public static IReadOnlyList<PlantRecord> ListPlants(
+        string forestDir,
+        string? statusFilter,
+        string? planFilter
+    )
     {
         if (!IsInitialized(forestDir))
         {
@@ -336,17 +371,19 @@ internal static class ForestStore
         IEnumerable<PlantRecord> filtered = plants;
         if (!string.IsNullOrWhiteSpace(statusFilter))
         {
-            filtered = filtered.Where(p => string.Equals(p.Status, statusFilter.Trim(), StringComparison.OrdinalIgnoreCase));
+            filtered = filtered.Where(p =>
+                string.Equals(p.Status, statusFilter.Trim(), StringComparison.OrdinalIgnoreCase)
+            );
         }
 
         if (!string.IsNullOrWhiteSpace(planFilter))
         {
-            filtered = filtered.Where(p => string.Equals(p.PlanId, planFilter.Trim(), StringComparison.OrdinalIgnoreCase));
+            filtered = filtered.Where(p =>
+                string.Equals(p.PlanId, planFilter.Trim(), StringComparison.OrdinalIgnoreCase)
+            );
         }
 
-        return filtered
-            .OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+        return filtered.OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
     public static PlantRecord ResolvePlant(string forestDir, string selector)
@@ -371,7 +408,12 @@ internal static class ForestStore
         throw new PlantAmbiguousSelectorException(selector, matches.Select(p => p.Key).ToArray());
     }
 
-    public static PlantRecord UpdatePlant(string forestDir, string selector, Func<PlantRecord, PlantRecord> update, bool dryRun)
+    public static PlantRecord UpdatePlant(
+        string forestDir,
+        string selector,
+        Func<PlantRecord, PlantRecord> update,
+        bool dryRun
+    )
     {
         if (update is null)
         {
@@ -382,7 +424,13 @@ internal static class ForestStore
         var updated = update(plant);
         if (!dryRun)
         {
-            WritePlant(forestDir, updated with { UpdatedAt = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture) });
+            WritePlant(
+                forestDir,
+                updated with
+                {
+                    UpdatedAt = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+                }
+            );
         }
 
         return updated;
@@ -411,7 +459,8 @@ internal static class ForestStore
         File.WriteAllText(
             plantYamlPath,
             PlantYamlLite.Serialize(ToFileModel(plant with { CreatedAt = createdAt })),
-            Encoding.UTF8);
+            Encoding.UTF8
+        );
     }
 
     public static (string PlanId, string Slug) SplitPlantKey(string key)
@@ -420,20 +469,27 @@ internal static class ForestStore
         var idx = k.IndexOf(':', StringComparison.Ordinal);
         if (idx <= 0 || idx == k.Length - 1)
         {
-            throw new InvalidDataException($"Invalid plant key '{key}'. Expected format: <plan-id>:<plant-slug>.");
+            throw new InvalidDataException(
+                $"Invalid plant key '{key}'. Expected format: <plan-id>:<plant-slug>."
+            );
         }
 
         var planId = k[..idx].Trim();
         var slug = k[(idx + 1)..].Trim();
         if (planId.Length == 0 || slug.Length == 0)
         {
-            throw new InvalidDataException($"Invalid plant key '{key}'. Expected format: <plan-id>:<plant-slug>.");
+            throw new InvalidDataException(
+                $"Invalid plant key '{key}'. Expected format: <plan-id>:<plant-slug>."
+            );
         }
 
         return (planId, slug);
     }
 
-    private static IReadOnlyList<PlantRecord> FindMatches(IReadOnlyList<PlantRecord> plants, string selector)
+    private static IReadOnlyList<PlantRecord> FindMatches(
+        IReadOnlyList<PlantRecord> plants,
+        string selector
+    )
     {
         var sel = (selector ?? string.Empty).Trim();
         if (sel.Length == 0 || plants.Count == 0)
@@ -442,7 +498,9 @@ internal static class ForestStore
         }
 
         // 1) Exact key match: <plan-id>:<slug>
-        var exact = plants.Where(p => string.Equals(p.Key, sel, StringComparison.OrdinalIgnoreCase)).ToArray();
+        var exact = plants
+            .Where(p => string.Equals(p.Key, sel, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
         if (exact.Length > 0)
         {
             return exact;
@@ -461,18 +519,20 @@ internal static class ForestStore
         }
 
         // 3) Slug match: match any plant whose key right-side equals selector.
-        var slugMatches = plants.Where(p =>
-        {
-            var key = p.Key ?? string.Empty;
-            var idx = key.IndexOf(':', StringComparison.Ordinal);
-            if (idx < 0 || idx == key.Length - 1)
+        var slugMatches = plants
+            .Where(p =>
             {
-                return false;
-            }
+                var key = p.Key ?? string.Empty;
+                var idx = key.IndexOf(':', StringComparison.Ordinal);
+                if (idx < 0 || idx == key.Length - 1)
+                {
+                    return false;
+                }
 
-            var slug = key[(idx + 1)..];
-            return string.Equals(slug, sel, StringComparison.OrdinalIgnoreCase);
-        }).ToArray();
+                var slug = key[(idx + 1)..];
+                return string.Equals(slug, sel, StringComparison.OrdinalIgnoreCase);
+            })
+            .ToArray();
 
         return slugMatches;
     }
@@ -560,7 +620,8 @@ internal static class ForestStore
             Branches: plant.Branches ?? Array.Empty<string>(),
             CreatedAt: plant.CreatedAt,
             UpdatedAt: plant.UpdatedAt,
-            Description: null);
+            Description: null
+        );
     }
 
     private static PlantRecord FromFileModel(PlantFileModel plant)
@@ -574,7 +635,8 @@ internal static class ForestStore
             AssignedPlanters: plant.AssignedPlanters ?? Array.Empty<string>(),
             Branches: plant.Branches ?? Array.Empty<string>(),
             CreatedAt: plant.CreatedAt,
-            UpdatedAt: plant.UpdatedAt);
+            UpdatedAt: plant.UpdatedAt
+        );
     }
 
     public sealed record InstalledPlan(
@@ -588,8 +650,11 @@ internal static class ForestStore
         string Homepage,
         string Source,
         string InstalledAt,
-        string Sha256);
+        string Sha256
+    );
+
     public sealed record ReconcileResult(string PlanId, int PlantsCreated, int PlantsUpdated);
+
     public sealed record PlantRecord(
         string Key,
         string Status,
@@ -599,7 +664,8 @@ internal static class ForestStore
         IReadOnlyList<string> AssignedPlanters,
         IReadOnlyList<string> Branches,
         string CreatedAt,
-        string? UpdatedAt);
+        string? UpdatedAt
+    );
 
     private static string ComputeSha256Hex(ReadOnlySpan<byte> bytes)
     {
@@ -609,22 +675,26 @@ internal static class ForestStore
 
     public sealed class ForestNotInitializedException : Exception
     {
-        public ForestNotInitializedException(string forestDir) : base($"Forest not initialized at '{forestDir}'.") { }
+        public ForestNotInitializedException(string forestDir)
+            : base($"Forest not initialized at '{forestDir}'.") { }
     }
 
     public sealed class PlanSourceNotFoundException : Exception
     {
-        public PlanSourceNotFoundException(string source) : base($"Plan source not found: '{source}'.") { }
+        public PlanSourceNotFoundException(string source)
+            : base($"Plan source not found: '{source}'.") { }
     }
 
     public sealed class PlanNotInstalledException : Exception
     {
-        public PlanNotInstalledException(string planId) : base($"Plan not installed: '{planId}'.") { }
+        public PlanNotInstalledException(string planId)
+            : base($"Plan not installed: '{planId}'.") { }
     }
 
     public sealed class PlantNotFoundException : Exception
     {
-        public PlantNotFoundException(string selector) : base($"Plant not found: '{selector}'.") { }
+        public PlantNotFoundException(string selector)
+            : base($"Plant not found: '{selector}'.") { }
     }
 
     public sealed class PlantAmbiguousSelectorException : Exception

@@ -31,9 +31,11 @@ internal static class FileSystemRepositoryFs
     public static List<T> LoadAllFromSubdirectories<T>(
         string parentDir,
         string yamlFileName,
-        Func<string, string, string, T> loader)
+        Func<string, string, string, T> loader
+    )
     {
-        if (loader is null) throw new ArgumentNullException(nameof(loader));
+        if (loader is null)
+            throw new ArgumentNullException(nameof(loader));
 
         if (!Directory.Exists(parentDir))
         {
@@ -57,4 +59,3 @@ internal static class FileSystemRepositoryFs
         return results;
     }
 }
-

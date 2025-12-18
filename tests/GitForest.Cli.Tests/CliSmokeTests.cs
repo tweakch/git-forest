@@ -37,7 +37,9 @@ public class CliSmokeTests
 
         try
         {
-            var exitCode = await CliApp.InvokeAsync(new[] { "plant", "sample:missing", "show", "--json" });
+            var exitCode = await CliApp.InvokeAsync(
+                new[] { "plant", "sample:missing", "show", "--json" }
+            );
 
             Assert.That(exitCode, Is.EqualTo(ExitCodes.PlantNotFoundOrAmbiguous));
             Assert.That(buffer.ToString(), Does.Contain("plant_not_found"));
@@ -57,7 +59,9 @@ public class CliSmokeTests
 
         try
         {
-            var exitCode = await CliApp.InvokeAsync(new[] { "planter", "missing-planter", "show", "--json" });
+            var exitCode = await CliApp.InvokeAsync(
+                new[] { "planter", "missing-planter", "show", "--json" }
+            );
 
             Assert.That(exitCode, Is.EqualTo(ExitCodes.PlanterNotFound));
             Assert.That(buffer.ToString(), Does.Contain("planter_not_found"));
@@ -68,5 +72,3 @@ public class CliSmokeTests
         }
     }
 }
-
-

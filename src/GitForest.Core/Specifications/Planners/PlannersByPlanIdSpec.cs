@@ -6,9 +6,6 @@ public sealed class PlannersByPlanIdSpec : Specification<Planner>
 {
     public PlannersByPlanIdSpec(string planId)
     {
-        Query.Where(p => p.PlanId == planId)
-             .OrderBy(p => p.Id);
+        Query.Where(p => p.PlanId == planId).OrderBy(p => p.Id);
     }
 }
-
-

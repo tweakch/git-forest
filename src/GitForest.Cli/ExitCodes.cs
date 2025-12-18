@@ -18,5 +18,3 @@ public static class ExitCodes
     public const int GitOperationFailed = 30;
     public const int ExecutionNotPermitted = 40;
 }
-
-

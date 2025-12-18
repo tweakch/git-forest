@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <ItemGroup>
     <ProjectReference Include="..\GitForest.Core\GitForest.Core.csproj" />
     <ProjectReference Include="..\GitForest.Application\GitForest.Application.csproj" />
@@ -47,5 +46,4 @@
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
   </ItemGroup>
-
 </Project>

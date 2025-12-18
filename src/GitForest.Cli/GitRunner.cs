@@ -17,11 +17,13 @@ internal static class GitRunner
         var startInfo = new ProcessStartInfo
         {
             FileName = "git",
-            WorkingDirectory = string.IsNullOrWhiteSpace(workingDirectory) ? Environment.CurrentDirectory : workingDirectory,
+            WorkingDirectory = string.IsNullOrWhiteSpace(workingDirectory)
+                ? Environment.CurrentDirectory
+                : workingDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
-            CreateNoWindow = true
+            CreateNoWindow = true,
         };
 
         // Avoid interactive prompts in automation contexts.
@@ -63,7 +65,10 @@ internal static class GitRunner
         return new GitResult(process.ExitCode, stdout.ToString(), stderr.ToString());
     }
 
-    public static GitResult RunOrThrow(IReadOnlyList<string> arguments, string? workingDirectory = null)
+    public static GitResult RunOrThrow(
+        IReadOnlyList<string> arguments,
+        string? workingDirectory = null
+    )
     {
         var result = Run(arguments, workingDirectory);
         if (result.ExitCode != 0)
@@ -93,11 +98,18 @@ internal static class GitRunner
             return false;
         }
 
-        var res = Run(["show-ref", "--verify", $"refs/heads/{branchName.Trim()}"], workingDirectory);
+        var res = Run(
+            ["show-ref", "--verify", $"refs/heads/{branchName.Trim()}"],
+            workingDirectory
+        );
         return res.ExitCode == 0;
     }
 
-    public static void CheckoutBranch(string branchName, bool createIfMissing, string? workingDirectory = null)
+    public static void CheckoutBranch(
+        string branchName,
+        bool createIfMissing,
+        string? workingDirectory = null
+    )
     {
         var name = (branchName ?? string.Empty).Trim();
         if (name.Length == 0)
@@ -142,7 +154,12 @@ internal static class GitRunner
         public string StdOut { get; }
         public string StdErr { get; }
 
-        public GitRunnerException(IReadOnlyList<string> arguments, int exitCode, string stdOut, string stdErr)
+        public GitRunnerException(
+            IReadOnlyList<string> arguments,
+            int exitCode,
+            string stdOut,
+            string stdErr
+        )
             : base($"git {string.Join(' ', arguments)} failed with exit code {exitCode}")
         {
             Arguments = arguments;
@@ -152,4 +169,3 @@ internal static class GitRunner
         }
     }
 }
-

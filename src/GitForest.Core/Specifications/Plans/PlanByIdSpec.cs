@@ -9,5 +9,3 @@ public sealed class PlanByIdSpec : Specification<Plan>, ISingleResultSpecificati
         Query.Where(p => p.Id == planId);
     }
 }
-
-

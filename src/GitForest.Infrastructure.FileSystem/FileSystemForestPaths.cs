@@ -6,7 +6,9 @@ internal sealed class FileSystemForestPaths
 
     public FileSystemForestPaths(string forestDir)
     {
-        _forestDir = string.IsNullOrWhiteSpace(forestDir) ? throw new ArgumentException("Forest directory must be provided.", nameof(forestDir)) : forestDir.Trim();
+        _forestDir = string.IsNullOrWhiteSpace(forestDir)
+            ? throw new ArgumentException("Forest directory must be provided.", nameof(forestDir))
+            : forestDir.Trim();
     }
 
     public string ForestDir => _forestDir;
@@ -22,8 +24,11 @@ internal sealed class FileSystemForestPaths
     public string LogsDir => Path.Combine(_forestDir, "logs");
 
     public string PlanDir(string planId) => Path.Combine(PlansDir, planId);
+
     public string PlanYamlPath(string planId) => Path.Combine(PlanDir(planId), "plan.yaml");
-    public string PlanInstallJsonPath(string planId) => Path.Combine(PlanDir(planId), "install.json");
+
+    public string PlanInstallJsonPath(string planId) =>
+        Path.Combine(PlanDir(planId), "install.json");
 
     public string PlantDirFromKey(string plantKey)
     {
@@ -31,13 +36,18 @@ internal sealed class FileSystemForestPaths
         return Path.Combine(PlantsDir, $"{planId}__{slug}");
     }
 
-    public string PlantYamlPathFromKey(string plantKey) => Path.Combine(PlantDirFromKey(plantKey), "plant.yaml");
+    public string PlantYamlPathFromKey(string plantKey) =>
+        Path.Combine(PlantDirFromKey(plantKey), "plant.yaml");
 
     public string PlanterDir(string planterId) => Path.Combine(PlantersDir, planterId);
-    public string PlanterYamlPath(string planterId) => Path.Combine(PlanterDir(planterId), "planter.yaml");
+
+    public string PlanterYamlPath(string planterId) =>
+        Path.Combine(PlanterDir(planterId), "planter.yaml");
 
     public string PlannerDir(string plannerId) => Path.Combine(PlannersDir, plannerId);
-    public string PlannerYamlPath(string plannerId) => Path.Combine(PlannerDir(plannerId), "planner.yaml");
+
+    public string PlannerYamlPath(string plannerId) =>
+        Path.Combine(PlannerDir(plannerId), "planner.yaml");
 
     public static (string PlanId, string Slug) SplitPlantKey(string key)
     {
@@ -45,18 +55,20 @@ internal sealed class FileSystemForestPaths
         var idx = k.IndexOf(':', StringComparison.Ordinal);
         if (idx <= 0 || idx == k.Length - 1)
         {
-            throw new InvalidDataException($"Invalid plant key '{key}'. Expected format: <plan-id>:<plant-slug>.");
+            throw new InvalidDataException(
+                $"Invalid plant key '{key}'. Expected format: <plan-id>:<plant-slug>."
+            );
         }
 
         var planId = k[..idx].Trim();
         var slug = k[(idx + 1)..].Trim();
         if (planId.Length == 0 || slug.Length == 0)
         {
-            throw new InvalidDataException($"Invalid plant key '{key}'. Expected format: <plan-id>:<plant-slug>.");
+            throw new InvalidDataException(
+                $"Invalid plant key '{key}'. Expected format: <plan-id>:<plant-slug>."
+            );
         }
 
         return (planId, slug);
     }
 }
-
-

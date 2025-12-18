@@ -18,7 +18,8 @@ public sealed class FileSystemPlanReconciler : IPlanReconciler
         string planId,
         bool dryRun,
         string? forum = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         _ = forum;
         _ = cancellationToken;
@@ -41,8 +42,12 @@ public sealed class FileSystemPlanReconciler : IPlanReconciler
         var plantsDir = Path.Combine(_forestDir.Trim(), "plants");
         Directory.CreateDirectory(plantsDir);
 
-        var templates = plan.PlantTemplateNames.Count > 0 ? plan.PlantTemplateNames : new List<string> { "default-plant" };
-        var planners = plan.Planners.Count > 0 ? plan.Planners : new List<string> { "default-planner" };
+        var templates =
+            plan.PlantTemplateNames.Count > 0
+                ? plan.PlantTemplateNames
+                : new List<string> { "default-plant" };
+        var planners =
+            plan.Planners.Count > 0 ? plan.Planners : new List<string> { "default-planner" };
         var planters = plan.Planters.Count > 0 ? plan.Planters : new List<string>();
 
         var created = 0;
@@ -57,7 +62,8 @@ public sealed class FileSystemPlanReconciler : IPlanReconciler
             var plantYamlPathOut = Path.Combine(plantDir, "plant.yaml");
 
             var plannerId = planners[i % planners.Count];
-            var assignedPlanters = planters.Count > 0 ? new[] { planters[i % planters.Count] } : Array.Empty<string>();
+            var assignedPlanters =
+                planters.Count > 0 ? new[] { planters[i % planters.Count] } : Array.Empty<string>();
 
             var now = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
             var plant = new PlantFileModel(
@@ -70,14 +76,19 @@ public sealed class FileSystemPlanReconciler : IPlanReconciler
                 Branches: Array.Empty<string>(),
                 CreatedAt: now,
                 UpdatedAt: null,
-                Description: null);
+                Description: null
+            );
 
             if (!Directory.Exists(plantDir) || !File.Exists(plantYamlPathOut))
             {
                 if (!dryRun)
                 {
                     Directory.CreateDirectory(plantDir);
-                    File.WriteAllText(plantYamlPathOut, PlantYamlLite.Serialize(plant), Encoding.UTF8);
+                    File.WriteAllText(
+                        plantYamlPathOut,
+                        PlantYamlLite.Serialize(plant),
+                        Encoding.UTF8
+                    );
                 }
 
                 created++;
@@ -126,4 +137,3 @@ public sealed class FileSystemPlanReconciler : IPlanReconciler
         return slug.Length == 0 ? "untitled" : slug;
     }
 }
-

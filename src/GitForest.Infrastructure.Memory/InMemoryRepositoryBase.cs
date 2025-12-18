@@ -14,12 +14,15 @@ internal sealed class InMemoryRepositoryBase<TEntity>
         IEqualityComparer<string> keyComparer,
         Func<TEntity, string?> keySelector,
         Action<TEntity> validateEntity,
-        string duplicateEntityLabel)
+        string duplicateEntityLabel
+    )
     {
-        if (keyComparer is null) throw new ArgumentNullException(nameof(keyComparer));
+        if (keyComparer is null)
+            throw new ArgumentNullException(nameof(keyComparer));
         _keySelector = keySelector ?? throw new ArgumentNullException(nameof(keySelector));
         _validateEntity = validateEntity ?? throw new ArgumentNullException(nameof(validateEntity));
-        _duplicateEntityLabel = duplicateEntityLabel ?? throw new ArgumentNullException(nameof(duplicateEntityLabel));
+        _duplicateEntityLabel =
+            duplicateEntityLabel ?? throw new ArgumentNullException(nameof(duplicateEntityLabel));
 
         _items = new Dictionary<string, TEntity>(keyComparer);
 
@@ -27,9 +30,11 @@ internal sealed class InMemoryRepositoryBase<TEntity>
         {
             foreach (var e in seed)
             {
-                if (e is null) continue;
+                if (e is null)
+                    continue;
                 var key = (keySelector(e) ?? string.Empty).Trim();
-                if (key.Length == 0) continue;
+                if (key.Length == 0)
+                    continue;
                 _items[key] = e;
             }
         }
@@ -38,7 +43,8 @@ internal sealed class InMemoryRepositoryBase<TEntity>
     public Task<TEntity?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
-        if (string.IsNullOrWhiteSpace(id)) return Task.FromResult<TEntity?>(null);
+        if (string.IsNullOrWhiteSpace(id))
+            return Task.FromResult<TEntity?>(null);
 
         lock (_gate)
         {
@@ -57,7 +63,9 @@ internal sealed class InMemoryRepositoryBase<TEntity>
         {
             if (_items.ContainsKey(key))
             {
-                throw new InvalidOperationException($"{_duplicateEntityLabel} '{key}' already exists.");
+                throw new InvalidOperationException(
+                    $"{_duplicateEntityLabel} '{key}' already exists."
+                );
             }
 
             _items[key] = entity;
@@ -83,10 +91,12 @@ internal sealed class InMemoryRepositoryBase<TEntity>
     public Task DeleteAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
-        if (entity is null) throw new ArgumentNullException(nameof(entity));
+        if (entity is null)
+            throw new ArgumentNullException(nameof(entity));
 
         var keyRaw = _keySelector(entity);
-        if (string.IsNullOrWhiteSpace(keyRaw)) return Task.CompletedTask;
+        if (string.IsNullOrWhiteSpace(keyRaw))
+            return Task.CompletedTask;
 
         lock (_gate)
         {
@@ -111,5 +121,3 @@ internal sealed class InMemoryRepositoryBase<TEntity>
         }
     }
 }
-
-

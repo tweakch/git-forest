@@ -11,4 +11,3 @@ public class Planner
     public string Type { get; set; } = string.Empty;
     public Dictionary<string, object> Configuration { get; set; } = new();
 }
-

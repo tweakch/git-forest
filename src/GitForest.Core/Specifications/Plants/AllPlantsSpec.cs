@@ -9,4 +9,3 @@ public sealed class AllPlantsSpec : Specification<Plant>
         Query.OrderBy(p => p.Key);
     }
 }
-

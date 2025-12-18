@@ -10,6 +10,6 @@ public interface IReconciliationForumRouter
     Task<ReconciliationStrategy> RunAsync(
         ReconcileContext context,
         string? forumOverride,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 }
-

@@ -13,7 +13,8 @@ public sealed record PlantFileModel(
     IReadOnlyList<string> Branches,
     string CreatedAt,
     string? UpdatedAt,
-    string? Description);
+    string? Description
+);
 
 /// <summary>
 /// Minimal YAML parsing/serialization for git-forest plant.yaml.
@@ -28,7 +29,9 @@ public static class PlantYamlLite
         // Minimal plant.yaml aligned with docs and CLI.md (v0 contract).
         var sb = new StringBuilder();
         sb.Append("key: ").Append(plant.Key).AppendLine();
-        sb.Append("status: ").Append(string.IsNullOrWhiteSpace(plant.Status) ? DefaultStatus : plant.Status).AppendLine();
+        sb.Append("status: ")
+            .Append(string.IsNullOrWhiteSpace(plant.Status) ? DefaultStatus : plant.Status)
+            .AppendLine();
         sb.Append("title: ").Append(EscapeScalar(plant.Title)).AppendLine();
         sb.Append("plan_id: ").Append(plant.PlanId).AppendLine();
 
@@ -92,7 +95,10 @@ public static class PlantYamlLite
         var createdAt = string.Empty;
         string? updatedAt = null;
 
-        var lines = (yaml ?? string.Empty).Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n').Split('\n');
+        var lines = (yaml ?? string.Empty)
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace('\r', '\n')
+            .Split('\n');
 
         string? currentList = null;
         var inContext = false;
@@ -110,14 +116,46 @@ public static class PlantYamlLite
                 currentList = null;
                 inContext = false;
 
-                if (TryParseScalar(line, "key", out var v)) { key = v; continue; }
-                if (TryParseScalar(line, "status", out v)) { status = v; continue; }
-                if (TryParseScalar(line, "title", out v)) { title = v; continue; }
-                if (TryParseScalar(line, "description", out v)) { description = v; continue; }
-                if (TryParseScalar(line, "plan_id", out v)) { planId = v; continue; }
-                if (TryParseScalar(line, "created_at", out v)) { createdAt = v; continue; }
-                if (TryParseScalar(line, "updated_at", out v)) { updatedAt = v; continue; }
-                if (line.StartsWith("assigned_planters:", StringComparison.Ordinal)) { currentList = "assigned_planters"; continue; }
+                if (TryParseScalar(line, "key", out var v))
+                {
+                    key = v;
+                    continue;
+                }
+                if (TryParseScalar(line, "status", out v))
+                {
+                    status = v;
+                    continue;
+                }
+                if (TryParseScalar(line, "title", out v))
+                {
+                    title = v;
+                    continue;
+                }
+                if (TryParseScalar(line, "description", out v))
+                {
+                    description = v;
+                    continue;
+                }
+                if (TryParseScalar(line, "plan_id", out v))
+                {
+                    planId = v;
+                    continue;
+                }
+                if (TryParseScalar(line, "created_at", out v))
+                {
+                    createdAt = v;
+                    continue;
+                }
+                if (TryParseScalar(line, "updated_at", out v))
+                {
+                    updatedAt = v;
+                    continue;
+                }
+                if (line.StartsWith("assigned_planters:", StringComparison.Ordinal))
+                {
+                    currentList = "assigned_planters";
+                    continue;
+                }
                 if (line.StartsWith("branches:", StringComparison.Ordinal))
                 {
                     // Support inline empty list: branches: []
@@ -129,7 +167,11 @@ public static class PlantYamlLite
                     currentList = "branches";
                     continue;
                 }
-                if (line.StartsWith("context:", StringComparison.Ordinal)) { inContext = true; continue; }
+                if (line.StartsWith("context:", StringComparison.Ordinal))
+                {
+                    inContext = true;
+                    continue;
+                }
                 continue;
             }
 
@@ -196,7 +238,8 @@ public static class PlantYamlLite
             Branches: branches,
             CreatedAt: createdAt,
             UpdatedAt: updatedAt,
-            Description: string.IsNullOrWhiteSpace(description) ? null : description);
+            Description: string.IsNullOrWhiteSpace(description) ? null : description
+        );
     }
 
     private static bool TryParseScalar(string line, string key, out string value)
@@ -213,7 +256,10 @@ public static class PlantYamlLite
 
     private static string Unquote(string value)
     {
-        if (value.Length >= 2 && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\'')))
+        if (
+            value.Length >= 2
+            && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\''))
+        )
         {
             return value[1..^1];
         }
@@ -224,15 +270,20 @@ public static class PlantYamlLite
     private static string EscapeScalar(string value)
     {
         var v = value ?? string.Empty;
-        if (v.Contains(':') || v.Contains('#') || v.Contains('"') || v.Contains('\'') || v.Contains('\\'))
+        if (
+            v.Contains(':')
+            || v.Contains('#')
+            || v.Contains('"')
+            || v.Contains('\'')
+            || v.Contains('\\')
+        )
         {
             // YAML double-quoted scalar (minimal escaping)
-            var escaped = v.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal);
+            var escaped = v.Replace("\\", "\\\\", StringComparison.Ordinal)
+                .Replace("\"", "\\\"", StringComparison.Ordinal);
             return $"\"{escaped}\"";
         }
 
         return v;
     }
 }
-
-

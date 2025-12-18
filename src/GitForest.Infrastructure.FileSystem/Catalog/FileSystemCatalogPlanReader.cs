@@ -17,7 +17,9 @@ public sealed class FileSystemCatalogPlanReader : ICatalogPlanReader
         _catalogPath = catalogPath ?? throw new ArgumentNullException(nameof(catalogPath));
     }
 
-    public Task<IReadOnlyList<CatalogPlan>> ListCatalogPlansAsync(CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<CatalogPlan>> ListCatalogPlansAsync(
+        CancellationToken cancellationToken = default
+    )
     {
         _ = cancellationToken;
 
@@ -50,7 +52,10 @@ public sealed class FileSystemCatalogPlanReader : ICatalogPlanReader
         return Task.FromResult<IReadOnlyList<CatalogPlan>>(plans);
     }
 
-    public Task<CatalogPlan?> GetCatalogPlanByIdAsync(string planId, CancellationToken cancellationToken = default)
+    public Task<CatalogPlan?> GetCatalogPlanByIdAsync(
+        string planId,
+        CancellationToken cancellationToken = default
+    )
     {
         _ = cancellationToken;
 
@@ -67,7 +72,10 @@ public sealed class FileSystemCatalogPlanReader : ICatalogPlanReader
             try
             {
                 var plan = LoadPlanFromFile(file);
-                if (plan != null && string.Equals(plan.Id, planId.Trim(), StringComparison.OrdinalIgnoreCase))
+                if (
+                    plan != null
+                    && string.Equals(plan.Id, planId.Trim(), StringComparison.OrdinalIgnoreCase)
+                )
                 {
                     return Task.FromResult<CatalogPlan?>(plan);
                 }
@@ -105,7 +113,7 @@ public sealed class FileSystemCatalogPlanReader : ICatalogPlanReader
             Homepage = parsed.Homepage ?? string.Empty,
             Planners = parsed.Planners.ToList(),
             Planters = parsed.Planters.ToList(),
-            Scopes = ExtractScopes(yaml)
+            Scopes = ExtractScopes(yaml),
         };
     }
 

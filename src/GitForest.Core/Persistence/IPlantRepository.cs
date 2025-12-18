@@ -1,7 +1,3 @@
 namespace GitForest.Core.Persistence;
 
-public interface IPlantRepository : IRepository<Plant, string>
-{
-}
-
-
+public interface IPlantRepository : IRepository<Plant, string> { }

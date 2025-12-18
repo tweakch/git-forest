@@ -1,24 +1,32 @@
-using MediatR;
 using GitForest.Infrastructure.FileSystem.Serialization;
+using MediatR;
 
 namespace GitForest.Cli.Features.Forest;
 
-public sealed record InitForestCommand(string? DirOptionValue, bool Force) : IRequest<InitForestResult>;
+public sealed record InitForestCommand(string? DirOptionValue, bool Force)
+    : IRequest<InitForestResult>;
 
 public sealed record InitForestResult(string DirectoryOptionValue, string ForestDirPath);
 
 internal sealed class InitForestHandler : IRequestHandler<InitForestCommand, InitForestResult>
 {
-    public Task<InitForestResult> Handle(InitForestCommand request, CancellationToken cancellationToken)
+    public Task<InitForestResult> Handle(
+        InitForestCommand request,
+        CancellationToken cancellationToken
+    )
     {
         _ = cancellationToken;
         _ = request.Force; // init is idempotent today
 
-        var dir = string.IsNullOrWhiteSpace(request.DirOptionValue) ? ForestStore.DefaultForestDirName : request.DirOptionValue!;
+        var dir = string.IsNullOrWhiteSpace(request.DirOptionValue)
+            ? ForestStore.DefaultForestDirName
+            : request.DirOptionValue!;
         var forestDir = ForestStore.GetForestDir(dir);
         ForestStore.Initialize(forestDir);
 
-        return Task.FromResult(new InitForestResult(DirectoryOptionValue: dir, ForestDirPath: forestDir));
+        return Task.FromResult(
+            new InitForestResult(DirectoryOptionValue: dir, ForestDirPath: forestDir)
+        );
     }
 }
 
@@ -32,11 +40,16 @@ public sealed record ForestStatusResult(
     string[] PlantersActive,
     string[] PlannersAvailable,
     string[] PlannersActive,
-    string LockStatus);
+    string LockStatus
+);
 
-internal sealed class GetForestStatusHandler : IRequestHandler<GetForestStatusQuery, ForestStatusResult>
+internal sealed class GetForestStatusHandler
+    : IRequestHandler<GetForestStatusQuery, ForestStatusResult>
 {
-    public Task<ForestStatusResult> Handle(GetForestStatusQuery request, CancellationToken cancellationToken)
+    public Task<ForestStatusResult> Handle(
+        GetForestStatusQuery request,
+        CancellationToken cancellationToken
+    )
     {
         _ = request;
         _ = cancellationToken;
@@ -50,9 +63,14 @@ internal sealed class GetForestStatusHandler : IRequestHandler<GetForestStatusQu
             .GroupBy(p => (p.Status ?? string.Empty).Trim().ToLowerInvariant())
             .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
 
-        var (plantersAvailable, plannersAvailable) = LoadAvailablePlantersAndPlanners(forestDir, plans.Select(p => p.Id));
+        var (plantersAvailable, plannersAvailable) = LoadAvailablePlantersAndPlanners(
+            forestDir,
+            plans.Select(p => p.Id)
+        );
 
-        var nonArchivedPlants = plants.Where(p => !string.Equals(p.Status, "archived", StringComparison.OrdinalIgnoreCase)).ToArray();
+        var nonArchivedPlants = plants
+            .Where(p => !string.Equals(p.Status, "archived", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
 
         var plantersActive = nonArchivedPlants
             .SelectMany(p => p.AssignedPlanters ?? Array.Empty<string>())
@@ -72,15 +90,18 @@ internal sealed class GetForestStatusHandler : IRequestHandler<GetForestStatusQu
 
         var lockStatus = GetLockStatus(forestDir);
 
-        return Task.FromResult(new ForestStatusResult(
-            PlansCount: plans.Count,
-            PlantsCount: plants.Count,
-            PlantsByStatus: plantsByStatus,
-            PlantersAvailable: plantersAvailable,
-            PlantersActive: plantersActive,
-            PlannersAvailable: plannersAvailable,
-            PlannersActive: plannersActive,
-            LockStatus: lockStatus));
+        return Task.FromResult(
+            new ForestStatusResult(
+                PlansCount: plans.Count,
+                PlantsCount: plants.Count,
+                PlantsByStatus: plantsByStatus,
+                PlantersAvailable: plantersAvailable,
+                PlantersActive: plantersActive,
+                PlannersAvailable: plannersAvailable,
+                PlannersActive: plannersActive,
+                LockStatus: lockStatus
+            )
+        );
     }
 
     private static string GetLockStatus(string forestDir)
@@ -106,7 +127,10 @@ internal sealed class GetForestStatusHandler : IRequestHandler<GetForestStatusQu
         return lockStatus;
     }
 
-    private static (string[] plantersAvailable, string[] plannersAvailable) LoadAvailablePlantersAndPlanners(string forestDir, IEnumerable<string> planIds)
+    private static (
+        string[] plantersAvailable,
+        string[] plannersAvailable
+    ) LoadAvailablePlantersAndPlanners(string forestDir, IEnumerable<string> planIds)
     {
         var planters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var planners = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -157,4 +181,3 @@ internal sealed class GetForestStatusHandler : IRequestHandler<GetForestStatusQu
         );
     }
 }
-

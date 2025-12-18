@@ -1,4 +1,3 @@
-using GitForest.Cli;
 using MediatR;
 
 namespace GitForest.Cli.Features.Config;

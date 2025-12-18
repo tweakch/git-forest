@@ -1,6 +1,5 @@
 using System.CommandLine;
 using GitForest.Application.Features.Plans;
-using GitForest.Application.Features.Plants;
 using GitForest.Cli.Commands;
 using GitForest.Cli.Reconciliation;
 using GitForest.Core.Persistence;

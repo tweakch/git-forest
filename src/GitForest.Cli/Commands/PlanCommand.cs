@@ -1,5 +1,4 @@
 using System.CommandLine;
-using GitForest.Cli;
 using MediatR;
 using AppPlans = GitForest.Application.Features.Plans;
 

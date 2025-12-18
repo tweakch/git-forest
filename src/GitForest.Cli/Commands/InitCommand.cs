@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.CommandLine;
-using GitForest.Cli;
 using GitForest.Cli.Orleans;
 using MediatR;
 using AppForest = GitForest.Application.Features.Forest;

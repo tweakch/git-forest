@@ -1,5 +1,4 @@
 using System.CommandLine;
-using GitForest.Cli;
 using MediatR;
 using AppPlantCmd = GitForest.Application.Features.Plants.Commands;
 using CliPlants = GitForest.Cli.Features.Plants;

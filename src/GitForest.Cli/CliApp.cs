@@ -55,7 +55,7 @@ public static class CliApp
     {
         var services = new ServiceCollection();
 
-        var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
+        var forestDir = ForestStore.GetDefaultForestDir();
         var forestConfig = ForestConfigReader.ReadEffective(forestDir);
         services.AddSingleton(forestConfig);
 

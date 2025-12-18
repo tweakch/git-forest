@@ -11,6 +11,19 @@ internal static class ForestStore
     internal const string DefaultForestDirName = ".git-forest";
     private const string DefaultStatus = "planned";
 
+    public static string GetDefaultForestDir(string? workingDirectory = null)
+    {
+        return GetForestDir(DefaultForestDirName, workingDirectory);
+    }
+
+    public static void EnsureInitialized(string forestDir)
+    {
+        if (!IsInitialized(forestDir))
+        {
+            throw new ForestNotInitializedException(forestDir);
+        }
+    }
+
     public static string GetForestDir(string? dirOptionValue, string? workingDirectory = null)
     {
         var dir = string.IsNullOrWhiteSpace(dirOptionValue)

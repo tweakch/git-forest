@@ -44,11 +44,8 @@ public static class PlanCommand
 
                 try
                 {
-                    var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
-                    if (!ForestStore.IsInitialized(forestDir))
-                    {
-                        throw new ForestStore.ForestNotInitializedException(forestDir);
-                    }
+                    var forestDir = ForestStore.GetDefaultForestDir();
+                    ForestStore.EnsureInitialized(forestDir);
 
                     var result = await mediator.Send(
                         new AppPlans.ReconcilePlanCommand(

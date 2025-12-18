@@ -1,94 +1,51 @@
+using Ardalis.Specification;
 using GitForest.Core;
 using GitForest.Core.Persistence;
 
 namespace GitForest.Infrastructure.Memory;
 
-public sealed class InMemoryPlanterRepository : AbstractPlanterRepository
+public sealed class InMemoryPlanterRepository : IPlanterRepository
 {
-    private readonly object _gate = new();
-    private readonly Dictionary<string, Planter> _planters;
+    private readonly InMemoryRepositoryBase<Planter> _repo;
 
     public InMemoryPlanterRepository(IEnumerable<Planter>? seed = null, IEqualityComparer<string>? idComparer = null)
     {
-        _planters = new Dictionary<string, Planter>(idComparer ?? StringComparer.OrdinalIgnoreCase);
-
-        if (seed is not null)
-        {
-            foreach (var p in seed)
-            {
-                if (p is null) continue;
-                var id = (p.Id ?? string.Empty).Trim();
-                if (id.Length == 0) continue;
-                _planters[id] = p;
-            }
-        }
+        _repo = new InMemoryRepositoryBase<Planter>(
+            seed,
+            idComparer ?? StringComparer.OrdinalIgnoreCase,
+            static p => p.Id,
+            ValidateEntity,
+            "Planter");
     }
 
-    public override Task<Planter?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    public Task<Planter?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+        => _repo.GetByIdAsync(id, cancellationToken);
+
+    public Task AddAsync(Planter entity, CancellationToken cancellationToken = default)
+        => _repo.AddAsync(entity, cancellationToken);
+
+    public Task UpdateAsync(Planter entity, CancellationToken cancellationToken = default)
+        => _repo.UpdateAsync(entity, cancellationToken);
+
+    public Task DeleteAsync(Planter entity, CancellationToken cancellationToken = default)
+        => _repo.DeleteAsync(entity, cancellationToken);
+
+    public Task<Planter?> GetBySpecAsync(ISpecification<Planter> specification, CancellationToken cancellationToken = default)
+        => _repo.GetBySpecAsync(specification, cancellationToken);
+
+    public Task<TResult?> GetBySpecAsync<TResult>(ISpecification<Planter, TResult> specification, CancellationToken cancellationToken = default)
+        => _repo.GetBySpecAsync(specification, cancellationToken);
+
+    public Task<IReadOnlyList<Planter>> ListAsync(ISpecification<Planter> specification, CancellationToken cancellationToken = default)
+        => _repo.ListAsync(specification, cancellationToken);
+
+    public Task<IReadOnlyList<TResult>> ListAsync<TResult>(ISpecification<Planter, TResult> specification, CancellationToken cancellationToken = default)
+        => _repo.ListAsync(specification, cancellationToken);
+
+    private static void ValidateEntity(Planter entity)
     {
-        _ = cancellationToken;
-        if (string.IsNullOrWhiteSpace(id)) return Task.FromResult<Planter?>(null);
-
-        lock (_gate)
-        {
-            _planters.TryGetValue(id.Trim(), out var found);
-            return Task.FromResult(found);
-        }
-    }
-
-    public override Task AddAsync(Planter entity, CancellationToken cancellationToken = default)
-    {
-        _ = cancellationToken;
-        ValidateEntity(entity);
-
-        var id = GetTrimmedId(entity);
-        lock (_gate)
-        {
-            if (_planters.ContainsKey(id))
-            {
-                throw new InvalidOperationException($"Planter '{id}' already exists.");
-            }
-
-            _planters[id] = entity;
-        }
-
-        return Task.CompletedTask;
-    }
-
-    public override Task UpdateAsync(Planter entity, CancellationToken cancellationToken = default)
-    {
-        _ = cancellationToken;
-        ValidateEntity(entity);
-
-        var id = GetTrimmedId(entity);
-        lock (_gate)
-        {
-            _planters[id] = entity;
-        }
-
-        return Task.CompletedTask;
-    }
-
-    public override Task DeleteAsync(Planter entity, CancellationToken cancellationToken = default)
-    {
-        _ = cancellationToken;
         if (entity is null) throw new ArgumentNullException(nameof(entity));
-        if (string.IsNullOrWhiteSpace(entity.Id)) return Task.CompletedTask;
-
-        lock (_gate)
-        {
-            _planters.Remove(entity.Id.Trim());
-        }
-
-        return Task.CompletedTask;
-    }
-
-    protected override List<Planter> LoadAll()
-    {
-        lock (_gate)
-        {
-            return _planters.Values.ToList();
-        }
+        if (string.IsNullOrWhiteSpace(entity.Id)) throw new ArgumentException("Planter.Id must be provided.", nameof(entity));
     }
 }
 

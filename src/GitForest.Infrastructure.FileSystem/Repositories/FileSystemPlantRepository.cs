@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Text;
 using GitForest.Core;
 using GitForest.Core.Persistence;
 using GitForest.Infrastructure.FileSystem.Serialization;
@@ -30,9 +28,9 @@ public sealed class FileSystemPlantRepository : AbstractPlantRepository
             return Task.FromResult<Plant?>(null);
         }
 
-        var yaml = File.ReadAllText(plantYamlPath, Encoding.UTF8);
+        var yaml = FileSystemRepositoryFs.ReadAllTextUtf8(plantYamlPath);
         var model = PlantYamlLite.Parse(yaml);
-        return Task.FromResult<Plant?>(ToDomain(model));
+        return Task.FromResult<Plant?>(PlantFileMapper.ToDomain(model));
     }
 
     public override Task AddAsync(Plant entity, CancellationToken cancellationToken = default)
@@ -48,7 +46,9 @@ public sealed class FileSystemPlantRepository : AbstractPlantRepository
         }
 
         Directory.CreateDirectory(dir);
-        WritePlantYaml(entity);
+        var model = PlantFileMapper.ToFileModelAndSyncDomain(entity);
+        var plantYamlPath = _paths.PlantYamlPathFromKey(model.Key);
+        FileSystemRepositoryFs.WriteAllTextUtf8(plantYamlPath, PlantYamlLite.Serialize(model));
         return Task.CompletedTask;
     }
 
@@ -59,7 +59,9 @@ public sealed class FileSystemPlantRepository : AbstractPlantRepository
 
         Directory.CreateDirectory(_paths.PlantsDir);
         Directory.CreateDirectory(_paths.PlantDirFromKey(GetTrimmedId(entity)));
-        WritePlantYaml(entity);
+        var model = PlantFileMapper.ToFileModelAndSyncDomain(entity);
+        var plantYamlPath = _paths.PlantYamlPathFromKey(model.Key);
+        FileSystemRepositoryFs.WriteAllTextUtf8(plantYamlPath, PlantYamlLite.Serialize(model));
         return Task.CompletedTask;
     }
 
@@ -70,100 +72,21 @@ public sealed class FileSystemPlantRepository : AbstractPlantRepository
         if (string.IsNullOrWhiteSpace(entity.Key)) return Task.CompletedTask;
 
         var dir = _paths.PlantDirFromKey(entity.Key.Trim());
-        if (Directory.Exists(dir))
-        {
-            Directory.Delete(dir, recursive: true);
-        }
+        FileSystemRepositoryFs.DeleteDirectoryIfExists(dir);
 
         return Task.CompletedTask;
     }
 
-    private void WritePlantYaml(Plant plant)
-    {
-        var key = plant.Key.Trim();
-        var (planId, slug) = FileSystemForestPaths.SplitPlantKey(key);
-        var created = plant.CreatedDate == default ? DateTimeOffset.UtcNow : new DateTimeOffset(DateTime.SpecifyKind(plant.CreatedDate, DateTimeKind.Utc));
-        var updated = plant.LastActivityDate.HasValue ? new DateTimeOffset(DateTime.SpecifyKind(plant.LastActivityDate.Value, DateTimeKind.Utc)) : (DateTimeOffset?)null;
-
-        var model = new PlantFileModel(
-            Key: key,
-            Status: plant.Status ?? "planned",
-            Title: plant.Title ?? string.Empty,
-            PlanId: string.IsNullOrWhiteSpace(plant.PlanId) ? planId : plant.PlanId,
-            PlannerId: string.IsNullOrWhiteSpace(plant.PlannerId) ? null : plant.PlannerId,
-            AssignedPlanters: plant.AssignedPlanters ?? new List<string>(),
-            Branches: plant.Branches ?? new List<string>(),
-            CreatedAt: created.ToString("O", CultureInfo.InvariantCulture),
-            UpdatedAt: updated?.ToString("O", CultureInfo.InvariantCulture),
-            Description: string.IsNullOrWhiteSpace(plant.Description) ? null : plant.Description);
-
-        var plantYamlPath = _paths.PlantYamlPathFromKey(key);
-        File.WriteAllText(plantYamlPath, PlantYamlLite.Serialize(model), Encoding.UTF8);
-
-        // Keep slug in sync (in-memory only)
-        plant.Slug = string.IsNullOrWhiteSpace(plant.Slug) ? slug : plant.Slug;
-        plant.PlanId = string.IsNullOrWhiteSpace(plant.PlanId) ? planId : plant.PlanId;
-    }
-
-    private static Plant ToDomain(PlantFileModel model)
-    {
-        var (planId, slug) = FileSystemForestPaths.SplitPlantKey(model.Key);
-        var created = TryParseRoundtripUtc(model.CreatedAt) ?? DateTime.UtcNow;
-        var updated = TryParseRoundtripUtc(model.UpdatedAt);
-        return new Plant
-        {
-            Key = model.Key ?? string.Empty,
-            Slug = slug,
-            PlanId = string.IsNullOrWhiteSpace(model.PlanId) ? planId : model.PlanId,
-            PlannerId = model.PlannerId ?? string.Empty,
-            Status = string.IsNullOrWhiteSpace(model.Status) ? "planned" : model.Status,
-            Title = model.Title ?? string.Empty,
-            Description = model.Description ?? string.Empty,
-            AssignedPlanters = (model.AssignedPlanters ?? Array.Empty<string>()).Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).ToList(),
-            Branches = (model.Branches ?? Array.Empty<string>()).Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).ToList(),
-            CreatedDate = created,
-            LastActivityDate = updated
-        };
-    }
-
-    private static DateTime? TryParseRoundtripUtc(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        if (DateTimeOffset.TryParse(value.Trim(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dto))
-        {
-            return dto.UtcDateTime;
-        }
-
-        return null;
-    }
-
     protected override List<Plant> LoadAll()
     {
-        var dir = _paths.PlantsDir;
-        if (!Directory.Exists(dir))
-        {
-            return new List<Plant>();
-        }
-
-        var results = new List<Plant>();
-        foreach (var plantDir in Directory.GetDirectories(dir))
-        {
-            var plantYaml = Path.Combine(plantDir, "plant.yaml");
-            if (!File.Exists(plantYaml))
+        return FileSystemRepositoryFs.LoadAllFromSubdirectories(
+            parentDir: _paths.PlantsDir,
+            yamlFileName: "plant.yaml",
+            loader: (_, _, yaml) =>
             {
-                continue;
-            }
-
-            var yaml = File.ReadAllText(plantYaml, Encoding.UTF8);
-            var model = PlantYamlLite.Parse(yaml);
-            results.Add(ToDomain(model));
-        }
-
-        return results;
+                var model = PlantYamlLite.Parse(yaml);
+                return PlantFileMapper.ToDomain(model);
+            });
     }
 }
 

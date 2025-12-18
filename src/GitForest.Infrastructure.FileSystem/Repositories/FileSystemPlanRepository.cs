@@ -1,6 +1,3 @@
-using System.Globalization;
-using System.Text;
-using System.Text.Json;
 using GitForest.Core;
 using GitForest.Core.Persistence;
 using GitForest.Infrastructure.FileSystem.Serialization;
@@ -31,27 +28,15 @@ public sealed class FileSystemPlanRepository : AbstractPlanRepository
             return Task.FromResult<Plan?>(null);
         }
 
-        var yaml = File.ReadAllText(planYamlPath, Encoding.UTF8);
+        var yaml = FileSystemRepositoryFs.ReadAllTextUtf8(planYamlPath);
         var parsed = PlanYamlLite.Parse(yaml);
 
-        var installedAt = TryReadInstalledAt(_paths.PlanInstallJsonPath(planId));
-        var source = TryReadPlanSource(_paths.PlanInstallJsonPath(planId));
+        var installJsonPath = _paths.PlanInstallJsonPath(planId);
+        var installedAt = PlanFileMapper.TryReadInstalledAt(installJsonPath);
+        var source = PlanFileMapper.TryReadPlanSource(installJsonPath);
+        var installedDate = installedAt ?? File.GetLastWriteTimeUtc(planYamlPath);
 
-        var plan = new Plan
-        {
-            Id = string.IsNullOrWhiteSpace(parsed.Id) ? planId : parsed.Id,
-            Version = parsed.Version ?? string.Empty,
-            Source = source,
-            Author = parsed.Author ?? string.Empty,
-            License = parsed.License ?? string.Empty,
-            Repository = parsed.Repository ?? string.Empty,
-            Homepage = parsed.Homepage ?? string.Empty,
-            Planners = (parsed.Planners ?? Array.Empty<string>()).Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).ToList(),
-            Planters = (parsed.Planters ?? Array.Empty<string>()).Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).ToList(),
-            InstalledDate = installedAt ?? File.GetLastWriteTimeUtc(planYamlPath)
-        };
-
-        return Task.FromResult<Plan?>(plan);
+        return Task.FromResult<Plan?>(PlanFileMapper.ToDomain(parsed, planId, source, installedDate));
     }
 
     public override Task AddAsync(Plan entity, CancellationToken cancellationToken = default)
@@ -67,25 +52,12 @@ public sealed class FileSystemPlanRepository : AbstractPlanRepository
         }
 
         Directory.CreateDirectory(dir);
-        var yaml = PlanYamlLite.SerializeMinimal(
-            id: planId,
-            version: entity.Version ?? string.Empty,
-            author: entity.Author ?? string.Empty,
-            license: entity.License ?? string.Empty,
-            repository: entity.Repository ?? string.Empty,
-            homepage: entity.Homepage ?? string.Empty,
-            planners: entity.Planners ?? new List<string>(),
-            planters: entity.Planters ?? new List<string>());
+        var yaml = PlanFileMapper.SerializeMinimalYaml(planId, entity);
+        FileSystemRepositoryFs.WriteAllTextUtf8(_paths.PlanYamlPath(planId), yaml);
 
-        File.WriteAllText(_paths.PlanYamlPath(planId), yaml, Encoding.UTF8);
-
-        // Best-effort install metadata (source + installedAt) for compatibility with existing tooling.
-        var installedAt = entity.InstalledDate == default
-            ? DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture)
-            : new DateTimeOffset(DateTime.SpecifyKind(entity.InstalledDate, DateTimeKind.Utc)).ToString("O", CultureInfo.InvariantCulture);
-
-        var metadata = new { id = planId, source = entity.Source ?? string.Empty, installedAt };
-        File.WriteAllText(_paths.PlanInstallJsonPath(planId), JsonSerializer.Serialize(metadata, new JsonSerializerOptions(JsonSerializerDefaults.Web)), Encoding.UTF8);
+        FileSystemRepositoryFs.WriteAllTextUtf8(
+            _paths.PlanInstallJsonPath(planId),
+            PlanFileMapper.SerializeInstallJsonForAdd(planId, entity));
 
         return Task.CompletedTask;
     }
@@ -97,17 +69,8 @@ public sealed class FileSystemPlanRepository : AbstractPlanRepository
 
         var planId = GetTrimmedId(entity);
         Directory.CreateDirectory(_paths.PlanDir(planId));
-        var yaml = PlanYamlLite.SerializeMinimal(
-            id: planId,
-            version: entity.Version ?? string.Empty,
-            author: entity.Author ?? string.Empty,
-            license: entity.License ?? string.Empty,
-            repository: entity.Repository ?? string.Empty,
-            homepage: entity.Homepage ?? string.Empty,
-            planners: entity.Planners ?? new List<string>(),
-            planters: entity.Planters ?? new List<string>());
-
-        File.WriteAllText(_paths.PlanYamlPath(planId), yaml, Encoding.UTF8);
+        var yaml = PlanFileMapper.SerializeMinimalYaml(planId, entity);
+        FileSystemRepositoryFs.WriteAllTextUtf8(_paths.PlanYamlPath(planId), yaml);
         return Task.CompletedTask;
     }
 
@@ -118,105 +81,29 @@ public sealed class FileSystemPlanRepository : AbstractPlanRepository
         if (string.IsNullOrWhiteSpace(entity.Id)) return Task.CompletedTask;
 
         var dir = _paths.PlanDir(entity.Id.Trim());
-        if (Directory.Exists(dir))
-        {
-            Directory.Delete(dir, recursive: true);
-        }
+        FileSystemRepositoryFs.DeleteDirectoryIfExists(dir);
 
         return Task.CompletedTask;
     }
 
     protected override List<Plan> LoadAllPlans()
     {
-        var dir = _paths.PlansDir;
-        if (!Directory.Exists(dir))
-        {
-            return new List<Plan>();
-        }
-
-        var results = new List<Plan>();
-        foreach (var planDir in Directory.GetDirectories(dir))
-        {
-            var planYaml = Path.Combine(planDir, "plan.yaml");
-            if (!File.Exists(planYaml))
+        return FileSystemRepositoryFs.LoadAllFromSubdirectories(
+            parentDir: _paths.PlansDir,
+            yamlFileName: "plan.yaml",
+            loader: (planDir, planId, yaml) =>
             {
-                continue;
-            }
+                var parsed = PlanYamlLite.Parse(yaml);
 
-            var planId = Path.GetFileName(planDir);
-            var yaml = File.ReadAllText(planYaml, Encoding.UTF8);
-            var parsed = PlanYamlLite.Parse(yaml);
+                var installJson = Path.Combine(planDir, "install.json");
+                var installedAt = PlanFileMapper.TryReadInstalledAt(installJson);
+                var source = PlanFileMapper.TryReadPlanSource(installJson);
 
-            var installJson = Path.Combine(planDir, "install.json");
-            var installedAt = TryReadInstalledAt(installJson);
-            var source = TryReadPlanSource(installJson);
+                var planYamlPath = Path.Combine(planDir, "plan.yaml");
+                var installedDate = installedAt ?? File.GetLastWriteTimeUtc(planYamlPath);
 
-            results.Add(new Plan
-            {
-                Id = string.IsNullOrWhiteSpace(parsed.Id) ? planId : parsed.Id,
-                Version = parsed.Version ?? string.Empty,
-                Source = source,
-                Author = parsed.Author ?? string.Empty,
-                License = parsed.License ?? string.Empty,
-                Repository = parsed.Repository ?? string.Empty,
-                Homepage = parsed.Homepage ?? string.Empty,
-                Planners = (parsed.Planners ?? Array.Empty<string>()).Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).ToList(),
-                Planters = (parsed.Planters ?? Array.Empty<string>()).Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).ToList(),
-                InstalledDate = installedAt ?? File.GetLastWriteTimeUtc(planYaml)
+                return PlanFileMapper.ToDomain(parsed, planId, source, installedDate);
             });
-        }
-
-        return results;
-    }
-
-    private static DateTime? TryReadInstalledAt(string installJsonPath)
-    {
-        if (!File.Exists(installJsonPath))
-        {
-            return null;
-        }
-
-        try
-        {
-            using var doc = JsonDocument.Parse(File.ReadAllText(installJsonPath, Encoding.UTF8));
-            if (doc.RootElement.TryGetProperty("installedAt", out var iat))
-            {
-                var text = iat.GetString();
-                if (!string.IsNullOrWhiteSpace(text) && DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dto))
-                {
-                    return dto.UtcDateTime;
-                }
-            }
-        }
-        catch
-        {
-            // best-effort metadata
-        }
-
-        return null;
-    }
-
-    private static string TryReadPlanSource(string installJsonPath)
-    {
-        if (!File.Exists(installJsonPath))
-        {
-            return string.Empty;
-        }
-
-        try
-        {
-            using var doc = JsonDocument.Parse(File.ReadAllText(installJsonPath, Encoding.UTF8));
-            if (doc.RootElement.TryGetProperty("source", out var src))
-            {
-                return src.GetString() ?? string.Empty;
-            }
-        }
-        catch
-        {
-            // best-effort metadata
-        }
-
-        return string.Empty;
     }
 }
 

@@ -1,4 +1,3 @@
-using System.Text;
 using GitForest.Core;
 using GitForest.Core.Persistence;
 using GitForest.Infrastructure.FileSystem.Serialization;
@@ -23,9 +22,9 @@ public sealed class FileSystemPlanterRepository : AbstractPlanterRepository
         var planterYaml = _paths.PlanterYamlPath(planterId);
         if (!File.Exists(planterYaml)) return Task.FromResult<Planter?>(null);
 
-        var yaml = File.ReadAllText(planterYaml, Encoding.UTF8);
+        var yaml = FileSystemRepositoryFs.ReadAllTextUtf8(planterYaml);
         var model = PlanterYamlLite.Parse(yaml);
-        return Task.FromResult<Planter?>(ToDomain(model, planterId));
+        return Task.FromResult<Planter?>(PlanterFileMapper.ToDomain(model, planterId));
     }
 
     public override Task AddAsync(Planter entity, CancellationToken cancellationToken = default)
@@ -41,7 +40,8 @@ public sealed class FileSystemPlanterRepository : AbstractPlanterRepository
         }
 
         Directory.CreateDirectory(dir);
-        WritePlanterYaml(entity);
+        var model = PlanterFileMapper.ToFileModel(entity);
+        FileSystemRepositoryFs.WriteAllTextUtf8(_paths.PlanterYamlPath(model.Id), PlanterYamlLite.Serialize(model));
         return Task.CompletedTask;
     }
 
@@ -52,7 +52,8 @@ public sealed class FileSystemPlanterRepository : AbstractPlanterRepository
 
         Directory.CreateDirectory(_paths.PlantersDir);
         Directory.CreateDirectory(_paths.PlanterDir(GetTrimmedId(entity)));
-        WritePlanterYaml(entity);
+        var model = PlanterFileMapper.ToFileModel(entity);
+        FileSystemRepositoryFs.WriteAllTextUtf8(_paths.PlanterYamlPath(model.Id), PlanterYamlLite.Serialize(model));
         return Task.CompletedTask;
     }
 
@@ -63,65 +64,21 @@ public sealed class FileSystemPlanterRepository : AbstractPlanterRepository
         if (string.IsNullOrWhiteSpace(entity.Id)) return Task.CompletedTask;
 
         var dir = _paths.PlanterDir(entity.Id.Trim());
-        if (Directory.Exists(dir))
-        {
-            Directory.Delete(dir, recursive: true);
-        }
+        FileSystemRepositoryFs.DeleteDirectoryIfExists(dir);
 
         return Task.CompletedTask;
     }
 
-    private void WritePlanterYaml(Planter planter)
-    {
-        var id = planter.Id.Trim();
-        var model = new PlanterFileModel(
-            Id: id,
-            Name: planter.Name ?? string.Empty,
-            Type: planter.Type ?? "builtin",
-            Origin: planter.Origin ?? "plan",
-            AssignedPlants: planter.AssignedPlants ?? new List<string>(),
-            IsActive: planter.IsActive);
-
-        File.WriteAllText(_paths.PlanterYamlPath(id), PlanterYamlLite.Serialize(model), Encoding.UTF8);
-    }
-
-    private static Planter ToDomain(PlanterFileModel model, string fallbackId)
-    {
-        return new Planter
-        {
-            Id = string.IsNullOrWhiteSpace(model.Id) ? fallbackId : model.Id,
-            Name = model.Name ?? string.Empty,
-            Type = string.IsNullOrWhiteSpace(model.Type) ? "builtin" : model.Type,
-            Origin = string.IsNullOrWhiteSpace(model.Origin) ? "plan" : model.Origin,
-            AssignedPlants = (model.AssignedPlants ?? Array.Empty<string>()).Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).ToList(),
-            IsActive = model.IsActive
-        };
-    }
-
     protected override List<Planter> LoadAll()
     {
-        var dir = _paths.PlantersDir;
-        if (!Directory.Exists(dir))
-        {
-            return new List<Planter>();
-        }
-
-        var results = new List<Planter>();
-        foreach (var planterDir in Directory.GetDirectories(dir))
-        {
-            var planterYaml = Path.Combine(planterDir, "planter.yaml");
-            if (!File.Exists(planterYaml))
+        return FileSystemRepositoryFs.LoadAllFromSubdirectories(
+            parentDir: _paths.PlantersDir,
+            yamlFileName: "planter.yaml",
+            loader: (_, planterId, yaml) =>
             {
-                continue;
-            }
-
-            var id = Path.GetFileName(planterDir);
-            var yaml = File.ReadAllText(planterYaml, Encoding.UTF8);
-            var model = PlanterYamlLite.Parse(yaml);
-            results.Add(ToDomain(model, id));
-        }
-
-        return results;
+                var model = PlanterYamlLite.Parse(yaml);
+                return PlanterFileMapper.ToDomain(model, planterId);
+            });
     }
 }
 

@@ -9,4 +9,3 @@ public sealed class PlantsByPlanIdAndStatusSpec : Specification<Plant>
         Query.Where(p => p.PlanId == planId && p.Status == status).OrderBy(p => p.Key);
     }
 }
-

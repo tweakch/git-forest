@@ -1,10 +1,10 @@
 using System.CommandLine;
 using GitForest.Application.Features.Plans;
 using GitForest.Cli.Commands;
+using GitForest.Cli.Orleans;
 using GitForest.Cli.Reconciliation;
 using GitForest.Core.Persistence;
 using GitForest.Core.Services;
-using GitForest.Cli.Orleans;
 using GitForest.Infrastructure.FileSystem.Forest;
 using GitForest.Infrastructure.FileSystem.Llm;
 using GitForest.Infrastructure.FileSystem.Plans;
@@ -17,16 +17,16 @@ namespace GitForest.Cli;
 
 public static class CliApp
 {
-    public static Task<int> InvokeAsync(string[] args)
+    public static async Task<int> InvokeAsync(string[] args)
     {
         var options = new CliOptions();
 
-        using var serviceProvider = BuildServiceProvider();
+        await using var serviceProvider = BuildServiceProvider();
         var mediator = serviceProvider.GetRequiredService<IMediator>();
 
         var rootCommand = BuildRootCommand(options, mediator);
         var parseResult = rootCommand.Parse(args);
-        return parseResult.InvokeAsync();
+        return await parseResult.InvokeAsync();
     }
 
     public static RootCommand BuildRootCommand(CliOptions options, IMediator mediator)
@@ -62,7 +62,10 @@ public static class CliApp
         {
             // Avoid connecting to distributed infrastructure before init exists.
             // Most commands will fail with "forest not initialized" anyway, but startup should remain fast and offline-safe.
-            forestConfig = forestConfig with { PersistenceProvider = "file" };
+            forestConfig = forestConfig with
+            {
+                PersistenceProvider = "file",
+            };
         }
         services.AddSingleton(forestConfig);
 
@@ -140,7 +143,9 @@ public static class CliApp
 
             case "orleans":
                 // Plans/planters/planners remain file-backed (packages + agent defs live under .git-forest/).
-                services.AddSingleton<IPlanRepository>(_ => new FileSystemPlanRepository(forestDir));
+                services.AddSingleton<IPlanRepository>(_ => new FileSystemPlanRepository(
+                    forestDir
+                ));
                 services.AddSingleton<IPlanterRepository>(_ => new FileSystemPlanterRepository(
                     forestDir
                 ));

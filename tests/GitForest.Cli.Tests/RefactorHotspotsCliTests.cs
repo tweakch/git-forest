@@ -20,7 +20,9 @@ public sealed class RefactorHotspotsCliTests
         env.WritePlant(key: "plan-a:alpha", status: "planned", title: "Alpha");
 
         using var console = new ConsoleCapture();
-        var exitCode = await CliApp.InvokeAsync(new[] { "plant", "plan-a:alpha", "show", "--json" });
+        var exitCode = await CliApp.InvokeAsync(
+            new[] { "plant", "plan-a:alpha", "show", "--json" }
+        );
 
         Assert.That(exitCode, Is.EqualTo(ExitCodes.Success));
 
@@ -47,7 +49,10 @@ public sealed class RefactorHotspotsCliTests
         Assert.That(exitCode, Is.EqualTo(ExitCodes.Success));
 
         var doc = JsonDocument.Parse(console.StdOut);
-        Assert.That(doc.RootElement.GetProperty("plant").GetProperty("key").GetString(), Is.EqualTo("plan-a:beta"));
+        Assert.That(
+            doc.RootElement.GetProperty("plant").GetProperty("key").GetString(),
+            Is.EqualTo("plan-a:beta")
+        );
     }
 
     [Test]
@@ -87,7 +92,9 @@ public sealed class RefactorHotspotsCliTests
         env.WritePlant(key: "plan-a:alpha", status: "planned", title: "Alpha");
 
         using var console = new ConsoleCapture();
-        var exitCode = await CliApp.InvokeAsync(new[] { "planter", "p1", "plant", "plan-a:alpha", "--json" });
+        var exitCode = await CliApp.InvokeAsync(
+            new[] { "planter", "p1", "plant", "plan-a:alpha", "--json" }
+        );
 
         Assert.That(exitCode, Is.EqualTo(ExitCodes.InvalidArguments));
 
@@ -117,7 +124,10 @@ public sealed class RefactorHotspotsCliTests
         var doc = JsonDocument.Parse(console.StdOut);
         var err = doc.RootElement.GetProperty("error");
         Assert.That(err.GetProperty("code").GetString(), Is.EqualTo("invalid_arguments"));
-        Assert.That(err.GetProperty("message").GetString(), Is.EqualTo("Invalid --mode. Expected: propose|apply"));
+        Assert.That(
+            err.GetProperty("message").GetString(),
+            Is.EqualTo("Invalid --mode. Expected: propose|apply")
+        );
         Assert.That(err.GetProperty("details").GetProperty("mode").GetString(), Is.EqualTo("nope"));
     }
 
@@ -130,7 +140,12 @@ public sealed class RefactorHotspotsCliTests
         public CliTestEnv()
         {
             _originalCwd = Environment.CurrentDirectory;
-            _workDir = Path.Combine(Path.GetTempPath(), "git-forest", "tests", Guid.NewGuid().ToString("n"));
+            _workDir = Path.Combine(
+                Path.GetTempPath(),
+                "git-forest",
+                "tests",
+                Guid.NewGuid().ToString("n")
+            );
             Directory.CreateDirectory(_workDir);
             Environment.CurrentDirectory = _workDir;
 
@@ -158,9 +173,16 @@ public sealed class RefactorHotspotsCliTests
         public void WritePlant(string key, string status, string title)
         {
             var parts = (key ?? string.Empty).Split(':', 2, StringSplitOptions.TrimEntries);
-            if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[0]) || string.IsNullOrWhiteSpace(parts[1]))
+            if (
+                parts.Length != 2
+                || string.IsNullOrWhiteSpace(parts[0])
+                || string.IsNullOrWhiteSpace(parts[1])
+            )
             {
-                throw new ArgumentException($"Invalid plant key '{key}'. Expected: <plan-id>:<slug>.", nameof(key));
+                throw new ArgumentException(
+                    $"Invalid plant key '{key}'. Expected: <plan-id>:<slug>.",
+                    nameof(key)
+                );
             }
 
             var planId = parts[0];

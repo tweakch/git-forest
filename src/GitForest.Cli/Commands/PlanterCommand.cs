@@ -250,7 +250,10 @@ public static class PlanterCommand
     {
         if (output.Json)
         {
-            output.WriteJsonError(code: "forest_not_initialized", message: "Forest not initialized");
+            output.WriteJsonError(
+                code: "forest_not_initialized",
+                message: "Forest not initialized"
+            );
         }
         else
         {
@@ -308,7 +311,9 @@ public static class PlanterCommand
         }
         else
         {
-            output.WriteErrorLine($"Plant '{selector}': ambiguous; matched {matches.Length} plants");
+            output.WriteErrorLine(
+                $"Plant '{selector}': ambiguous; matched {matches.Length} plants"
+            );
         }
 
         return ExitCodes.PlantNotFoundOrAmbiguous;

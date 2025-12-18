@@ -35,9 +35,10 @@ public static class ForestConfigWriter
         sb.AppendLine("persistence:");
         sb.AppendLine($"  provider: {provider}");
 
-        var locks = config.LocksTimeoutSeconds <= 0
-            ? ForestConfigReader.DefaultLocksTimeoutSeconds
-            : config.LocksTimeoutSeconds;
+        var locks =
+            config.LocksTimeoutSeconds <= 0
+                ? ForestConfigReader.DefaultLocksTimeoutSeconds
+                : config.LocksTimeoutSeconds;
         sb.AppendLine("locks:");
         sb.AppendLine($"  timeoutSeconds: {locks}");
 
@@ -51,9 +52,10 @@ public static class ForestConfigWriter
         var gatewayHost = string.IsNullOrWhiteSpace(orleans.GatewayHost)
             ? ForestConfigReader.DefaultOrleansGatewayHost
             : orleans.GatewayHost.Trim();
-        var gatewayPort = orleans.GatewayPort <= 0
-            ? ForestConfigReader.DefaultOrleansGatewayPort
-            : orleans.GatewayPort;
+        var gatewayPort =
+            orleans.GatewayPort <= 0
+                ? ForestConfigReader.DefaultOrleansGatewayPort
+                : orleans.GatewayPort;
 
         sb.AppendLine("orleans:");
         sb.AppendLine($"  clusterId: {clusterId}");
@@ -71,14 +73,17 @@ public static class ForestConfigWriter
         var llmProvider = string.IsNullOrWhiteSpace(llm.Provider)
             ? ForestConfigReader.DefaultLlmProvider
             : llm.Provider.Trim().ToLowerInvariant();
-        var llmModel = string.IsNullOrWhiteSpace(llm.Model) ? ForestConfigReader.DefaultLlmModel : llm.Model.Trim();
+        var llmModel = string.IsNullOrWhiteSpace(llm.Model)
+            ? ForestConfigReader.DefaultLlmModel
+            : llm.Model.Trim();
         var llmBaseUrl = string.IsNullOrWhiteSpace(llm.BaseUrl)
             ? ForestConfigReader.DefaultLlmBaseUrl
             : llm.BaseUrl.Trim();
         var llmApiKeyEnvVar = string.IsNullOrWhiteSpace(llm.ApiKeyEnvVar)
             ? ForestConfigReader.DefaultLlmApiKeyEnvVar
             : llm.ApiKeyEnvVar.Trim();
-        var llmTemp = llm.Temperature < 0 ? ForestConfigReader.DefaultLlmTemperature : llm.Temperature;
+        var llmTemp =
+            llm.Temperature < 0 ? ForestConfigReader.DefaultLlmTemperature : llm.Temperature;
 
         sb.AppendLine("llm:");
         sb.AppendLine($"  provider: {llmProvider}");
@@ -90,4 +95,3 @@ public static class ForestConfigWriter
         return sb.ToString();
     }
 }
-

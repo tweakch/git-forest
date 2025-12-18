@@ -25,4 +25,3 @@ builder.ConfigureServices(services =>
 });
 
 await builder.Build().RunAsync();
-

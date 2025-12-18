@@ -10,3 +10,4 @@ public sealed class PlanByIdSpec : Specification<Plan>, ISingleResultSpecificati
     }
 }
 
+

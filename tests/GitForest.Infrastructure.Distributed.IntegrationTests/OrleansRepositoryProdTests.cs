@@ -1,6 +1,5 @@
 using GitForest.Core;
 using GitForest.Core.Persistence;
-using GitForest.Infrastructure.Distributed;
 using GitForest.Infrastructure.Distributed.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -41,8 +40,7 @@ public class OrleansRepositoryProdTests
                 builder.AddJsonSerializer(isSupported: _ => true);
             });
             
-            // Register repositories and specification evaluator
-            services.AddSingleton<ISpecificationEvaluator, SpecificationEvaluator>();
+            // Register repositories
             services.AddSingleton<IPlanRepository, OrleansPlansRepository>();
             services.AddSingleton<IPlantRepository, OrleansPlantRepository>();
             services.AddSingleton<IPlanterRepository, OrleansPlanterRepository>();

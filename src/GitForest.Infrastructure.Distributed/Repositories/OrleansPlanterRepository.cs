@@ -1,4 +1,3 @@
-using Ardalis.Specification;
 using GitForest.Core;
 using GitForest.Core.Persistence;
 using GitForest.Infrastructure.Distributed.Grains;
@@ -8,18 +7,16 @@ namespace GitForest.Infrastructure.Distributed.Repositories;
 /// <summary>
 /// Orleans-based repository implementation for Planter entities
 /// </summary>
-public sealed class OrleansPlanterRepository : IPlanterRepository
+public sealed class OrleansPlanterRepository : AbstractRepositoryWithSpecs<Planter, string>, IPlanterRepository
 {
     private readonly IGrainFactory _grainFactory;
-    private readonly ISpecificationEvaluator _specificationEvaluator;
 
-    public OrleansPlanterRepository(IGrainFactory grainFactory, ISpecificationEvaluator specificationEvaluator)
+    public OrleansPlanterRepository(IGrainFactory grainFactory)
     {
         _grainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
-        _specificationEvaluator = specificationEvaluator ?? throw new ArgumentNullException(nameof(specificationEvaluator));
     }
 
-    public async Task<Planter?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    public override async Task<Planter?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(id)) return null;
 
@@ -27,31 +24,7 @@ public sealed class OrleansPlanterRepository : IPlanterRepository
         return await grain.GetAsync();
     }
 
-    public async Task<Planter?> GetBySpecAsync(ISpecification<Planter> specification, CancellationToken cancellationToken = default)
-    {
-        var all = await GetAllAsync(cancellationToken);
-        return _specificationEvaluator.Evaluate(all, specification).FirstOrDefault();
-    }
-
-    public async Task<TResult?> GetBySpecAsync<TResult>(ISpecification<Planter, TResult> specification, CancellationToken cancellationToken = default)
-    {
-        var all = await GetAllAsync(cancellationToken);
-        return _specificationEvaluator.Evaluate(all, specification).FirstOrDefault();
-    }
-
-    public async Task<IReadOnlyList<Planter>> ListAsync(ISpecification<Planter> specification, CancellationToken cancellationToken = default)
-    {
-        var all = await GetAllAsync(cancellationToken);
-        return _specificationEvaluator.Evaluate(all, specification).ToList();
-    }
-
-    public async Task<IReadOnlyList<TResult>> ListAsync<TResult>(ISpecification<Planter, TResult> specification, CancellationToken cancellationToken = default)
-    {
-        var all = await GetAllAsync(cancellationToken);
-        return _specificationEvaluator.Evaluate(all, specification).ToList();
-    }
-
-    public async Task AddAsync(Planter entity, CancellationToken cancellationToken = default)
+    public override async Task AddAsync(Planter entity, CancellationToken cancellationToken = default)
     {
         if (entity is null) throw new ArgumentNullException(nameof(entity));
         if (string.IsNullOrWhiteSpace(entity.Id)) throw new ArgumentException("Planter.Id must be provided.", nameof(entity));
@@ -71,7 +44,7 @@ public sealed class OrleansPlanterRepository : IPlanterRepository
         await indexGrain.AddIdAsync(id);
     }
 
-    public async Task UpdateAsync(Planter entity, CancellationToken cancellationToken = default)
+    public override async Task UpdateAsync(Planter entity, CancellationToken cancellationToken = default)
     {
         if (entity is null) throw new ArgumentNullException(nameof(entity));
         if (string.IsNullOrWhiteSpace(entity.Id)) throw new ArgumentException("Planter.Id must be provided.", nameof(entity));
@@ -81,7 +54,7 @@ public sealed class OrleansPlanterRepository : IPlanterRepository
         await grain.SetAsync(entity);
     }
 
-    public async Task DeleteAsync(Planter entity, CancellationToken cancellationToken = default)
+    public override async Task DeleteAsync(Planter entity, CancellationToken cancellationToken = default)
     {
         if (entity is null) throw new ArgumentNullException(nameof(entity));
         if (string.IsNullOrWhiteSpace(entity.Id)) return;
@@ -93,6 +66,9 @@ public sealed class OrleansPlanterRepository : IPlanterRepository
         var indexGrain = _grainFactory.GetGrain<IPlanterIndexGrain>(0);
         await indexGrain.RemoveIdAsync(id);
     }
+
+    protected override Task<IReadOnlyList<Planter>> LoadAllAsync(CancellationToken cancellationToken = default)
+        => GetAllAsync(cancellationToken);
 
     private async Task<IReadOnlyList<Planter>> GetAllAsync(CancellationToken cancellationToken = default)
     {

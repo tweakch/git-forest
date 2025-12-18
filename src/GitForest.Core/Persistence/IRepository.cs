@@ -11,3 +11,4 @@ public interface IRepository<T, in TId> : IReadRepository<T, TId>
     Task DeleteAsync(T entity, CancellationToken cancellationToken = default);
 }
 
+

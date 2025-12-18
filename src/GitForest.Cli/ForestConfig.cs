@@ -9,15 +9,20 @@ public sealed record LlmConfig(
     string ApiKeyEnvVar,
     double Temperature);
 
+public sealed record ReconcileConfig(
+    string Forum);
+
 public sealed record ForestConfig(
     string PersistenceProvider,
     int LocksTimeoutSeconds,
+    ReconcileConfig Reconcile,
     LlmConfig Llm);
 
 public static class ForestConfigReader
 {
     public const string DefaultPersistenceProvider = "file";
     public const int DefaultLocksTimeoutSeconds = 15;
+    public const string DefaultReconcileForum = "file";
     public const string DefaultLlmProvider = "mock";
     public const string DefaultLlmModel = "gpt-4o-mini";
     public const string DefaultLlmBaseUrl = "https://api.openai.com/v1";
@@ -38,6 +43,12 @@ public static class ForestConfigReader
         "ollama"
     };
 
+    private static readonly HashSet<string> AllowedReconcileForums = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "file",
+        "ai"
+    };
+
     public static ForestConfig ReadEffective(string forestDir)
     {
         var parsed = TryRead(forestDir);
@@ -49,6 +60,7 @@ public static class ForestConfigReader
         return new ForestConfig(
             PersistenceProvider: DefaultPersistenceProvider,
             LocksTimeoutSeconds: DefaultLocksTimeoutSeconds,
+            Reconcile: new ReconcileConfig(Forum: DefaultReconcileForum),
             Llm: new LlmConfig(
                 Provider: DefaultLlmProvider,
                 Model: DefaultLlmModel,
@@ -88,6 +100,7 @@ public static class ForestConfigReader
     {
         var provider = DefaultPersistenceProvider;
         var locksTimeoutSeconds = DefaultLocksTimeoutSeconds;
+        var reconcileForum = DefaultReconcileForum;
         var llmProvider = DefaultLlmProvider;
         var llmModel = DefaultLlmModel;
         var llmBaseUrl = DefaultLlmBaseUrl;
@@ -160,6 +173,18 @@ public static class ForestConfigReader
                 continue;
             }
 
+            if (currentSection.Equals("reconcile", StringComparison.OrdinalIgnoreCase) &&
+                nestedKey.Equals("forum", StringComparison.OrdinalIgnoreCase))
+            {
+                var candidate = nestedValue.Trim();
+                if (AllowedReconcileForums.Contains(candidate))
+                {
+                    reconcileForum = candidate.ToLowerInvariant();
+                }
+
+                continue;
+            }
+
             if (currentSection.Equals("llm", StringComparison.OrdinalIgnoreCase))
             {
                 if (nestedKey.Equals("provider", StringComparison.OrdinalIgnoreCase))
@@ -221,6 +246,7 @@ public static class ForestConfigReader
         return new ForestConfig(
             PersistenceProvider: provider,
             LocksTimeoutSeconds: locksTimeoutSeconds,
+            Reconcile: new ReconcileConfig(Forum: reconcileForum),
             Llm: new LlmConfig(
                 Provider: llmProvider,
                 Model: llmModel,

@@ -61,3 +61,6 @@ TestResults/
 
 .gemini/
 gha-creds-*.json
+.git-forest/config.yaml
+.git-forest/forest.yaml
+.git-forest/lock

@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\GitForest.Mediator\GitForest.Mediator.csproj" />
     <ProjectReference Include="..\..\src\GitForest.Application\GitForest.Application.csproj" />
     <ProjectReference Include="..\..\src\GitForest.Infrastructure.Memory\GitForest.Infrastructure.Memory.csproj" />
     <ProjectReference Include="..\..\src\GitForest.Core\GitForest.Core.csproj" />

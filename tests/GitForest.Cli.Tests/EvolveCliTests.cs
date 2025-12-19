@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -34,9 +35,13 @@ public sealed class EvolveCliTests
         );
 
         var plantA = env.ReadPlant("plan-a:alpha");
-        Assert.That(plantA.Status, Is.EqualTo("planned"));
-        Assert.That(plantA.AssignedPlanters, Is.Empty);
-        Assert.That(plantA.Branches, Is.Empty);
+        Assert.That(plantA.Status, Is.EqualTo("growing"));
+        Assert.That(plantA.AssignedPlanters, Does.Contain("planter-a"));
+        Assert.That(
+            plantA.Branches.Any(b => b.Contains("planter-a/plan-a__alpha", StringComparison.OrdinalIgnoreCase)),
+            Is.True,
+            "Expected evolve to create a deterministic branch for planter-a"
+        );
     }
 
     private sealed class CliTestEnv : IDisposable
@@ -62,6 +67,8 @@ public sealed class EvolveCliTests
 
         public void EnsureForestInitialized()
         {
+            EnsureGitRepoInitialized();
+
             Directory.CreateDirectory(_forestDir);
 
             // ForestStore.IsInitialized() requires forest.yaml.
@@ -79,6 +86,62 @@ public sealed class EvolveCliTests
                     configYamlPath,
                     "persistence:\n  provider: file\n",
                     Encoding.UTF8
+                );
+            }
+        }
+
+        private void EnsureGitRepoInitialized()
+        {
+            var gitDir = Path.Combine(_workDir, ".git");
+            if (Directory.Exists(gitDir))
+            {
+                return;
+            }
+
+            RunGit("init", "--initial-branch", "main");
+            RunGit("config", "user.email", "test@example.com");
+            RunGit("config", "user.name", "Test User");
+            RunGit("config", "commit.gpgsign", "false");
+
+            var readme = Path.Combine(_workDir, "README.md");
+            File.WriteAllText(readme, "# Test Repo\n", Encoding.UTF8);
+            RunGit("add", "README.md");
+            RunGit("commit", "-m", "Initial commit");
+        }
+
+        private void RunGit(params string[] args)
+        {
+            using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "git",
+                    WorkingDirectory = _workDir,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                },
+            };
+
+            foreach (var arg in args)
+            {
+                process.StartInfo.ArgumentList.Add(arg);
+            }
+
+            if (!process.Start())
+            {
+                throw new InvalidOperationException("Failed to start git process.");
+            }
+
+            var stdout = process.StandardOutput.ReadToEnd();
+            var stderr = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+
+            if (process.ExitCode != 0)
+            {
+                throw new InvalidOperationException(
+                    $"git {string.Join(' ', args)} failed (exit={process.ExitCode}).\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}"
                 );
             }
         }

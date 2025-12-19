@@ -72,13 +72,13 @@ public static class PlantsCommand
                         }
                         else
                         {
-                            output.WriteLine("Key Status Planter Title");
+                            output.WriteLine("Key Status");
                             foreach (var p in plants)
                             {
                                 var planter =
                                     p.AssignedPlanters.Count > 0 ? p.AssignedPlanters[0] : "-";
                                 output.WriteLine(
-                                    $"{p.Key} {p.Status} {planter} {Truncate(p.Title, 80)}"
+                                    $"{p.Key} {p.Status}"
                                 );
                             }
                         }

@@ -389,9 +389,9 @@ git-forest plants list --json
 
 **Output:**
 ```text
-Key                                    Status   Title                         Plan                 Planter
-dependency-hygiene:remove-unused       planned  Remove unused packages        dependency-hygiene   -
-dependency-hygiene:update-outdated     planted  Update outdated dependencies  dependency-hygiene   dep-cleaner
+Key Status Planter Title
+dependency-hygiene:remove-unused planned - Remove unused packages
+dependency-hygiene:update-outdated planted dep-cleaner Update outdated dependencies
 ```
 
 ---

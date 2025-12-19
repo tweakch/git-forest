@@ -124,16 +124,16 @@ Hints: gf plants list --status planned
 
 # 3.3 `gf evolve`
 
-Placeholder for the evolve workflow.
+Evolve the forest at the planning layer (no execution).
 
 ```bash
-gf evolve [--json]
+gf evolve [--all] [--plan <plan-id>] [--dry-run] [--json]
 ```
 
 Human output example:
 
 ```text
-Evolve workflow not implemented yet.
+Evolved forest: +4 ~6
 ```
 
 ---
@@ -288,12 +288,25 @@ gf plants list
 Human example:
 
 ```text
-Key                             Status   Title                         Plan   Planter
-sample:reduce-tech-debt          planned  Reduce technical debt          sample -
-sample:backend-memory-hygiene    planted  Backend memory hygiene         sample backend
+Key Status Planter Title
+sample:reduce-tech-debt planned - Reduce technical debt
+sample:backend-memory-hygiene planted backend Backend memory hygiene
 ```
 
-## 7.3 `gf plant show`
+## 7.3 `gf plants remove`
+
+Remove a plant from the forest (deletes its metadata directory under `.git-forest/plants/`).
+
+```bash
+gf plants remove <selector> [--yes] [--force] [--dry-run] [--json]
+```
+
+Contract:
+
+* Requires `--yes` unless `--dry-run`.
+* By default, only removes plants in `archived` status. Use `--force` to override.
+
+## 7.4 `gf plant show`
 
 ```bash
 gf plant <selector> [show] [--json]
@@ -308,7 +321,7 @@ Shows:
 * candidates count
 * last activity
 
-## 7.4 `gf plant set` (user overrides)
+## 7.5 `gf plant set` (user overrides)
 
 User-owned updates only.
 
@@ -324,7 +337,7 @@ gf plant sample:backend-memory-hygiene set priority high
 gf plant sample:backend-memory-hygiene set notes "Focus on pooling + Span usage"
 ```
 
-## 7.5 `gf plant history|logs|candidates|branches`
+## 7.6 `gf plant history|logs|candidates|branches`
 
 ```bash
 gf plant <selector> history [--json]
@@ -375,7 +388,27 @@ Branch policy:
 * `auto` uses `branches.template` from config.
 * Branch creation is skipped if already exists unless `--force-branch`.
 
-## 8.5 `gf planter <id> grow`
+## 8.5 `gf planters plant`
+
+Assign default planters to plants (metadata only; no execution).
+
+```bash
+gf planters plant --all [--plan <plan-id>] [--single] [--reset] [--only-unassigned] [--dry-run]
+```
+
+Behavior:
+
+* Assigns the default planters from each plan to its plants.
+* If no planters are declared, plants remain unassigned (unless `--reset`).
+* `--single` chooses one planter deterministically (plan order).
+
+Human output example:
+
+```text
+Assigned planters for forest: 12 updated
+```
+
+## 8.6 `gf planter <id> grow`
 
 ```bash
 gf planter <planter-id> grow <selector>
@@ -391,7 +424,7 @@ Contract:
 * `propose` creates candidate diffs only.
 * `apply` may open PRs / apply patches if configured and allowed.
 
-## 8.6 Unassign
+## 8.7 Unassign
 
 ```bash
 gf plant <selector> unassign <planter-id>
@@ -417,6 +450,20 @@ gf planner <planner-id> run --plan <plan-id> [--only <scope>] [--dry-run] [--jso
 Notes:
 
 * Planner output is always reconciled through the same engine as `gf plan reconcile`.
+
+## 9.3 `gf planners plan`
+
+Run planners to refresh desired plants (planning only).
+
+```bash
+gf planners plan --all [--plan <plan-id>] [--planner <planner-id>] [--reconcile] [--dry-run]
+```
+
+Behavior:
+
+* Runs planners to update the desired plant set in `.git-forest/`.
+* Does not execute planters.
+* `--reconcile` chains `gf reconcile` afterward.
 
 ---
 

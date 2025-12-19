@@ -1,6 +1,5 @@
 using System.CommandLine;
-using GitForest.Application.Features.Planters;
-using GitForest.Cli.Features.Planters;
+using CliPlanters = GitForest.Cli.Features.Planters;
 using GitForest.Mediator;
 using AppPlans = GitForest.Application.Features.Plans;
 
@@ -44,7 +43,7 @@ public static class PlantersCommand
                     var includeCustom = !builtin && !custom || custom;
                     var merged = (
                         await mediator.Send(
-                            new ListPlantersQuery(
+                            new CliPlanters.ListPlantersQuery(
                                 IncludeBuiltin: includeBuiltin,
                                 IncludeCustom: includeCustom
                             ),
@@ -184,7 +183,7 @@ public static class PlantersCommand
                     }
 
                     var result = await mediator.Send(
-                        new AssignDefaultPlantersCommand(
+                        new CliPlanters.AssignDefaultPlantersCommand(
                             PlanId: all ? null : planId,
                             Single: single,
                             Reset: reset,

@@ -41,7 +41,7 @@ public sealed class RefactorHotspotsCliTests
         env.WritePlant(key: "plan-b:alpha", status: "planned", title: "C");
 
         using var console = new ConsoleCapture();
-        var exitCode = await CliApp.InvokeAsync(new[] { "plant", "P02", "show", "--json" });
+        var exitCode = await CliApp.InvokeAsync("plant", "P02", "show", "--json");
 
         Assert.That(exitCode, Is.EqualTo(ExitCodes.Success));
 
@@ -62,7 +62,7 @@ public sealed class RefactorHotspotsCliTests
         env.WritePlant(key: "plan-b:alpha", status: "planned", title: "B");
 
         using var console = new ConsoleCapture();
-        var exitCode = await CliApp.InvokeAsync(new[] { "plant", "alpha", "show", "--json" });
+        var exitCode = await CliApp.InvokeAsync("plant", "alpha", "show", "--json");
 
         Assert.That(exitCode, Is.EqualTo(ExitCodes.PlantNotFoundOrAmbiguous));
 
@@ -89,9 +89,7 @@ public sealed class RefactorHotspotsCliTests
         env.WritePlant(key: "plan-a:alpha", status: "planned", title: "Alpha");
 
         using var console = new ConsoleCapture();
-        var exitCode = await CliApp.InvokeAsync(
-            new[] { "planter", "p1", "plant", "plan-a:alpha", "--json" }
-        );
+        var exitCode = await CliApp.InvokeAsync("planter", "p1", "plant", "plan-a:alpha", "--json");
 
         Assert.That(exitCode, Is.EqualTo(ExitCodes.InvalidArguments));
 
@@ -112,9 +110,7 @@ public sealed class RefactorHotspotsCliTests
         env.WritePlant(key: "plan-a:alpha", status: "planned", title: "Alpha");
 
         using var console = new ConsoleCapture();
-        var exitCode = await CliApp.InvokeAsync(
-            new[] { "planter", "p1", "grow", "plan-a:alpha", "--mode", "nope", "--json" }
-        );
+        var exitCode = await CliApp.InvokeAsync("planter", "p1", "grow", "plan-a:alpha", "--mode", "nope", "--json");
 
         Assert.That(exitCode, Is.EqualTo(ExitCodes.InvalidArguments));
 
@@ -158,6 +154,17 @@ public sealed class RefactorHotspotsCliTests
             if (!File.Exists(forestYamlPath))
             {
                 File.WriteAllText(forestYamlPath, "version: v0\n", Encoding.UTF8);
+            }
+
+            // Create config.yaml to use file persistence for tests (not Orleans).
+            var configYamlPath = Path.Combine(_forestDir, "config.yaml");
+            if (!File.Exists(configYamlPath))
+            {
+                File.WriteAllText(
+                    configYamlPath,
+                    "persistence:\n  provider: file\n",
+                    Encoding.UTF8
+                );
             }
         }
 

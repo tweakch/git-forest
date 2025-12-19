@@ -1,8 +1,5 @@
-using System;
-using System.IO;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using GitForest.Infrastructure.FileSystem.Serialization;
 using NUnit.Framework;
 
@@ -200,6 +197,7 @@ public sealed class RefactorHotspotsCliTests
                 PlannerId: null,
                 AssignedPlanters: Array.Empty<string>(),
                 Branches: Array.Empty<string>(),
+                SelectedBranch: null,
                 CreatedAt: "2020-01-01T00:00:00Z",
                 UpdatedAt: null,
                 Description: null

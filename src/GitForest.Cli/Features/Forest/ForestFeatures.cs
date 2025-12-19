@@ -1,5 +1,5 @@
 using GitForest.Infrastructure.FileSystem.Serialization;
-using MediatR;
+using GitForest.Mediator;
 
 namespace GitForest.Cli.Features.Forest;
 

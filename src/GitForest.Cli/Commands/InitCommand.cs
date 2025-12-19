@@ -1,7 +1,7 @@
 using System.CommandLine;
 using System.Diagnostics;
 using GitForest.Cli.Orleans;
-using MediatR;
+using GitForest.Mediator;
 using AppForest = GitForest.Application.Features.Forest;
 
 namespace GitForest.Cli.Commands;

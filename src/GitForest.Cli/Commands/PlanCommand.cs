@@ -1,5 +1,5 @@
 using System.CommandLine;
-using MediatR;
+using GitForest.Mediator;
 using AppPlans = GitForest.Application.Features.Plans;
 
 namespace GitForest.Cli.Commands;

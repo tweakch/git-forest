@@ -10,7 +10,7 @@ using GitForest.Infrastructure.FileSystem.Llm;
 using GitForest.Infrastructure.FileSystem.Plans;
 using GitForest.Infrastructure.FileSystem.Repositories;
 using GitForest.Infrastructure.Memory;
-using MediatR;
+using GitForest.Mediator;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GitForest.Cli;
@@ -38,7 +38,8 @@ public static class CliApp
 
         rootCommand.Subcommands.Add(InitCommand.Build(options, mediator));
         rootCommand.Subcommands.Add(StatusCommand.Build(options, mediator));
-        rootCommand.Subcommands.Add(EvolveCommand.Build(options));
+        rootCommand.Subcommands.Add(EvolveCommand.Build(options, mediator));
+        rootCommand.Subcommands.Add(ReconcileCommand.Build(options, mediator));
         rootCommand.Subcommands.Add(ConfigCommand.Build(options, mediator));
         rootCommand.Subcommands.Add(MigrateCommand.Build(options));
         rootCommand.Subcommands.Add(PlansCommand.Build(options, mediator));

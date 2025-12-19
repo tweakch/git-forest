@@ -1,5 +1,5 @@
 using System.CommandLine;
-using MediatR;
+using GitForest.Mediator;
 using AppPlantCmd = GitForest.Application.Features.Plants.Commands;
 using CliPlants = GitForest.Cli.Features.Plants;
 
@@ -42,6 +42,7 @@ public static class PlantCommand
                                     plannerId = plant.PlannerId,
                                     planters = plant.AssignedPlanters.ToArray(),
                                     branches = plant.Branches.ToArray(),
+                                    selectedBranch = plant.SelectedBranch,
                                     createdAt = plant.CreatedAt,
                                     updatedAt = plant.UpdatedAt,
                                 },
@@ -63,6 +64,7 @@ public static class PlantCommand
                         output.WriteLine($"Planner: {plant.PlannerId ?? "-"}");
                         output.WriteLine($"Planters: {plantersText}");
                         output.WriteLine($"Branches: {branchesText}");
+                        output.WriteLine($"Selected branch: {plant.SelectedBranch ?? "-"}");
                     }
 
                     return ExitCodes.Success;

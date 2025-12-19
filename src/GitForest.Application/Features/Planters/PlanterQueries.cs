@@ -1,7 +1,7 @@
 using GitForest.Core.Persistence;
 using GitForest.Core.Specifications.Plans;
 using GitForest.Core.Specifications.Planters;
-using MediatR;
+using GitForest.Mediator;
 
 namespace GitForest.Application.Features.Planters;
 

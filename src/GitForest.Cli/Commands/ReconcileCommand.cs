@@ -1,74 +1,33 @@
 using System.CommandLine;
 using GitForest.Mediator;
 using AppPlantCmd = GitForest.Application.Features.Plants.Commands;
-using CliEvolve = GitForest.Cli.Features.Evolve;
+using CliReconcile = GitForest.Cli.Features.Reconcile;
 
 namespace GitForest.Cli.Commands;
 
-public static class EvolveCommand
+public static class ReconcileCommand
 {
     public static Command Build(CliOptions cliOptions, IMediator mediator)
     {
-        var command = new Command("evolve", "Evolve plants (branches + growth)");
+        var command = new Command("reconcile", "Reconcile plant outcomes");
 
-        command.SetAction(
-            (parseResult, token) =>
-            {
-                _ = token;
-                var output = parseResult.GetOutput(cliOptions);
-                const string message = "Evolve workflow not implemented yet.";
-
-                if (output.Json)
-                {
-                    output.WriteJson(new { status = "not_implemented", message });
-                }
-                else
-                {
-                    output.WriteLine(message);
-                }
-
-                return Task.FromResult(ExitCodes.Success);
-            }
-        );
-
-        var plantCommand = new Command("plant", "Evolve a specific plant");
-        var selectorArg = new Argument<string>("selector")
+        var planOption = new Option<string?>("--plan")
         {
-            Description = "Plant selector (key, slug, or P01)",
-        };
-        plantCommand.Arguments.Add(selectorArg);
-
-        var planterOption = new Option<string>("--planter")
-        {
-            Description = "Planter identifier to evolve with",
-            Required = true,
-        };
-        var branchOption = new Option<string>("--branch")
-        {
-            Description = "Branch name (or 'auto' for default naming)",
-        };
-        var modeOption = new Option<string>("--mode")
-        {
-            Description = "Evolution mode (propose|apply)",
+            Description = "Plan identifier to scope reconciliation",
         };
         var dryRunOption = new Option<bool>("--dry-run")
         {
             Description = "Show what would be done without applying",
         };
 
-        plantCommand.Options.Add(planterOption);
-        plantCommand.Options.Add(branchOption);
-        plantCommand.Options.Add(modeOption);
-        plantCommand.Options.Add(dryRunOption);
+        command.Options.Add(planOption);
+        command.Options.Add(dryRunOption);
 
-        plantCommand.SetAction(
+        command.SetAction(
             async (parseResult, token) =>
             {
                 var output = parseResult.GetOutput(cliOptions);
-                var selector = parseResult.GetRequiredValue(selectorArg);
-                var planterId = parseResult.GetRequiredValue(planterOption);
-                var branch = parseResult.GetValue(branchOption);
-                var mode = parseResult.GetValue(modeOption);
+                var planId = parseResult.GetValue(planOption);
                 var dryRun = parseResult.GetValue(dryRunOption);
 
                 try
@@ -77,11 +36,95 @@ public static class EvolveCommand
                     ForestStore.EnsureInitialized(forestDir);
 
                     var result = await mediator.Send(
-                        new CliEvolve.EvolvePlantCommand(
+                        new CliReconcile.ReconcileForestCommand(planId, dryRun),
+                        token
+                    );
+
+                    if (output.Json)
+                    {
+                        output.WriteJson(
+                            new
+                            {
+                                status = "reconciled",
+                                dryRun,
+                                planId = result.PlanId,
+                                updated = result.PlantsUpdated,
+                                needsSelection = result.NeedsSelection,
+                            }
+                        );
+                    }
+                    else
+                    {
+                        var scope = string.IsNullOrWhiteSpace(result.PlanId)
+                            ? "forest"
+                            : $"plan '{result.PlanId}'";
+                        output.WriteLine(
+                            $"Reconciled {scope}: {result.PlantsUpdated} updated, {result.NeedsSelection} need selection"
+                        );
+                    }
+
+                    return ExitCodes.Success;
+                }
+                catch (ForestStore.ForestNotInitializedException)
+                {
+                    return WriteForestNotInitialized(output);
+                }
+            }
+        );
+
+        var plantCommand = new Command("plant", "Reconcile a specific plant");
+        var selectorArg = new Argument<string>("selector")
+        {
+            Description = "Plant selector (key, slug, or P01)",
+        };
+        plantCommand.Arguments.Add(selectorArg);
+
+        var selectOption = new Option<string?>("--select")
+        {
+            Description = "Selected branch to keep",
+        };
+        var statusOption = new Option<string?>("--status")
+        {
+            Description = "Target status (harvestable|harvested|archived)",
+        };
+        var pruneOption = new Option<bool>("--prune")
+        {
+            Description = "Prune non-selected branches when a selection is made",
+        };
+        var forceOption = new Option<bool>("--force")
+        {
+            Description = "Force state transition even if current status is unexpected",
+        };
+
+        plantCommand.Options.Add(selectOption);
+        plantCommand.Options.Add(statusOption);
+        plantCommand.Options.Add(pruneOption);
+        plantCommand.Options.Add(forceOption);
+        plantCommand.Options.Add(dryRunOption);
+
+        plantCommand.SetAction(
+            async (parseResult, token) =>
+            {
+                var output = parseResult.GetOutput(cliOptions);
+                var selector = parseResult.GetRequiredValue(selectorArg);
+                var selected = parseResult.GetValue(selectOption);
+                var status = parseResult.GetValue(statusOption);
+                var prune = parseResult.GetValue(pruneOption);
+                var force = parseResult.GetValue(forceOption);
+                var dryRun = parseResult.GetValue(dryRunOption);
+
+                try
+                {
+                    var forestDir = ForestStore.GetDefaultForestDir();
+                    ForestStore.EnsureInitialized(forestDir);
+
+                    var result = await mediator.Send(
+                        new CliReconcile.ReconcilePlantCommand(
                             Selector: selector,
-                            PlanterId: planterId,
-                            BranchOption: branch ?? "auto",
-                            Mode: string.IsNullOrWhiteSpace(mode) ? "propose" : mode.Trim(),
+                            SelectedBranch: selected,
+                            Status: status,
+                            Prune: prune,
+                            Force: force,
                             DryRun: dryRun
                         ),
                         token
@@ -92,12 +135,12 @@ public static class EvolveCommand
                         output.WriteJson(
                             new
                             {
-                                status = "evolved",
+                                status = "reconciled",
                                 dryRun,
                                 plantKey = result.PlantKey,
-                                branch = result.BranchName,
-                                mode = result.Mode,
                                 plantStatus = result.Status,
+                                selectedBranch = result.SelectedBranch,
+                                pruned = result.Pruned,
                             }
                         );
                     }
@@ -105,8 +148,8 @@ public static class EvolveCommand
                     {
                         output.WriteLine(
                             dryRun
-                                ? $"Would evolve '{result.PlantKey}' on branch '{result.BranchName}' ({result.Mode})"
-                                : $"Evolved '{result.PlantKey}' on branch '{result.BranchName}' ({result.Mode})"
+                                ? $"Would reconcile '{result.PlantKey}' (status={result.Status})"
+                                : $"Reconciled '{result.PlantKey}' (status={result.Status})"
                         );
                     }
 
@@ -124,15 +167,7 @@ public static class EvolveCommand
                 {
                     return WritePlantAmbiguous(output, selector: ex.Selector, matches: ex.Matches);
                 }
-                catch (CliEvolve.InvalidModeException ex)
-                {
-                    return WriteInvalidArguments(
-                        output,
-                        message: ex.Message,
-                        details: new { mode = ex.Mode }
-                    );
-                }
-                catch (ArgumentException ex)
+                catch (InvalidOperationException ex)
                 {
                     return WriteInvalidArguments(output, ex.Message, new { selector });
                 }

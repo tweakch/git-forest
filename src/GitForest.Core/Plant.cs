@@ -34,6 +34,7 @@ public class Plant
     public string Description { get; set; } = string.Empty;
     public List<string> AssignedPlanters { get; set; } = new();
     public List<string> Branches { get; set; } = new();
+    public string? SelectedBranch { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime? LastActivityDate { get; set; }
 }

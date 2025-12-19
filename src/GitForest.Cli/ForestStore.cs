@@ -327,6 +327,7 @@ internal static class ForestStore
                 PlannerId: plannerId,
                 AssignedPlanters: assignedPlanters,
                 Branches: Array.Empty<string>(),
+                SelectedBranch: null,
                 CreatedAt: now,
                 UpdatedAt: null
             );
@@ -636,6 +637,7 @@ internal static class ForestStore
             PlannerId: plant.PlannerId,
             AssignedPlanters: plant.AssignedPlanters ?? Array.Empty<string>(),
             Branches: plant.Branches ?? Array.Empty<string>(),
+            SelectedBranch: plant.SelectedBranch,
             CreatedAt: plant.CreatedAt,
             UpdatedAt: plant.UpdatedAt,
             Description: null
@@ -652,6 +654,7 @@ internal static class ForestStore
             PlannerId: plant.PlannerId,
             AssignedPlanters: plant.AssignedPlanters ?? Array.Empty<string>(),
             Branches: plant.Branches ?? Array.Empty<string>(),
+            SelectedBranch: plant.SelectedBranch,
             CreatedAt: plant.CreatedAt,
             UpdatedAt: plant.UpdatedAt
         );
@@ -681,6 +684,7 @@ internal static class ForestStore
         string? PlannerId,
         IReadOnlyList<string> AssignedPlanters,
         IReadOnlyList<string> Branches,
+        string? SelectedBranch,
         string CreatedAt,
         string? UpdatedAt
     );

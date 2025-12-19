@@ -195,6 +195,7 @@ public static class MigrateCommand
             Branches = source.Branches is null
                 ? new List<string>()
                 : new List<string>(source.Branches),
+            SelectedBranch = source.SelectedBranch,
             CreatedDate = source.CreatedDate,
             LastActivityDate = source.LastActivityDate,
         };

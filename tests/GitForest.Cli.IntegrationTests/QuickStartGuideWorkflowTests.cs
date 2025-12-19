@@ -217,9 +217,7 @@ public sealed class QuickStartGuideWorkflowTests
                     $"git-forest plant show after planting failed.\nSTDOUT:\n{plantShowAfterPlant.StdOut}\nSTDERR:\n{plantShowAfterPlant.StdErr}"
             );
 
-            using var plantAfterPlantDoc = JsonDocument.Parse(
-                plantShowAfterPlant.StdOut.Trim()
-            );
+            using var plantAfterPlantDoc = JsonDocument.Parse(plantShowAfterPlant.StdOut.Trim());
             var statusAfterPlant = plantAfterPlantDoc
                 .RootElement.GetProperty("plant")
                 .GetProperty("status")

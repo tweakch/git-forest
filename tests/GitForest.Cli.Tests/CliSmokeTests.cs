@@ -81,7 +81,7 @@ public class CliSmokeTests
 
         try
         {
-            var exitCode = await CliApp.InvokeAsync("evolve", "--planter", "p1");
+            var exitCode = await CliApp.InvokeAsync("evolve");
 
             Assert.That(exitCode, Is.EqualTo(ExitCodes.ForestNotInitialized));
             Assert.That(buffer.ToString(), Does.Contain("forest not initialized"));
@@ -118,7 +118,7 @@ public class CliSmokeTests
 
         try
         {
-            var exitCode = await CliApp.InvokeAsync("evolve", "--planter", "p1", "--json");
+            var exitCode = await CliApp.InvokeAsync("evolve", "--json");
 
             Assert.That(exitCode, Is.EqualTo(ExitCodes.ForestNotInitialized));
             Assert.That(buffer.ToString(), Does.Contain("\"code\":\"forest_not_initialized\""));

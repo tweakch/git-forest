@@ -1,25 +1,27 @@
 # evolve
 
-Evolve the forest workflow (scaffold).
+Evolve the forest at the planning layer (no execution).
 
 ## Usage
 
 ```bash
-git-forest evolve [--json]
+git-forest evolve [--all] [--plan <plan-id>] [--dry-run] [--json]
 ```
 
 ## Options
 
+- `--all` - Evolve all plans in the forest
+- `--plan` - Plan identifier to scope evolution
+- `--dry-run` - Show what would be done without applying
 - `--json` - Output in JSON format (global option)
 
 ## Description
 
-This command is a placeholder for the future evolve workflow. It currently reports
-that the workflow is not implemented.
+Evolve refreshes desired plants in `.git-forest/` without running planters or creating branches.
 
 ## Example
 
 ```bash
-$ git-forest evolve
-Evolve workflow not implemented yet.
+$ git-forest evolve --all
+Evolved forest: +4 ~6
 ```

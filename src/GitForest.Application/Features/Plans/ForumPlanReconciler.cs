@@ -86,7 +86,7 @@ public sealed class ForumPlanReconciler : IPlanReconciler
                         Status = "planned",
                         Title = d.Title ?? string.Empty,
                         Description = d.Description ?? string.Empty,
-                        AssignedPlanters = d.AssignedPlanters.ToList(),
+                        AssignedPlanters = new List<string>(),
                         Branches = new List<string>(),
                         CreatedDate = now,
                         LastActivityDate = null,
@@ -102,8 +102,6 @@ public sealed class ForumPlanReconciler : IPlanReconciler
             var normalizedPlannerId = d.PlannerId ?? string.Empty;
             var normalizedTitle = d.Title ?? string.Empty;
             var normalizedDescription = d.Description ?? string.Empty;
-            var normalizedAssignedPlanters = d.AssignedPlanters.ToList();
-
             var changed = false;
 
             if (!string.Equals(existing.PlanId ?? string.Empty, id, StringComparison.Ordinal))
@@ -151,12 +149,6 @@ public sealed class ForumPlanReconciler : IPlanReconciler
             )
             {
                 existing.Description = normalizedDescription;
-                changed = true;
-            }
-
-            if (!ListEquals(existing.AssignedPlanters, normalizedAssignedPlanters))
-            {
-                existing.AssignedPlanters = normalizedAssignedPlanters;
                 changed = true;
             }
 
@@ -237,11 +229,7 @@ public sealed class ForumPlanReconciler : IPlanReconciler
             var description = (d.Description ?? string.Empty).Trim();
             var plannerId = (d.PlannerId ?? string.Empty).Trim();
 
-            var assigned = (d.AssignedPlanters ?? Array.Empty<string>())
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => x.Trim())
-                .Distinct(StringComparer.Ordinal)
-                .ToList();
+            var assigned = Array.Empty<string>();
 
             normalized.Add(
                 new NormalizedDesiredPlant(
@@ -310,34 +298,6 @@ public sealed class ForumPlanReconciler : IPlanReconciler
         }
 
         return normalized;
-    }
-
-    private static bool ListEquals(IReadOnlyList<string>? a, IReadOnlyList<string>? b)
-    {
-        if (ReferenceEquals(a, b))
-        {
-            return true;
-        }
-
-        a ??= Array.Empty<string>();
-        b ??= Array.Empty<string>();
-
-        if (a.Count != b.Count)
-        {
-            return false;
-        }
-
-        for (var i = 0; i < a.Count; i++)
-        {
-            if (
-                !string.Equals(a[i] ?? string.Empty, b[i] ?? string.Empty, StringComparison.Ordinal)
-            )
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private static string NormalizeSlug(string input)

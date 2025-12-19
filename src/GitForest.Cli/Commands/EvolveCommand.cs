@@ -1,7 +1,7 @@
 using System.CommandLine;
+using GitForest.Cli.Features.Planning;
 using GitForest.Mediator;
-using AppPlantCmd = GitForest.Application.Features.Plants.Commands;
-using CliEvolve = GitForest.Cli.Features.Evolve;
+using AppPlans = GitForest.Application.Features.Plans;
 
 namespace GitForest.Cli.Commands;
 
@@ -9,24 +9,15 @@ public static class EvolveCommand
 {
     public static Command Build(CliOptions cliOptions, IMediator mediator)
     {
-        var command = new Command("evolve", "Evolve plants (branches + growth)");
+        var command = new Command("evolve", "Evolve plants (planning-level refresh)");
 
         var planOption = new Option<string?>("--plan")
         {
             Description = "Plan identifier to scope evolution",
         };
-        var planterOption = new Option<string>("--planter")
+        var allOption = new Option<bool>("--all")
         {
-            Description = "Planter identifier to evolve with",
-            Required = true,
-        };
-        var branchOption = new Option<string>("--branch")
-        {
-            Description = "Branch name (or 'auto' for default naming)",
-        };
-        var modeOption = new Option<string>("--mode")
-        {
-            Description = "Evolution mode (propose|apply)",
+            Description = "Evolve all plans in the forest",
         };
         var dryRunOption = new Option<bool>("--dry-run")
         {
@@ -34,9 +25,7 @@ public static class EvolveCommand
         };
 
         command.Options.Add(planOption);
-        command.Options.Add(planterOption);
-        command.Options.Add(branchOption);
-        command.Options.Add(modeOption);
+        command.Options.Add(allOption);
         command.Options.Add(dryRunOption);
 
         command.SetAction(
@@ -44,9 +33,7 @@ public static class EvolveCommand
             {
                 var output = parseResult.GetOutput(cliOptions);
                 var planId = parseResult.GetValue(planOption);
-                var planterId = parseResult.GetRequiredValue(planterOption);
-                var branch = parseResult.GetValue(branchOption);
-                var mode = parseResult.GetValue(modeOption);
+                var all = parseResult.GetValue(allOption);
                 var dryRun = parseResult.GetValue(dryRunOption);
 
                 try
@@ -55,11 +42,9 @@ public static class EvolveCommand
                     ForestStore.EnsureInitialized(forestDir);
 
                     var result = await mediator.Send(
-                        new CliEvolve.EvolveForestCommand(
-                            PlanId: planId,
-                            PlanterId: planterId,
-                            BranchOption: branch ?? "auto",
-                            Mode: string.IsNullOrWhiteSpace(mode) ? "propose" : mode.Trim(),
+                        new PlanForestCommand(
+                            PlanId: all ? null : planId,
+                            PlannerId: null,
                             DryRun: dryRun
                         ),
                         token
@@ -73,10 +58,12 @@ public static class EvolveCommand
                                 status = "evolved",
                                 dryRun,
                                 planId = result.PlanId,
-                                planterId = result.PlanterId,
-                                branch = branch ?? "auto",
-                                mode = result.Mode,
-                                evolved = result.PlantsEvolved,
+                                plans = result.PlansPlanned,
+                                plants = new
+                                {
+                                    created = result.PlantsCreated,
+                                    updated = result.PlantsUpdated,
+                                },
                             }
                         );
                     }
@@ -87,8 +74,8 @@ public static class EvolveCommand
                             : $"plan '{result.PlanId}'";
                         output.WriteLine(
                             dryRun
-                                ? $"Would evolve {scope}: {result.PlantsEvolved} plants"
-                                : $"Evolved {scope}: {result.PlantsEvolved} plants"
+                                ? $"Would evolve {scope}: +{result.PlantsCreated} ~{result.PlantsUpdated}"
+                                : $"Evolved {scope}: +{result.PlantsCreated} ~{result.PlantsUpdated}"
                         );
                     }
 
@@ -98,130 +85,16 @@ public static class EvolveCommand
                 {
                     return WriteForestNotInitialized(output);
                 }
-                catch (CliEvolve.InvalidModeException ex)
+                catch (AppPlans.PlanNotInstalledException)
                 {
-                    return WriteInvalidArguments(
-                        output,
-                        message: ex.Message,
-                        details: new { mode = ex.Mode }
-                    );
+                    return WritePlanNotFound(output, planId ?? string.Empty);
                 }
                 catch (ArgumentException ex)
                 {
-                    return WriteInvalidArguments(output, ex.Message, new { planterId });
+                    return WriteInvalidArguments(output, ex.Message, new { planId });
                 }
             }
         );
-
-        var plantCommand = new Command("plant", "Evolve a specific plant");
-        var selectorArg = new Argument<string>("selector")
-        {
-            Description = "Plant selector (key, slug, or P01)",
-        };
-        plantCommand.Arguments.Add(selectorArg);
-
-        var plantPlanterOption = new Option<string>("--planter")
-        {
-            Description = "Planter identifier to evolve with",
-            Required = true,
-        };
-        var plantBranchOption = new Option<string>("--branch")
-        {
-            Description = "Branch name (or 'auto' for default naming)",
-        };
-        var plantModeOption = new Option<string>("--mode")
-        {
-            Description = "Evolution mode (propose|apply)",
-        };
-        var plantDryRunOption = new Option<bool>("--dry-run")
-        {
-            Description = "Show what would be done without applying",
-        };
-
-        plantCommand.Options.Add(plantPlanterOption);
-        plantCommand.Options.Add(plantBranchOption);
-        plantCommand.Options.Add(plantModeOption);
-        plantCommand.Options.Add(plantDryRunOption);
-
-        plantCommand.SetAction(
-            async (parseResult, token) =>
-            {
-                var output = parseResult.GetOutput(cliOptions);
-                var selector = parseResult.GetRequiredValue(selectorArg);
-                var planterId = parseResult.GetRequiredValue(plantPlanterOption);
-                var branch = parseResult.GetValue(plantBranchOption);
-                var mode = parseResult.GetValue(plantModeOption);
-                var dryRun = parseResult.GetValue(plantDryRunOption);
-
-                try
-                {
-                    var forestDir = ForestStore.GetDefaultForestDir();
-                    ForestStore.EnsureInitialized(forestDir);
-
-                    var result = await mediator.Send(
-                        new CliEvolve.EvolvePlantCommand(
-                            Selector: selector,
-                            PlanterId: planterId,
-                            BranchOption: branch ?? "auto",
-                            Mode: string.IsNullOrWhiteSpace(mode) ? "propose" : mode.Trim(),
-                            DryRun: dryRun
-                        ),
-                        token
-                    );
-
-                    if (output.Json)
-                    {
-                        output.WriteJson(
-                            new
-                            {
-                                status = "evolved",
-                                dryRun,
-                                plantKey = result.PlantKey,
-                                branch = result.BranchName,
-                                mode = result.Mode,
-                                plantStatus = result.Status,
-                            }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteLine(
-                            dryRun
-                                ? $"Would evolve '{result.PlantKey}' on branch '{result.BranchName}' ({result.Mode})"
-                                : $"Evolved '{result.PlantKey}' on branch '{result.BranchName}' ({result.Mode})"
-                        );
-                    }
-
-                    return ExitCodes.Success;
-                }
-                catch (ForestStore.ForestNotInitializedException)
-                {
-                    return WriteForestNotInitialized(output);
-                }
-                catch (AppPlantCmd.PlantNotFoundException)
-                {
-                    return WritePlantNotFound(output, selector);
-                }
-                catch (AppPlantCmd.PlantAmbiguousSelectorException ex)
-                {
-                    return WritePlantAmbiguous(output, selector: ex.Selector, matches: ex.Matches);
-                }
-                catch (CliEvolve.InvalidModeException ex)
-                {
-                    return WriteInvalidArguments(
-                        output,
-                        message: ex.Message,
-                        details: new { mode = ex.Mode }
-                    );
-                }
-                catch (ArgumentException ex)
-                {
-                    return WriteInvalidArguments(output, ex.Message, new { selector });
-                }
-            }
-        );
-
-        command.Subcommands.Add(plantCommand);
         return command;
     }
 
@@ -242,42 +115,22 @@ public static class EvolveCommand
         return ExitCodes.ForestNotInitialized;
     }
 
-    private static int WritePlantNotFound(Output output, string selector)
+    private static int WritePlanNotFound(Output output, string planId)
     {
         if (output.Json)
         {
             output.WriteJsonError(
-                code: "plant_not_found",
-                message: "Plant not found",
-                details: new { selector }
+                code: "plan_not_found",
+                message: "Plan not found",
+                details: new { planId }
             );
         }
         else
         {
-            output.WriteErrorLine($"Plant '{selector}': not found");
+            output.WriteErrorLine($"Plan '{planId}': not found");
         }
 
-        return ExitCodes.PlantNotFoundOrAmbiguous;
-    }
-
-    private static int WritePlantAmbiguous(Output output, string selector, string[] matches)
-    {
-        if (output.Json)
-        {
-            output.WriteJsonError(
-                code: "plant_ambiguous",
-                message: "Plant selector is ambiguous",
-                details: new { selector, matches }
-            );
-        }
-        else
-        {
-            output.WriteErrorLine(
-                $"Plant '{selector}': ambiguous; matched {matches.Length} plants"
-            );
-        }
-
-        return ExitCodes.PlantNotFoundOrAmbiguous;
+        return ExitCodes.PlanNotFound;
     }
 
     private static int WriteInvalidArguments(Output output, string message, object? details)

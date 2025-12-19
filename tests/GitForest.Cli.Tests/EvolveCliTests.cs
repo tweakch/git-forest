@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using GitForest.Infrastructure.FileSystem.Serialization;
 using NUnit.Framework;
@@ -11,27 +12,27 @@ namespace GitForest.Cli.Tests;
 public sealed class EvolveCliTests
 {
     [Test]
-    public async Task Evolve_UpdatesAllPlants_WithBranchAndPlanter()
+    public async Task Evolve_CreatesPlantsFromPlans_WithoutAssignments()
     {
         using var env = new CliTestEnv();
         env.EnsureForestInitialized();
-        env.WritePlant(key: "plan-a:alpha", status: "planned", title: "Alpha");
-        env.WritePlant(key: "plan-b:beta", status: "planted", title: "Beta");
+        env.WritePlan(
+            planId: "plan-a",
+            planName: "Plan A",
+            planners: new[] { "planner-a" },
+            planters: new[] { "planter-a" },
+            templates: new[] { "alpha" }
+        );
 
         using var console = new ConsoleCapture();
-        var exitCode = await CliApp.InvokeAsync("evolve", "--planter", "p1");
+        var exitCode = await CliApp.InvokeAsync("evolve", "--all");
 
         Assert.That(exitCode, Is.EqualTo(ExitCodes.Success));
 
         var plantA = env.ReadPlant("plan-a:alpha");
-        Assert.That(plantA.Status, Is.EqualTo("growing"));
-        Assert.That(plantA.AssignedPlanters, Does.Contain("p1"));
-        Assert.That(plantA.Branches, Does.Contain("p1/plan-a__alpha"));
-
-        var plantB = env.ReadPlant("plan-b:beta");
-        Assert.That(plantB.Status, Is.EqualTo("growing"));
-        Assert.That(plantB.AssignedPlanters, Does.Contain("p1"));
-        Assert.That(plantB.Branches, Does.Contain("p1/plan-b__beta"));
+        Assert.That(plantA.Status, Is.EqualTo("planned"));
+        Assert.That(plantA.AssignedPlanters, Is.Empty);
+        Assert.That(plantA.Branches, Is.Empty);
     }
 
     private sealed class CliTestEnv : IDisposable
@@ -116,6 +117,36 @@ public sealed class EvolveCliTests
 
             var yaml = PlantYamlLite.Serialize(plant);
             File.WriteAllText(Path.Combine(plantDir, "plant.yaml"), yaml, Encoding.UTF8);
+        }
+
+        public void WritePlan(
+            string planId,
+            string planName,
+            string[] planners,
+            string[] planters,
+            string[] templates
+        )
+        {
+            var planDir = Path.Combine(_forestDir, "plans", planId);
+            Directory.CreateDirectory(planDir);
+
+            var yaml = new StringBuilder()
+                .AppendLine($"id: {planId}")
+                .AppendLine($"name: {planName}")
+                .AppendLine("planners:")
+                .Append(string.Join(Environment.NewLine, planners.Select(p => $"  - {p}")))
+                .AppendLine()
+                .AppendLine("planters:")
+                .Append(string.Join(Environment.NewLine, planters.Select(p => $"  - {p}")))
+                .AppendLine()
+                .AppendLine("plant_templates:");
+
+            foreach (var template in templates)
+            {
+                yaml.AppendLine($"  - name: {template}");
+            }
+
+            File.WriteAllText(Path.Combine(planDir, "plan.yaml"), yaml.ToString(), Encoding.UTF8);
         }
 
         public PlantFileModel ReadPlant(string key)

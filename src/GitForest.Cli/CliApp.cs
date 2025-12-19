@@ -17,7 +17,7 @@ namespace GitForest.Cli;
 
 public static class CliApp
 {
-    public static async Task<int> InvokeAsync(string[] args)
+    public static async Task<int> InvokeAsync(params string[] args)
     {
         var options = new CliOptions();
 

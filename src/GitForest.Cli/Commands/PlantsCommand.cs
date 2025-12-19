@@ -72,13 +72,13 @@ public static class PlantsCommand
                         }
                         else
                         {
-                            output.WriteLine("Key Status");
+                            output.WriteLine("Key Status Planter");
                             foreach (var p in plants)
                             {
                                 var planter =
                                     p.AssignedPlanters.Count > 0 ? p.AssignedPlanters[0] : "-";
                                 output.WriteLine(
-                                    $"{p.Key} {p.Status}"
+                                    $"{p.Key} {p.Status} {planter}"
                                 );
                             }
                         }
@@ -105,10 +105,18 @@ public static class PlantsCommand
             }
         );
 
-        var removeCommand = new Command("remove", "Remove a plant from the forest (deletes metadata)");
-        var selectorArg = new Argument<string>("selector")
+        var removeCommand = new Command(
+            "remove",
+            "Remove plants from the forest (deletes metadata)"
+        );
+        var selectorArg = new Argument<string?>("selector")
         {
             Description = "Plant selector (key, slug, or P01)",
+            Arity = ArgumentArity.ZeroOrOne,
+        };
+        var planOption = new Option<string?>("--plan")
+        {
+            Description = "Remove all plants for a plan ID",
         };
         var yesOption = new Option<bool>("--yes") { Description = "Proceed without prompting" };
         var forceOption = new Option<bool>("--force")
@@ -120,6 +128,7 @@ public static class PlantsCommand
             Description = "Show what would be done without applying",
         };
         removeCommand.Arguments.Add(selectorArg);
+        removeCommand.Options.Add(planOption);
         removeCommand.Options.Add(yesOption);
         removeCommand.Options.Add(forceOption);
         removeCommand.Options.Add(dryRunOption);
@@ -128,10 +137,51 @@ public static class PlantsCommand
             async (parseResult, token) =>
             {
                 var output = parseResult.GetOutput(cliOptions);
-                var selector = parseResult.GetRequiredValue(selectorArg);
+                var selector = parseResult.GetValue(selectorArg);
+                var planId = parseResult.GetValue(planOption);
                 var yes = parseResult.GetValue(yesOption);
                 var force = parseResult.GetValue(forceOption);
                 var dryRun = parseResult.GetValue(dryRunOption);
+
+                var hasSelector = !string.IsNullOrWhiteSpace(selector);
+                var hasPlan = !string.IsNullOrWhiteSpace(planId);
+                if (hasSelector && hasPlan)
+                {
+                    if (output.Json)
+                    {
+                        output.WriteJsonError(
+                            code: "invalid_arguments",
+                            message: "Use either <selector> or --plan (not both).",
+                            details: new { selector, planId }
+                        );
+                    }
+                    else
+                    {
+                        output.WriteErrorLine(
+                            "Error: use either <selector> or --plan (not both)."
+                        );
+                    }
+
+                    return ExitCodes.InvalidArguments;
+                }
+
+                if (!hasSelector && !hasPlan)
+                {
+                    if (output.Json)
+                    {
+                        output.WriteJsonError(
+                            code: "invalid_arguments",
+                            message: "Provide either <selector> or --plan.",
+                            details: null
+                        );
+                    }
+                    else
+                    {
+                        output.WriteErrorLine("Error: provide either <selector> or --plan.");
+                    }
+
+                    return ExitCodes.InvalidArguments;
+                }
 
                 if (!dryRun && !yes)
                 {
@@ -143,35 +193,79 @@ public static class PlantsCommand
                     var forestDir = ForestStore.GetDefaultForestDir();
                     ForestStore.EnsureInitialized(forestDir);
 
-                    var removed = await mediator.Send(
-                        new AppPlantCmd.RemovePlantCommand(
-                            Selector: selector,
-                            Force: force,
-                            DryRun: dryRun
-                        ),
-                        token
-                    );
-
-                    if (output.Json)
+                    if (hasPlan)
                     {
-                        output.WriteJson(
-                            new
-                            {
-                                status = "removed",
-                                dryRun,
-                                force,
-                                plantKey = removed.Key,
-                                plantStatus = removed.Status,
-                            }
+                        var removed = await mediator.Send(
+                            new AppPlantCmd.RemovePlantsByPlanCommand(
+                                PlanId: planId!.Trim(),
+                                Force: force,
+                                DryRun: dryRun
+                            ),
+                            token
                         );
+
+                        if (output.Json)
+                        {
+                            output.WriteJson(
+                                new
+                                {
+                                    status = "removed",
+                                    dryRun,
+                                    force,
+                                    planId = removed.PlanId,
+                                    plantsRemovedCount = removed.PlantKeys.Length,
+                                    plantKeys = removed.PlantKeys,
+                                }
+                            );
+                        }
+                        else
+                        {
+                            if (removed.PlantKeys.Length == 0)
+                            {
+                                output.WriteLine($"No plants found for plan '{removed.PlanId}'");
+                            }
+                            else
+                            {
+                                output.WriteLine(
+                                    dryRun
+                                        ? $"Would remove {removed.PlantKeys.Length} plants for plan '{removed.PlanId}'"
+                                        : $"Removed {removed.PlantKeys.Length} plants for plan '{removed.PlanId}'"
+                                );
+                            }
+                        }
                     }
                     else
                     {
-                        output.WriteLine(
-                            dryRun
-                                ? $"Would remove '{removed.Key}'"
-                                : $"Removed '{removed.Key}'"
+                        var removed = await mediator.Send(
+                            new AppPlantCmd.RemovePlantCommand(
+                                Selector: selector!.Trim(),
+                                Force: force,
+                                DryRun: dryRun
+                            ),
+                            token
                         );
+
+                        if (output.Json)
+                        {
+                            output.WriteJson(
+                                new
+                                {
+                                    status = "removed",
+                                    dryRun,
+                                    force,
+                                    plantKey = removed.Key,
+                                    plantStatus = removed.Status,
+                                }
+                            );
+                        }
+                        else
+                        {
+                            output.WriteLine(
+                                dryRun
+                                    ? $"Would remove '{removed.Key}'"
+                                    : $"Removed '{removed.Key}'"
+                            );
+                        }
                     }
 
                     return ExitCodes.Success;
@@ -211,7 +305,7 @@ public static class PlantsCommand
                 }
                 catch (AppPlantCmd.PlantNotFoundException)
                 {
-                    return WritePlantNotFound(output, selector);
+                    return WritePlantNotFound(output, selector ?? string.Empty);
                 }
                 catch (AppPlantCmd.PlantAmbiguousSelectorException ex)
                 {

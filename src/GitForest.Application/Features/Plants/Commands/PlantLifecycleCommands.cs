@@ -516,3 +516,81 @@ internal sealed class RemovePlantHandler : IRequestHandler<RemovePlantCommand, P
         );
     }
 }
+
+public sealed record RemovePlantsByPlanCommand(string PlanId, bool Force, bool DryRun)
+    : IRequest<RemovePlantsByPlanResult>;
+
+public sealed record RemovePlantsByPlanResult(string PlanId, bool DryRun, bool Force, string[] PlantKeys);
+
+internal sealed class RemovePlantsByPlanHandler
+    : IRequestHandler<RemovePlantsByPlanCommand, RemovePlantsByPlanResult>
+{
+    private readonly IPlantRepository _plants;
+
+    public RemovePlantsByPlanHandler(IPlantRepository plants)
+    {
+        _plants = plants ?? throw new ArgumentNullException(nameof(plants));
+    }
+
+    public async Task<RemovePlantsByPlanResult> Handle(
+        RemovePlantsByPlanCommand request,
+        CancellationToken cancellationToken
+    )
+    {
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
+
+        var planId = (request.PlanId ?? string.Empty).Trim();
+        if (planId.Length == 0)
+        {
+            throw new InvalidOperationException("Plan ID is required.");
+        }
+
+        var plants = await _plants.ListAsync(new PlantsByPlanIdSpec(planId), cancellationToken);
+        var ordered = plants
+            .OrderBy(p => p.Key ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        foreach (var plant in ordered)
+        {
+            if (plant is null)
+            {
+                continue;
+            }
+
+            if (
+                !request.Force
+                && !string.Equals(plant.Status, "archived", StringComparison.OrdinalIgnoreCase)
+            )
+            {
+                throw new InvalidOperationException(
+                    $"Plant '{plant.Key}' must be archived before removal (status={plant.Status}). Use --force to override."
+                );
+            }
+        }
+
+        if (!request.DryRun)
+        {
+            foreach (var plant in ordered)
+            {
+                if (plant is null)
+                {
+                    continue;
+                }
+
+                await _plants.DeleteAsync(plant, cancellationToken);
+            }
+        }
+
+        return new RemovePlantsByPlanResult(
+            PlanId: planId,
+            DryRun: request.DryRun,
+            Force: request.Force,
+            PlantKeys: ordered
+                .Select(p => p.Key)
+                .Where(k => !string.IsNullOrWhiteSpace(k))
+                .Select(k => k.Trim())
+                .ToArray()
+        );
+    }
+}

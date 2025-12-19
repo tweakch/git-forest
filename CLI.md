@@ -298,7 +298,7 @@ sample:backend-memory-hygiene planted backend Backend memory hygiene
 Remove a plant from the forest (deletes its metadata directory under `.git-forest/plants/`).
 
 ```bash
-gf plants remove <selector> [--yes] [--force] [--dry-run] [--json]
+gf plants remove [<selector>] [--plan <plan-id>] [--yes] [--force] [--dry-run] [--json]
 ```
 
 Contract:

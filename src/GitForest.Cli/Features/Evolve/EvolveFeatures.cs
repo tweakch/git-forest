@@ -1,147 +1,42 @@
 using System.Text;
+using GitForest.Application.Features.Plans;
+using GitForest.Cli.Features;
 using GitForest.Core;
 using GitForest.Core.Persistence;
+using GitForest.Core.Services;
+using GitForest.Core.Specifications.Plans;
 using GitForest.Core.Specifications.Plants;
 using GitForest.Mediator;
 
 namespace GitForest.Cli.Features.Evolve;
 
-public sealed record EvolvePlantCommand(
-    string Selector,
-    string PlanterId,
-    string BranchOption,
-    string Mode,
-    bool DryRun
-) : IRequest<EvolvePlantResult>;
-
-public sealed record EvolvePlantResult(
-    string PlantKey,
-    string BranchName,
-    string Status,
-    string Mode,
-    bool DryRun
-);
-
-public sealed record EvolveForestCommand(
-    string? PlanId,
-    string PlanterId,
-    string BranchOption,
-    string Mode,
-    bool DryRun
-) : IRequest<EvolveForestResult>;
+public sealed record EvolveForestCommand(string? PlanId, string? PlantSelector, bool DryRun)
+    : IRequest<EvolveForestResult>;
 
 public sealed record EvolveForestResult(
     string? PlanId,
-    string PlanterId,
-    string Mode,
+    string? PlantKey,
+    int PlantsConsidered,
     int PlantsEvolved,
+    int Skipped,
     bool DryRun
 );
 
-public sealed class InvalidModeException : Exception
-{
-    public string Mode { get; }
-
-    public InvalidModeException(string mode)
-        : base("Invalid --mode. Expected: propose|apply")
-    {
-        Mode = mode;
-    }
-}
-
 internal static class EvolveHelpers
 {
-    public static string NormalizeMode(string mode)
+    public static string ComputeBaseBranchName(string planterId, string plantKey)
     {
-        var normalized = (mode ?? "propose").Trim();
-        if (
-            !string.Equals(normalized, "apply", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(normalized, "propose", StringComparison.OrdinalIgnoreCase)
-        )
+        var id = (planterId ?? string.Empty).Trim();
+        if (id.Length == 0)
         {
-            throw new InvalidModeException(mode ?? string.Empty);
-        }
-
-        return normalized.ToLowerInvariant();
-    }
-
-    public static string ComputeBranchName(
-        string planterId,
-        string plantKey,
-        string? branchOption
-    )
-    {
-        var opt = (branchOption ?? "auto").Trim();
-        if (!string.Equals(opt, "auto", StringComparison.OrdinalIgnoreCase) && opt.Length > 0)
-        {
-            return NormalizeBranchName(opt);
+            return "git-forest/untitled";
         }
 
         var (planId, slug) = ForestStore.SplitPlantKey(plantKey);
-        return NormalizeBranchName($"{planterId}/{planId}__{slug}");
+        return NormalizeBranchName($"{id}/{planId}__{slug}");
     }
 
-    public static Plant Clone(Plant source)
-    {
-        if (source is null)
-            throw new ArgumentNullException(nameof(source));
-
-        return new Plant
-        {
-            Key = source.Key,
-            Slug = source.Slug,
-            PlanId = source.PlanId,
-            PlannerId = source.PlannerId,
-            Status = source.Status,
-            Title = source.Title,
-            Description = source.Description,
-            AssignedPlanters = source.AssignedPlanters is null
-                ? new List<string>()
-                : new List<string>(source.AssignedPlanters),
-            Branches = source.Branches is null
-                ? new List<string>()
-                : new List<string>(source.Branches),
-            SelectedBranch = source.SelectedBranch,
-            CreatedDate = source.CreatedDate,
-            LastActivityDate = source.LastActivityDate,
-        };
-    }
-
-    public static void ApplyEvolution(Plant updated, string planterId, string branchName)
-    {
-        var planters = (updated.AssignedPlanters ?? new List<string>()).ToList();
-        if (
-            !planters.Any(p => string.Equals(p, planterId, StringComparison.OrdinalIgnoreCase))
-        )
-        {
-            planters.Add(planterId);
-        }
-
-        var branches = (updated.Branches ?? new List<string>()).ToList();
-        if (
-            !branches.Any(b =>
-                string.Equals(b, branchName, StringComparison.OrdinalIgnoreCase)
-            )
-        )
-        {
-            branches.Add(branchName);
-        }
-
-        var status = updated.Status ?? "planned";
-        if (
-            string.Equals(status, "planned", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "planted", StringComparison.OrdinalIgnoreCase)
-        )
-        {
-            status = "growing";
-        }
-
-        updated.AssignedPlanters = planters;
-        updated.Branches = branches;
-        updated.Status = status;
-    }
-
-    private static string NormalizeBranchName(string input)
+    public static string NormalizeBranchName(string input)
     {
         var trimmed = (input ?? string.Empty).Trim();
         if (trimmed.Length == 0)
@@ -170,71 +65,127 @@ internal static class EvolveHelpers
         var normalized = sb.ToString().Trim('-');
         return normalized.Length == 0 ? "git-forest/untitled" : normalized;
     }
-}
 
-internal sealed class EvolvePlantHandler : IRequestHandler<EvolvePlantCommand, EvolvePlantResult>
-{
-    private readonly IPlantRepository _plants;
-
-    public EvolvePlantHandler(IPlantRepository plants)
+    public static Plant Clone(Plant source)
     {
-        _plants = plants ?? throw new ArgumentNullException(nameof(plants));
+        if (source is null)
+            throw new ArgumentNullException(nameof(source));
+
+        return new Plant
+        {
+            Key = source.Key,
+            Slug = source.Slug,
+            PlanId = source.PlanId,
+            PlannerId = source.PlannerId,
+            Status = source.Status,
+            Title = source.Title,
+            Description = source.Description,
+            AssignedPlanters = source.AssignedPlanters is null
+                ? new List<string>()
+                : new List<string>(source.AssignedPlanters),
+            Branches = source.Branches is null ? new List<string>() : new List<string>(source.Branches),
+            SelectedBranch = source.SelectedBranch,
+            CreatedDate = source.CreatedDate,
+            LastActivityDate = source.LastActivityDate,
+        };
     }
 
-    public async Task<EvolvePlantResult> Handle(
-        EvolvePlantCommand request,
-        CancellationToken cancellationToken
-    )
+    public static bool IsEligibleForEvolve(Plant plant)
     {
-        if (request is null)
-            throw new ArgumentNullException(nameof(request));
-
-        var mode = EvolveHelpers.NormalizeMode(request.Mode);
-        var planterId = (request.PlanterId ?? string.Empty).Trim();
-        if (planterId.Length == 0)
+        var status = (plant.Status ?? string.Empty).Trim();
+        if (status.Length == 0)
         {
-            throw new ArgumentException("Planter ID must be provided.", nameof(request.PlanterId));
+            return true;
         }
 
-        var resolved = await PlantSelector.ResolveAsync(
-            _plants,
-            request.Selector,
-            cancellationToken
-        );
-        var updated = EvolveHelpers.Clone(resolved);
-
-        var branchName = EvolveHelpers.ComputeBranchName(
-            planterId,
-            updated.Key,
-            request.BranchOption
-        );
-        EvolveHelpers.ApplyEvolution(updated, planterId, branchName);
-
-        if (!request.DryRun)
-        {
-            updated.LastActivityDate = DateTime.UtcNow;
-            await _plants.UpdateAsync(updated, cancellationToken);
-        }
-
-        return new EvolvePlantResult(
-            PlantKey: updated.Key,
-            BranchName: branchName,
-            Status: updated.Status,
-            Mode: mode,
-            DryRun: request.DryRun
-        );
+        return status.Equals("planned", StringComparison.OrdinalIgnoreCase)
+            || status.Equals("planted", StringComparison.OrdinalIgnoreCase)
+            || status.Equals("growing", StringComparison.OrdinalIgnoreCase)
+            || status.Equals("harvestable", StringComparison.OrdinalIgnoreCase);
     }
 
+    public static List<string> NormalizeOrderedIds(IEnumerable<string>? values)
+    {
+        var list = new List<string>();
+        if (values is null)
+        {
+            return list;
+        }
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var raw in values)
+        {
+            var value = (raw ?? string.Empty).Trim();
+            if (value.Length == 0 || !seen.Add(value))
+            {
+                continue;
+            }
+
+            list.Add(value);
+        }
+
+        return list;
+    }
+
+    public static bool ListContainsIgnoreCase(IReadOnlyList<string> values, string value)
+    {
+        var v = (value ?? string.Empty).Trim();
+        if (v.Length == 0)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < values.Count; i++)
+        {
+            if (string.Equals(values[i], v, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static void ApplyEvolutionMetadata(Plant updated, string planterId, string branchName)
+    {
+        var planters = NormalizeOrderedIds(updated.AssignedPlanters);
+        if (!planters.Any(p => string.Equals(p, planterId, StringComparison.OrdinalIgnoreCase)))
+        {
+            planters.Add(planterId);
+        }
+
+        var branches = NormalizeOrderedIds(updated.Branches);
+        if (!branches.Any(b => string.Equals(b, branchName, StringComparison.OrdinalIgnoreCase)))
+        {
+            branches.Add(branchName);
+        }
+
+        var status = (updated.Status ?? "planned").Trim();
+        if (
+            status.Equals("planned", StringComparison.OrdinalIgnoreCase)
+            || status.Equals("planted", StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            status = "growing";
+        }
+
+        updated.AssignedPlanters = planters;
+        updated.Branches = branches;
+        updated.Status = status;
+    }
 }
 
-internal sealed class EvolveForestHandler
-    : IRequestHandler<EvolveForestCommand, EvolveForestResult>
+internal sealed class EvolveForestHandler : IRequestHandler<EvolveForestCommand, EvolveForestResult>
 {
+    private readonly IPlanRepository _plans;
     private readonly IPlantRepository _plants;
+    private readonly IPlanReconciler _reconciler;
 
-    public EvolveForestHandler(IPlantRepository plants)
+    public EvolveForestHandler(IPlanRepository plans, IPlantRepository plants, IPlanReconciler reconciler)
     {
+        _plans = plans ?? throw new ArgumentNullException(nameof(plans));
         _plants = plants ?? throw new ArgumentNullException(nameof(plants));
+        _reconciler = reconciler ?? throw new ArgumentNullException(nameof(reconciler));
     }
 
     public async Task<EvolveForestResult> Handle(
@@ -245,61 +196,190 @@ internal sealed class EvolveForestHandler
         if (request is null)
             throw new ArgumentNullException(nameof(request));
 
-        var mode = EvolveHelpers.NormalizeMode(request.Mode);
-        var planterId = (request.PlanterId ?? string.Empty).Trim();
-        if (planterId.Length == 0)
+        var planId = Normalize(request.PlanId);
+        var plantSelector = Normalize(request.PlantSelector);
+
+        // Single-plant mode: no lazy seeding (matches spec).
+        if (plantSelector is not null)
         {
-            throw new ArgumentException("Planter ID must be provided.", nameof(request.PlanterId));
+            var resolved = await PlantSelector.ResolveAsync(_plants, plantSelector, cancellationToken);
+            var (considered, evolved, skipped) = await EvolveOnePlantAsync(
+                resolved,
+                request.DryRun,
+                cancellationToken
+            );
+
+            return new EvolveForestResult(
+                PlanId: null,
+                PlantKey: resolved.Key,
+                PlantsConsidered: considered,
+                PlantsEvolved: evolved,
+                Skipped: skipped,
+                DryRun: request.DryRun
+            );
         }
 
-        var planId = NormalizePlanId(request.PlanId);
-        var all = await _plants.ListAsync(new AllPlantsSpec(), cancellationToken);
+        // Validate plan existence if scoped.
+        var allPlans = await _plans.ListAsync(new AllPlansSpec(), cancellationToken);
+        if (planId is not null)
+        {
+            var exists = allPlans.Any(p => string.Equals(p.Id, planId, StringComparison.OrdinalIgnoreCase));
+            if (!exists)
+            {
+                throw new PlanNotInstalledException(planId);
+            }
+        }
 
-        var evolved = 0;
+        var plansToConsider = planId is null
+            ? allPlans.Where(p => !string.IsNullOrWhiteSpace(p.Id)).OrderBy(p => p.Id, StringComparer.OrdinalIgnoreCase).ToArray()
+            : allPlans.Where(p => string.Equals(p.Id, planId, StringComparison.OrdinalIgnoreCase)).ToArray();
 
-        foreach (var plant in all)
+        // Lazy seed: for any plan with zero plants, run plan reconciliation.
+        foreach (var plan in plansToConsider)
+        {
+            var id = (plan.Id ?? string.Empty).Trim();
+            if (id.Length == 0)
+            {
+                continue;
+            }
+
+            var existing = await _plants.ListAsync(new PlantsByPlanIdSpec(id), cancellationToken);
+            if (existing.Count == 0)
+            {
+                _ = await _reconciler.ReconcileAsync(id, request.DryRun, forum: null, cancellationToken: cancellationToken);
+            }
+        }
+
+        var plantsInScope = planId is null
+            ? await _plants.ListAsync(new AllPlantsSpec(), cancellationToken)
+            : await _plants.ListAsync(new PlantsByPlanIdSpec(planId), cancellationToken);
+
+        var consideredTotal = 0;
+        var evolvedTotal = 0;
+        var skippedTotal = 0;
+
+        foreach (var plant in plantsInScope)
         {
             if (plant is null || string.IsNullOrWhiteSpace(plant.Key))
             {
                 continue;
             }
 
-            if (
-                planId is not null
-                && !string.Equals(plant.PlanId, planId, StringComparison.OrdinalIgnoreCase)
-            )
-            {
-                continue;
-            }
-
-            var updated = EvolveHelpers.Clone(plant);
-            var branchName = EvolveHelpers.ComputeBranchName(
-                planterId,
-                updated.Key,
-                request.BranchOption
+            var (considered, evolved, skipped) = await EvolveOnePlantAsync(
+                plant,
+                request.DryRun,
+                cancellationToken
             );
-            EvolveHelpers.ApplyEvolution(updated, planterId, branchName);
-            evolved++;
-
-            if (!request.DryRun)
-            {
-                updated.LastActivityDate = DateTime.UtcNow;
-                await _plants.UpdateAsync(updated, cancellationToken);
-            }
+            consideredTotal += considered;
+            evolvedTotal += evolved;
+            skippedTotal += skipped;
         }
 
         return new EvolveForestResult(
             PlanId: planId,
-            PlanterId: planterId,
-            Mode: mode,
-            PlantsEvolved: evolved,
+            PlantKey: null,
+            PlantsConsidered: consideredTotal,
+            PlantsEvolved: evolvedTotal,
+            Skipped: skippedTotal,
             DryRun: request.DryRun
         );
     }
 
-    private static string? NormalizePlanId(string? planId)
+    private async Task<(int considered, int evolved, int skipped)> EvolveOnePlantAsync(
+        Plant plant,
+        bool dryRun,
+        CancellationToken cancellationToken
+    )
     {
-        var trimmed = (planId ?? string.Empty).Trim();
+        var considered = 1;
+
+        if (!EvolveHelpers.IsEligibleForEvolve(plant))
+        {
+            return (considered, evolved: 0, skipped: 1);
+        }
+
+        var updated = EvolveHelpers.Clone(plant);
+
+        var plantKey = updated.Key ?? string.Empty;
+        var (planId, _) = ForestStore.SplitPlantKey(plantKey);
+
+        var planters = EvolveHelpers.NormalizeOrderedIds(updated.AssignedPlanters);
+        if (planters.Count == 0)
+        {
+            var plan = await _plans.GetBySpecAsync(new PlanByIdSpec(planId), cancellationToken);
+            if (plan is not null)
+            {
+                planters = EvolveHelpers.NormalizeOrderedIds(plan.Planters);
+            }
+        }
+
+        if (planters.Count == 0)
+        {
+            return (considered, evolved: 0, skipped: 1);
+        }
+
+        var existingBranches = EvolveHelpers.NormalizeOrderedIds(updated.Branches);
+        var evolvedThisPlant = false;
+        foreach (var planterId in planters)
+        {
+            var baseBranch = EvolveHelpers.ComputeBaseBranchName(planterId, plantKey);
+
+            var chosenBranch = ChooseAvailableBranchName(baseBranch, existingBranches);
+
+            if (!dryRun)
+            {
+                GitRunner.CreateBranch(chosenBranch);
+            }
+
+            EvolveHelpers.ApplyEvolutionMetadata(updated, planterId, chosenBranch);
+            existingBranches = EvolveHelpers.NormalizeOrderedIds(updated.Branches);
+            evolvedThisPlant = true;
+        }
+
+        if (evolvedThisPlant && !dryRun)
+        {
+            updated.LastActivityDate = DateTime.UtcNow;
+            await _plants.UpdateAsync(updated, cancellationToken);
+        }
+
+        return evolvedThisPlant ? (considered, evolved: 1, skipped: 0) : (considered, evolved: 0, skipped: 1);
+    }
+
+    private static string? Normalize(string? value)
+    {
+        var trimmed = (value ?? string.Empty).Trim();
         return trimmed.Length == 0 ? null : trimmed;
+    }
+
+    private static string ChooseAvailableBranchName(string baseBranchName, IReadOnlyList<string> existingBranches)
+    {
+        var baseName = (baseBranchName ?? string.Empty).Trim();
+        if (baseName.Length == 0)
+        {
+            baseName = "git-forest/untitled";
+        }
+
+        if (!GitRunner.BranchExists(baseName) && !EvolveHelpers.ListContainsIgnoreCase(existingBranches, baseName))
+        {
+            return baseName;
+        }
+
+        for (var suffix = 2; suffix < 10000; suffix++)
+        {
+            var candidate = $"{baseName}--{suffix}";
+            if (GitRunner.BranchExists(candidate))
+            {
+                continue;
+            }
+
+            if (EvolveHelpers.ListContainsIgnoreCase(existingBranches, candidate))
+            {
+                continue;
+            }
+
+            return candidate;
+        }
+
+        throw new InvalidOperationException($"Unable to find available branch name for base '{baseName}'.");
     }
 }

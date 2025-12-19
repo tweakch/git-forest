@@ -105,6 +105,33 @@ internal static class GitRunner
         return res.ExitCode == 0;
     }
 
+    public static void CreateBranch(string branchName, string? workingDirectory = null)
+    {
+        var name = (branchName ?? string.Empty).Trim();
+        if (name.Length == 0)
+        {
+            throw new ArgumentException("Branch name must be provided.", nameof(branchName));
+        }
+
+        RunOrThrow(["branch", name], workingDirectory);
+    }
+
+    public static void CreateBranchIfMissing(string branchName, string? workingDirectory = null)
+    {
+        var name = (branchName ?? string.Empty).Trim();
+        if (name.Length == 0)
+        {
+            throw new ArgumentException("Branch name must be provided.", nameof(branchName));
+        }
+
+        if (BranchExists(name, workingDirectory))
+        {
+            return;
+        }
+
+        RunOrThrow(["branch", name], workingDirectory);
+    }
+
     public static void CheckoutBranch(
         string branchName,
         bool createIfMissing,

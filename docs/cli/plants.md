@@ -24,6 +24,5 @@ List plants.
 
 ```bash
 $ git-forest plants list
-Key                             Status   Title                         Plan   Planter
 No plants found
 ```

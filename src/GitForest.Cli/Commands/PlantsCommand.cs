@@ -1,5 +1,6 @@
 using System.CommandLine;
 using GitForest.Application.Features.Plants;
+using AppPlantCmd = GitForest.Application.Features.Plants.Commands;
 using GitForest.Mediator;
 
 namespace GitForest.Cli.Commands;
@@ -65,21 +66,19 @@ public static class PlantsCommand
                     }
                     else
                     {
-                        output.WriteLine(
-                            "Key                             Status   Title                         Plan   Planter"
-                        );
                         if (plants.Count == 0)
                         {
                             output.WriteLine("No plants found");
                         }
                         else
                         {
+                            output.WriteLine("Key Status Planter Title");
                             foreach (var p in plants)
                             {
                                 var planter =
                                     p.AssignedPlanters.Count > 0 ? p.AssignedPlanters[0] : "-";
                                 output.WriteLine(
-                                    $"{PadRight(p.Key, 31)} {PadRight(p.Status, 8)} {PadRight(Truncate(p.Title, 28), 28)} {PadRight(p.PlanId, 6)} {planter}"
+                                    $"{p.Key} {p.Status} {planter} {Truncate(p.Title, 80)}"
                                 );
                             }
                         }
@@ -106,14 +105,180 @@ public static class PlantsCommand
             }
         );
 
+        var removeCommand = new Command("remove", "Remove a plant from the forest (deletes metadata)");
+        var selectorArg = new Argument<string>("selector")
+        {
+            Description = "Plant selector (key, slug, or P01)",
+        };
+        var yesOption = new Option<bool>("--yes") { Description = "Proceed without prompting" };
+        var forceOption = new Option<bool>("--force")
+        {
+            Description = "Remove even if plant is not archived",
+        };
+        var dryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Show what would be done without applying",
+        };
+        removeCommand.Arguments.Add(selectorArg);
+        removeCommand.Options.Add(yesOption);
+        removeCommand.Options.Add(forceOption);
+        removeCommand.Options.Add(dryRunOption);
+
+        removeCommand.SetAction(
+            async (parseResult, token) =>
+            {
+                var output = parseResult.GetOutput(cliOptions);
+                var selector = parseResult.GetRequiredValue(selectorArg);
+                var yes = parseResult.GetValue(yesOption);
+                var force = parseResult.GetValue(forceOption);
+                var dryRun = parseResult.GetValue(dryRunOption);
+
+                if (!dryRun && !yes)
+                {
+                    return WriteConfirmationRequired(output);
+                }
+
+                try
+                {
+                    var forestDir = ForestStore.GetDefaultForestDir();
+                    ForestStore.EnsureInitialized(forestDir);
+
+                    var removed = await mediator.Send(
+                        new AppPlantCmd.RemovePlantCommand(
+                            Selector: selector,
+                            Force: force,
+                            DryRun: dryRun
+                        ),
+                        token
+                    );
+
+                    if (output.Json)
+                    {
+                        output.WriteJson(
+                            new
+                            {
+                                status = "removed",
+                                dryRun,
+                                force,
+                                plantKey = removed.Key,
+                                plantStatus = removed.Status,
+                            }
+                        );
+                    }
+                    else
+                    {
+                        output.WriteLine(
+                            dryRun
+                                ? $"Would remove '{removed.Key}'"
+                                : $"Removed '{removed.Key}'"
+                        );
+                    }
+
+                    return ExitCodes.Success;
+                }
+                catch (InvalidOperationException ex)
+                {
+                    if (output.Json)
+                    {
+                        output.WriteJsonError(
+                            code: "invalid_state",
+                            message: ex.Message,
+                            details: new { selector, force }
+                        );
+                    }
+                    else
+                    {
+                        output.WriteErrorLine($"Error: {ex.Message}");
+                    }
+
+                    return ExitCodes.InvalidArguments;
+                }
+                catch (ForestStore.ForestNotInitializedException)
+                {
+                    if (output.Json)
+                    {
+                        output.WriteJsonError(
+                            code: "forest_not_initialized",
+                            message: "Forest not initialized"
+                        );
+                    }
+                    else
+                    {
+                        output.WriteErrorLine("Error: forest not initialized");
+                    }
+
+                    return ExitCodes.ForestNotInitialized;
+                }
+                catch (AppPlantCmd.PlantNotFoundException)
+                {
+                    return WritePlantNotFound(output, selector);
+                }
+                catch (AppPlantCmd.PlantAmbiguousSelectorException ex)
+                {
+                    return WritePlantAmbiguous(output, selector: ex.Selector, matches: ex.Matches);
+                }
+            }
+        );
+
         plantsCommand.Subcommands.Add(listCommand);
+        plantsCommand.Subcommands.Add(removeCommand);
         return plantsCommand;
     }
 
-    private static string PadRight(string value, int width)
+    private static int WriteConfirmationRequired(Output output)
     {
-        value ??= string.Empty;
-        return value.Length >= width ? value : value.PadRight(width);
+        if (output.Json)
+        {
+            output.WriteJsonError(
+                code: "confirmation_required",
+                message: "Use --yes to remove a plant.",
+                details: null
+            );
+        }
+        else
+        {
+            output.WriteErrorLine("Error: confirmation required. Re-run with --yes.");
+        }
+
+        return ExitCodes.InvalidArguments;
+    }
+
+    private static int WritePlantNotFound(Output output, string selector)
+    {
+        if (output.Json)
+        {
+            output.WriteJsonError(
+                code: "plant_not_found",
+                message: "Plant not found",
+                details: new { selector }
+            );
+        }
+        else
+        {
+            output.WriteErrorLine($"Plant '{selector}': not found");
+        }
+
+        return ExitCodes.PlantNotFoundOrAmbiguous;
+    }
+
+    private static int WritePlantAmbiguous(Output output, string selector, string[] matches)
+    {
+        if (output.Json)
+        {
+            output.WriteJsonError(
+                code: "plant_ambiguous",
+                message: "Plant selector is ambiguous",
+                details: new { selector, matches }
+            );
+        }
+        else
+        {
+            output.WriteErrorLine(
+                $"Plant '{selector}': ambiguous; matched {matches.Length} plants"
+            );
+        }
+
+        return ExitCodes.PlantNotFoundOrAmbiguous;
     }
 
     private static string Truncate(string value, int max)

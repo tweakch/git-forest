@@ -9,3 +9,4 @@ public sealed class PlantsByStatusSpec : Specification<Plant>
         Query.Where(p => p.Status == status).OrderBy(p => p.Key);
     }
 }
+

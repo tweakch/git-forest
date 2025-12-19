@@ -451,3 +451,68 @@ internal sealed class ArchivePlantHandler : IRequestHandler<ArchivePlantCommand,
         );
     }
 }
+
+public sealed record RemovePlantCommand(string Selector, bool Force, bool DryRun) : IRequest<Plant>;
+
+internal sealed class RemovePlantHandler : IRequestHandler<RemovePlantCommand, Plant>
+{
+    private readonly IPlantRepository _plants;
+
+    public RemovePlantHandler(IPlantRepository plants)
+    {
+        _plants = plants ?? throw new ArgumentNullException(nameof(plants));
+    }
+
+    public async Task<Plant> Handle(RemovePlantCommand request, CancellationToken cancellationToken)
+    {
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
+
+        var resolved = await ResolvePlantAsync(request.Selector, cancellationToken);
+
+        if (
+            !request.Force
+            && !string.Equals(resolved.Status, "archived", StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            throw new InvalidOperationException(
+                $"Plant must be archived before removal (status={resolved.Status}). Use --force to override."
+            );
+        }
+
+        var snapshot = AssignPlanterToPlantHandler.Clone(resolved);
+
+        if (!request.DryRun)
+        {
+            await _plants.DeleteAsync(resolved, cancellationToken);
+        }
+
+        return snapshot;
+    }
+
+    private async Task<Plant> ResolvePlantAsync(string selector, CancellationToken cancellationToken)
+    {
+        var sel = (selector ?? string.Empty).Trim();
+        if (sel.Length == 0)
+        {
+            throw new PlantNotFoundException(selector ?? string.Empty);
+        }
+
+        var plants = await _plants.ListAsync(new AllPlantsSpec(), cancellationToken);
+        var matches = AssignPlanterToPlantHandler.FindMatches(plants, sel);
+        if (matches.Count == 1)
+        {
+            return matches[0];
+        }
+
+        if (matches.Count == 0)
+        {
+            throw new PlantNotFoundException(selector ?? string.Empty);
+        }
+
+        throw new PlantAmbiguousSelectorException(
+            selector ?? string.Empty,
+            matches.Select(p => p.Key).ToArray()
+        );
+    }
+}

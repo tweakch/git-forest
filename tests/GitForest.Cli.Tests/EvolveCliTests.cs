@@ -27,7 +27,11 @@ public sealed class EvolveCliTests
         using var console = new ConsoleCapture();
         var exitCode = await CliApp.InvokeAsync("evolve", "--all");
 
-        Assert.That(exitCode, Is.EqualTo(ExitCodes.Success));
+        Assert.That(
+            exitCode,
+            Is.EqualTo(ExitCodes.Success),
+            () => $"Expected evolve to succeed.\nSTDOUT:\n{console.StdOut}\nSTDERR:\n{console.StdErr}"
+        );
 
         var plantA = env.ReadPlant("plan-a:alpha");
         Assert.That(plantA.Status, Is.EqualTo("planned"));

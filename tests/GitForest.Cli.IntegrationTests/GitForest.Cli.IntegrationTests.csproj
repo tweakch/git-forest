@@ -4,8 +4,8 @@
     <IsPackable>false</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <VSTestCollect>XPlat Code Coverage</VSTestCollect>
-    <VSTestLogger>trx</VSTestLogger>
+    <VSTestCollect Condition="'$(CI)' == 'true'">XPlat Code Coverage</VSTestCollect>
+    <VSTestLogger Condition="'$(CI)' == 'true'">trx</VSTestLogger>
   </PropertyGroup>
 
   <ItemGroup>

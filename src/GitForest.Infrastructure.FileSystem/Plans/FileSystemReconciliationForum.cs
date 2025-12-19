@@ -106,3 +106,4 @@ public sealed class FileSystemReconciliationForum : IReconciliationForum
         return slug.Length == 0 ? "untitled" : slug;
     }
 }
+

@@ -21,27 +21,16 @@ public sealed class ToolInstallWorkflowTests
             () => $"Expected CLI project at: {cliProject}"
         );
 
-        var tempRoot = Path.Combine(
-            Path.GetTempPath(),
-            "git-forest-integration",
-            Guid.NewGuid().ToString("N")
-        );
-        Directory.CreateDirectory(tempRoot);
+        await using var workspace = TestWorkspace.Create();
 
-        var packagesDir = Path.Combine(tempRoot, "packages");
-        var toolPath = Path.Combine(tempRoot, "tool-path");
-        var workingRepoDir = Path.Combine(tempRoot, "repo");
+        var packagesDir = workspace.CreateDirectory("packages");
+        var toolPath = workspace.CreateDirectory("tool-path");
+        var workingRepoDir = workspace.RepoDirectory;
 
-        Directory.CreateDirectory(packagesDir);
-        Directory.CreateDirectory(toolPath);
-        Directory.CreateDirectory(workingRepoDir);
+        var dotnetEnv = workspace.DotNetEnvironment;
+        var gitEnv = workspace.GitEnvironment;
+        var cliEnv = workspace.CliEnvironment;
 
-        var dotnetEnv = TestEnvironments.DotNet;
-        var gitEnv = TestEnvironments.Git;
-
-        string toolExePath;
-
-        try
         {
             // 0) Restore + build once (so pack can be --no-build/--no-restore)
             // Restore can be slow on cold machines / CI, so keep it explicit and with a larger timeout.
@@ -52,13 +41,7 @@ public sealed class ToolInstallWorkflowTests
                 environmentVariables: dotnetEnv,
                 timeout: TimeSpan.FromMinutes(10)
             );
-
-            Assert.That(
-                restore.ExitCode,
-                Is.EqualTo(0),
-                () =>
-                    $"dotnet restore failed.\nSTDOUT:\n{restore.StdOut}\nSTDERR:\n{restore.StdErr}"
-            );
+            CliTestAsserts.Succeeded(restore, "dotnet restore failed");
 
             var build = await ProcessRunner.RunAsync(
                 fileName: "dotnet",
@@ -75,12 +58,7 @@ public sealed class ToolInstallWorkflowTests
                 environmentVariables: dotnetEnv,
                 timeout: TimeSpan.FromMinutes(10)
             );
-
-            Assert.That(
-                build.ExitCode,
-                Is.EqualTo(0),
-                () => $"dotnet build failed.\nSTDOUT:\n{build.StdOut}\nSTDERR:\n{build.StdErr}"
-            );
+            CliTestAsserts.Succeeded(build, "dotnet build failed");
 
             // 1) Pack tool
             var pack = await ProcessRunner.RunAsync(
@@ -101,12 +79,7 @@ public sealed class ToolInstallWorkflowTests
                 environmentVariables: dotnetEnv,
                 timeout: TimeSpan.FromMinutes(10)
             );
-
-            Assert.That(
-                pack.ExitCode,
-                Is.EqualTo(0),
-                () => $"dotnet pack failed.\nSTDOUT:\n{pack.StdOut}\nSTDERR:\n{pack.StdErr}"
-            );
+            CliTestAsserts.Succeeded(pack, "dotnet pack failed");
 
             var nupkg = Directory
                 .GetFiles(packagesDir, "git-forest*.nupkg")
@@ -131,15 +104,9 @@ public sealed class ToolInstallWorkflowTests
                 environmentVariables: dotnetEnv,
                 timeout: TimeSpan.FromMinutes(3)
             );
+            CliTestAsserts.Succeeded(install, "dotnet tool install failed");
 
-            Assert.That(
-                install.ExitCode,
-                Is.EqualTo(0),
-                () =>
-                    $"dotnet tool install failed.\nSTDOUT:\n{install.StdOut}\nSTDERR:\n{install.StdErr}"
-            );
-
-            toolExePath = ToolPaths.GetToolCommandPath(toolPath, "git-forest");
+            var toolExePath = ToolPaths.GetToolCommandPath(toolPath, "git-forest");
             Assert.That(
                 File.Exists(toolExePath),
                 Is.True,
@@ -151,16 +118,10 @@ public sealed class ToolInstallWorkflowTests
                 fileName: toolExePath,
                 arguments: ["--version"],
                 workingDirectory: workingRepoDir,
-                environmentVariables: dotnetEnv,
+                environmentVariables: cliEnv,
                 timeout: TimeSpan.FromMinutes(1)
             );
-
-            Assert.That(
-                version.ExitCode,
-                Is.EqualTo(0),
-                () =>
-                    $"git-forest --version failed.\nSTDOUT:\n{version.StdOut}\nSTDERR:\n{version.StdErr}"
-            );
+            CliTestAsserts.Succeeded(version, "git-forest --version failed");
             Assert.That(version.StdOut.Trim(), Is.Not.Empty);
 
             // 4) Create deterministic git repo context
@@ -217,15 +178,15 @@ public sealed class ToolInstallWorkflowTests
                     fileName: toolExePath,
                     arguments: step.Args,
                     workingDirectory: workingRepoDir,
-                    environmentVariables: dotnetEnv,
+                    environmentVariables: cliEnv,
                     timeout: TimeSpan.FromMinutes(1)
                 );
 
-                Assert.That(
-                    result.ExitCode,
-                    Is.EqualTo(step.ExitCode),
-                    () =>
-                        $"Step '{step.Name}' failed.\nArgs: {string.Join(' ', step.Args)}\nExpected exit: {step.ExitCode}\nActual exit: {result.ExitCode}\nSTDOUT:\n{result.StdOut}\nSTDERR:\n{result.StdErr}"
+                CliTestAsserts.ExitCodeIs(
+                    result,
+                    expectedExitCode: step.ExitCode,
+                    context:
+                        $"Step '{step.Name}' failed.\nArgs: {string.Join(' ', step.Args)}\nExpected exit: {step.ExitCode}"
                 );
 
                 if (
@@ -298,13 +259,7 @@ public sealed class ToolInstallWorkflowTests
                 environmentVariables: dotnetEnv,
                 timeout: TimeSpan.FromMinutes(2)
             );
-
-            Assert.That(
-                uninstall.ExitCode,
-                Is.EqualTo(0),
-                () =>
-                    $"dotnet tool uninstall failed.\nSTDOUT:\n{uninstall.StdOut}\nSTDERR:\n{uninstall.StdErr}"
-            );
+            CliTestAsserts.Succeeded(uninstall, "dotnet tool uninstall failed");
 
             Assert.That(
                 File.Exists(toolExePath),
@@ -319,31 +274,14 @@ public sealed class ToolInstallWorkflowTests
                 environmentVariables: dotnetEnv,
                 timeout: TimeSpan.FromMinutes(1)
             );
-
-            Assert.That(
-                list.ExitCode,
-                Is.EqualTo(0),
-                () => $"dotnet tool list failed.\nSTDOUT:\n{list.StdOut}\nSTDERR:\n{list.StdErr}"
-            );
+            CliTestAsserts.Succeeded(list, "dotnet tool list failed");
             Assert.That(
                 list.StdOut,
                 Does.Not.Contain("git-forest"),
                 "Expected 'git-forest' to not appear in dotnet tool list after uninstall"
             );
-        }
-        finally
-        {
-            try
-            {
-                if (Directory.Exists(tempRoot))
-                {
-                    Directory.Delete(tempRoot, recursive: true);
-                }
-            }
-            catch
-            {
-                // best-effort cleanup
-            }
+
+            workspace.MarkSucceeded();
         }
     }
 

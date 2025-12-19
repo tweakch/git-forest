@@ -9,3 +9,4 @@ public sealed class PlanterByIdSpec : Specification<Planter>, ISingleResultSpeci
         Query.Where(p => p.Id == planterId);
     }
 }
+

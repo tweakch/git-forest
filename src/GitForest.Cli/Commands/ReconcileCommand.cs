@@ -11,32 +11,102 @@ public static class ReconcileCommand
     {
         var command = new Command("reconcile", "Reconcile plant outcomes");
 
+        var allOption = new Option<bool>("--all")
+        {
+            Description = "Reconcile all eligible plants across the forest",
+        };
         var planOption = new Option<string?>("--plan")
         {
             Description = "Plan identifier to scope reconciliation",
+        };
+        var plantOption = new Option<string?>("--plant")
+        {
+            Description = "Plant selector/key to scope reconciliation to a single plant",
         };
         var dryRunOption = new Option<bool>("--dry-run")
         {
             Description = "Show what would be done without applying",
         };
 
+        command.Options.Add(allOption);
         command.Options.Add(planOption);
+        command.Options.Add(plantOption);
         command.Options.Add(dryRunOption);
 
         command.SetAction(
             async (parseResult, token) =>
             {
                 var output = parseResult.GetOutput(cliOptions);
+                var all = parseResult.GetValue(allOption);
                 var planId = parseResult.GetValue(planOption);
+                var plantSelector = parseResult.GetValue(plantOption);
                 var dryRun = parseResult.GetValue(dryRunOption);
+
+                if (!all && string.IsNullOrWhiteSpace(planId) && string.IsNullOrWhiteSpace(plantSelector))
+                {
+                    // Default: reconcile the whole forest.
+                    all = true;
+                }
+
+                var specified = (all ? 1 : 0)
+                    + (!string.IsNullOrWhiteSpace(planId) ? 1 : 0)
+                    + (!string.IsNullOrWhiteSpace(plantSelector) ? 1 : 0);
+                if (specified != 1)
+                {
+                    return WriteInvalidArguments(
+                        output,
+                        "Specify exactly one of: --all, --plan, or --plant",
+                        new { all, planId, plant = plantSelector }
+                    );
+                }
 
                 try
                 {
                     var forestDir = ForestStore.GetDefaultForestDir();
                     ForestStore.EnsureInitialized(forestDir);
 
+                    if (!string.IsNullOrWhiteSpace(plantSelector))
+                    {
+                        var plantResult = await mediator.Send(
+                            new CliReconcile.ReconcilePlantCommand(
+                                Selector: plantSelector!,
+                                SelectedBranch: null,
+                                Status: null,
+                                Prune: false,
+                                Force: false,
+                                DryRun: dryRun
+                            ),
+                            token
+                        );
+
+                        if (output.Json)
+                        {
+                            output.WriteJson(
+                                new
+                                {
+                                    status = "reconciled",
+                                    dryRun,
+                                    plantKey = plantResult.PlantKey,
+                                    plantStatus = plantResult.Status,
+                                    selectedBranch = plantResult.SelectedBranch,
+                                    pruned = plantResult.Pruned,
+                                }
+                            );
+                        }
+                        else
+                        {
+                            output.WriteLine(
+                                dryRun
+                                    ? $"Would reconcile '{plantResult.PlantKey}' (status={plantResult.Status})"
+                                    : $"Reconciled '{plantResult.PlantKey}' (status={plantResult.Status})"
+                            );
+                        }
+
+                        return ExitCodes.Success;
+                    }
+
                     var result = await mediator.Send(
-                        new CliReconcile.ReconcileForestCommand(planId, dryRun),
+                        new CliReconcile.ReconcileForestCommand(all ? null : planId, dryRun),
                         token
                     );
 
@@ -68,6 +138,22 @@ public static class ReconcileCommand
                 catch (ForestStore.ForestNotInitializedException)
                 {
                     return WriteForestNotInitialized(output);
+                }
+                catch (AppPlantCmd.PlantNotFoundException)
+                {
+                    return WritePlantNotFound(output, plantSelector ?? string.Empty);
+                }
+                catch (AppPlantCmd.PlantAmbiguousSelectorException ex)
+                {
+                    return WritePlantAmbiguous(output, selector: ex.Selector, matches: ex.Matches);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return WriteInvalidArguments(
+                        output,
+                        ex.Message,
+                        new { all, planId, plant = plantSelector }
+                    );
                 }
             }
         );

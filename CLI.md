@@ -51,6 +51,7 @@ Drift is tracked (`plan_owned_hash`, `user_overrides`).
 ```text
 gf init
 gf status
+gf evolve
 gf config ...
 
 gf plans ...
@@ -117,6 +118,22 @@ Plants: planned 15 | planted 1 | growing 0 | harvestable 0 | harvested 0
 Planters: 24 available | 2 active
 Lock: free
 Hints: gf plants list --status planned
+```
+
+---
+
+# 3.3 `gf evolve`
+
+Placeholder for the evolve workflow.
+
+```bash
+gf evolve [--json]
+```
+
+Human output example:
+
+```text
+Evolve workflow not implemented yet.
 ```
 
 ---

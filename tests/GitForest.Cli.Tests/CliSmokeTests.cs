@@ -70,4 +70,44 @@ public class CliSmokeTests
             Console.SetOut(originalOut);
         }
     }
+
+    [Test]
+    public async Task Evolve_PrintsNotImplemented_And_ExitsZero()
+    {
+        var originalOut = Console.Out;
+        var buffer = new StringWriter();
+        Console.SetOut(buffer);
+
+        try
+        {
+            var exitCode = await CliApp.InvokeAsync(new[] { "evolve" });
+
+            Assert.That(exitCode, Is.EqualTo(ExitCodes.Success));
+            Assert.That(buffer.ToString(), Does.Contain("not implemented"));
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+        }
+    }
+
+    [Test]
+    public async Task Evolve_PrintsJsonStatus_WhenJsonEnabled()
+    {
+        var originalOut = Console.Out;
+        var buffer = new StringWriter();
+        Console.SetOut(buffer);
+
+        try
+        {
+            var exitCode = await CliApp.InvokeAsync(new[] { "evolve", "--json" });
+
+            Assert.That(exitCode, Is.EqualTo(ExitCodes.Success));
+            Assert.That(buffer.ToString(), Does.Contain("\"status\":\"not_implemented\""));
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+        }
+    }
 }

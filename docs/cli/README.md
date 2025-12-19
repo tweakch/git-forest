@@ -10,6 +10,7 @@ This directory contains documentation for all git-forest CLI commands.
 - **Commands**
   - [init](./init.md) - Initialize forest state
   - [status](./status.md) - Show forest status
+  - [evolve](./evolve.md) - Evolve forest workflow (scaffold)
   - [config](./config.md) - Manage configuration (`config show`)
   - [plans](./plans.md) - Manage plans (`plans list`, `plans install`)
   - [plan](./plan.md) - Manage a specific plan (`plan <id> reconcile`)

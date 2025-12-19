@@ -38,6 +38,7 @@ public static class CliApp
 
         rootCommand.Subcommands.Add(InitCommand.Build(options, mediator));
         rootCommand.Subcommands.Add(StatusCommand.Build(options, mediator));
+        rootCommand.Subcommands.Add(EvolveCommand.Build(options));
         rootCommand.Subcommands.Add(ConfigCommand.Build(options, mediator));
         rootCommand.Subcommands.Add(MigrateCommand.Build(options));
         rootCommand.Subcommands.Add(PlansCommand.Build(options, mediator));

@@ -57,7 +57,7 @@ public static class PlansCommand
                         else
                         {
                             output.WriteLine(
-                                $"{PadRight("Id", 28)} {PadRight("Version", 10)} {PadRight("Category", 20)} {PadRight("Author", 18)} {PadRight("License", 12)} {PadRight("Repository", 26)} {PadRight("InstalledAt", 20)} {PadRight("SHA256", 10)} {PadRight("Source", 20)}"
+                                $"{PadRight("Id", 28)} {PadRight("Version", 10)} {PadRight("Category", 20)} {PadRight("InstalledAt", 20)}"
                             );
 
                             foreach (var plan in plans)
@@ -66,26 +66,13 @@ public static class PlansCommand
                                     ? "-"
                                     : plan.Version;
                                 var category = "-";
-                                var author = string.IsNullOrWhiteSpace(plan.Author)
-                                    ? "-"
-                                    : plan.Author;
-                                var license = string.IsNullOrWhiteSpace(plan.License)
-                                    ? "-"
-                                    : plan.License;
-                                var repository = string.IsNullOrWhiteSpace(plan.Repository)
-                                    ? "-"
-                                    : plan.Repository;
                                 var installedAt =
                                     plan.InstalledDate == default
                                         ? "-"
                                         : FormatInstalledAt(plan.InstalledDate.ToString("O"));
-                                var sha = "-";
-                                var source = string.IsNullOrWhiteSpace(plan.Source)
-                                    ? "-"
-                                    : plan.Source;
 
                                 output.WriteLine(
-                                    $"{PadRight(plan.Id, 28)} {PadRight(version, 10)} {PadRight(Truncate(category, 20), 20)} {PadRight(Truncate(author, 18), 18)} {PadRight(Truncate(license, 12), 12)} {PadRight(Truncate(repository, 26), 26)} {PadRight(installedAt, 20)} {PadRight(sha, 10)} {PadRight(Truncate(source, 20), 20)}"
+                                    $"{PadRight(plan.Id, 28)} {PadRight(version, 10)} {PadRight(Truncate(category, 20), 20)} {PadRight(installedAt, 20)}"
                                 );
                             }
                         }

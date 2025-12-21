@@ -1,6 +1,6 @@
 using GitForest.Core.Persistence;
+using GitForest.Core.Services;
 using GitForest.Core.Specifications.Plans;
-using GitForest.Core.Specifications.Planters;
 using GitForest.Mediator;
 
 namespace GitForest.Application.Features.Planters;
@@ -14,12 +14,13 @@ internal sealed class ListPlantersHandler
     : IRequestHandler<ListPlantersQuery, IReadOnlyList<PlanterRow>>
 {
     private readonly IPlanRepository _plans;
-    private readonly IPlanterRepository _planters;
+    private readonly IPlanterDiscovery _planterDiscovery;
 
-    public ListPlantersHandler(IPlanRepository plans, IPlanterRepository planters)
+    public ListPlantersHandler(IPlanRepository plans, IPlanterDiscovery planterDiscovery)
     {
         _plans = plans ?? throw new ArgumentNullException(nameof(plans));
-        _planters = planters ?? throw new ArgumentNullException(nameof(planters));
+        _planterDiscovery =
+            planterDiscovery ?? throw new ArgumentNullException(nameof(planterDiscovery));
     }
 
     public async Task<IReadOnlyList<PlanterRow>> Handle(
@@ -71,15 +72,16 @@ internal sealed class ListPlantersHandler
 
         if (request.IncludeCustom)
         {
-            // Custom planters are stored explicitly in the planter repository.
-            var custom = await _planters.ListAsync(new AllPlantersSpec(), cancellationToken);
-            foreach (var planter in custom)
+            // Best-effort: any directory names under .git-forest/planters are treated as custom planters.
+            foreach (var id in _planterDiscovery.ListCustomPlanterIds())
             {
-                var id = (planter.Id ?? string.Empty).Trim();
-                if (id.Length == 0)
+                var trimmed = (id ?? string.Empty).Trim();
+                if (trimmed.Length == 0)
+                {
                     continue;
+                }
 
-                rows.Add(new PlanterRow(Id: id, Kind: "custom", Plans: Array.Empty<string>()));
+                rows.Add(new PlanterRow(Id: trimmed, Kind: "custom", Plans: Array.Empty<string>()));
             }
         }
 
@@ -106,12 +108,13 @@ public sealed record PlanterInfoResult(bool Exists, string Id, string Kind, stri
 internal sealed class GetPlanterHandler : IRequestHandler<GetPlanterQuery, PlanterInfoResult>
 {
     private readonly IPlanRepository _plans;
-    private readonly IPlanterRepository _planters;
+    private readonly IPlanterDiscovery _planterDiscovery;
 
-    public GetPlanterHandler(IPlanRepository plans, IPlanterRepository planters)
+    public GetPlanterHandler(IPlanRepository plans, IPlanterDiscovery planterDiscovery)
     {
         _plans = plans ?? throw new ArgumentNullException(nameof(plans));
-        _planters = planters ?? throw new ArgumentNullException(nameof(planters));
+        _planterDiscovery =
+            planterDiscovery ?? throw new ArgumentNullException(nameof(planterDiscovery));
     }
 
     public async Task<PlanterInfoResult> Handle(
@@ -152,7 +155,7 @@ internal sealed class GetPlanterHandler : IRequestHandler<GetPlanterQuery, Plant
         }
 
         var isBuiltin = plans.Count > 0;
-        var isCustom = await _planters.GetByIdAsync(id, cancellationToken) is not null;
+        var isCustom = _planterDiscovery.CustomPlanterExists(id);
         var exists = isBuiltin || isCustom;
         var kind = isBuiltin ? "builtin" : (isCustom ? "custom" : string.Empty);
 

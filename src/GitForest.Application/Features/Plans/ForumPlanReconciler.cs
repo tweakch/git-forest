@@ -102,7 +102,9 @@ public sealed class ForumPlanReconciler : IPlanReconciler
             var normalizedPlannerId = d.PlannerId ?? string.Empty;
             var normalizedTitle = d.Title ?? string.Empty;
             var normalizedDescription = d.Description ?? string.Empty;
-            var normalizedAssignedPlanters = (d.AssignedPlanters ?? Array.Empty<string>()).ToArray();
+            var normalizedAssignedPlanters = (
+                d.AssignedPlanters ?? Array.Empty<string>()
+            ).ToArray();
             var changed = false;
 
             if (!string.Equals(existing.PlanId ?? string.Empty, id, StringComparison.Ordinal))

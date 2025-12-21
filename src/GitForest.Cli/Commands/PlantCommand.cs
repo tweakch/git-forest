@@ -1,7 +1,7 @@
 using System.CommandLine;
 using GitForest.Mediator;
-using AppPlants = GitForest.Application.Features.Plants;
 using AppPlantCmd = GitForest.Application.Features.Plants.Commands;
+using AppPlants = GitForest.Application.Features.Plants;
 
 namespace GitForest.Cli.Commands;
 

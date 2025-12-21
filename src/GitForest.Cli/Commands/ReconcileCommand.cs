@@ -1,7 +1,7 @@
 using System.CommandLine;
 using GitForest.Mediator;
 using AppPlantCmd = GitForest.Application.Features.Plants.Commands;
-using CliReconcile = GitForest.Cli.Features.Reconcile;
+using AppReconcile = GitForest.Application.Features.Reconcile;
 
 namespace GitForest.Cli.Commands;
 
@@ -42,13 +42,18 @@ public static class ReconcileCommand
                 var plantSelector = parseResult.GetValue(plantOption);
                 var dryRun = parseResult.GetValue(dryRunOption);
 
-                if (!all && string.IsNullOrWhiteSpace(planId) && string.IsNullOrWhiteSpace(plantSelector))
+                if (
+                    !all
+                    && string.IsNullOrWhiteSpace(planId)
+                    && string.IsNullOrWhiteSpace(plantSelector)
+                )
                 {
                     // Default: reconcile the whole forest.
                     all = true;
                 }
 
-                var specified = (all ? 1 : 0)
+                var specified =
+                    (all ? 1 : 0)
                     + (!string.IsNullOrWhiteSpace(planId) ? 1 : 0)
                     + (!string.IsNullOrWhiteSpace(plantSelector) ? 1 : 0);
                 if (specified != 1)
@@ -56,7 +61,12 @@ public static class ReconcileCommand
                     return BaseCommand.WriteInvalidArguments(
                         output,
                         "Specify exactly one of: --all, --plan, or --plant",
-                        new { all, planId, plant = plantSelector }
+                        new
+                        {
+                            all,
+                            planId,
+                            plant = plantSelector,
+                        }
                     );
                 }
 
@@ -68,7 +78,7 @@ public static class ReconcileCommand
                     if (!string.IsNullOrWhiteSpace(plantSelector))
                     {
                         var plantResult = await mediator.Send(
-                            new CliReconcile.ReconcilePlantCommand(
+                            new AppReconcile.ReconcilePlantCommand(
                                 Selector: plantSelector!,
                                 SelectedBranch: null,
                                 Status: null,
@@ -106,7 +116,7 @@ public static class ReconcileCommand
                     }
 
                     var result = await mediator.Send(
-                        new CliReconcile.ReconcileForestCommand(all ? null : planId, dryRun),
+                        new AppReconcile.ReconcileForestCommand(all ? null : planId, dryRun),
                         token
                     );
 
@@ -156,7 +166,12 @@ public static class ReconcileCommand
                     return BaseCommand.WriteInvalidArguments(
                         output,
                         ex.Message,
-                        new { all, planId, plant = plantSelector }
+                        new
+                        {
+                            all,
+                            planId,
+                            plant = plantSelector,
+                        }
                     );
                 }
             }
@@ -209,7 +224,7 @@ public static class ReconcileCommand
                     ForestStore.EnsureInitialized(forestDir);
 
                     var result = await mediator.Send(
-                        new CliReconcile.ReconcilePlantCommand(
+                        new AppReconcile.ReconcilePlantCommand(
                             Selector: selector,
                             SelectedBranch: selected,
                             Status: status,

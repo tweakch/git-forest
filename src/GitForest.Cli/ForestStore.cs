@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using GitForest.Application.Configuration;
 using GitForest.Infrastructure.FileSystem.Serialization;
 
 namespace GitForest.Cli;
@@ -301,8 +302,7 @@ internal static class ForestStore
                 : new List<string> { "default-plant" };
         var planners =
             plan.Planners.Count > 0 ? plan.Planners : new List<string> { "default-planner" };
-        var planters =
-            plan.Planters.Count > 0 ? plan.Planters : Array.Empty<string>();
+        var planters = plan.Planters.Count > 0 ? plan.Planters : Array.Empty<string>();
 
         var created = 0;
         var updated = 0;
@@ -316,9 +316,8 @@ internal static class ForestStore
             var plantYamlPath = Path.Combine(plantDir, "plant.yaml");
 
             var plannerId = planners[i % planners.Count];
-            var assignedPlanters = planters.Count > 0 
-                ? new[] { planters[0] } 
-                : Array.Empty<string>();
+            var assignedPlanters =
+                planters.Count > 0 ? new[] { planters[0] } : Array.Empty<string>();
 
             var now = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
             var plant = new PlantRecord(

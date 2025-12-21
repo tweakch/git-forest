@@ -1,8 +1,8 @@
 using System.CommandLine;
 using GitForest.Mediator;
+using AppEvolve = GitForest.Application.Features.Evolve;
 using AppPlans = GitForest.Application.Features.Plans;
 using AppPlantCmd = GitForest.Application.Features.Plants.Commands;
-using CliEvolve = GitForest.Cli.Features.Evolve;
 
 namespace GitForest.Cli.Commands;
 
@@ -43,13 +43,18 @@ public static class EvolveCommand
                 var all = parseResult.GetValue(allOption);
                 var dryRun = parseResult.GetValue(dryRunOption);
 
-                if (!all && string.IsNullOrWhiteSpace(planId) && string.IsNullOrWhiteSpace(plantSelector))
+                if (
+                    !all
+                    && string.IsNullOrWhiteSpace(planId)
+                    && string.IsNullOrWhiteSpace(plantSelector)
+                )
                 {
                     // Default for automation: evolve the whole forest.
                     all = true;
                 }
 
-                var specified = (all ? 1 : 0)
+                var specified =
+                    (all ? 1 : 0)
                     + (!string.IsNullOrWhiteSpace(planId) ? 1 : 0)
                     + (!string.IsNullOrWhiteSpace(plantSelector) ? 1 : 0);
                 if (specified != 1)
@@ -57,7 +62,12 @@ public static class EvolveCommand
                     return BaseCommand.WriteInvalidArguments(
                         output,
                         "Specify exactly one of: --all, --plan, or --plant",
-                        new { all, planId, plant = plantSelector }
+                        new
+                        {
+                            all,
+                            planId,
+                            plant = plantSelector,
+                        }
                     );
                 }
 
@@ -67,7 +77,7 @@ public static class EvolveCommand
                     ForestStore.EnsureInitialized(forestDir);
 
                     var result = await mediator.Send(
-                        new CliEvolve.EvolveForestCommand(
+                        new AppEvolve.EvolveForestCommand(
                             PlanId: all ? null : planId,
                             PlantSelector: plantSelector,
                             DryRun: dryRun
@@ -77,11 +87,10 @@ public static class EvolveCommand
 
                     if (output.Json)
                     {
-                        var scope = result.PlantKey is not null
-                            ? "plant"
-                            : result.PlanId is not null
-                                ? "plan"
-                                : "all";
+                        var scope =
+                            result.PlantKey is not null ? "plant"
+                            : result.PlanId is not null ? "plan"
+                            : "all";
                         output.WriteJson(
                             new
                             {
@@ -98,11 +107,10 @@ public static class EvolveCommand
                     }
                     else
                     {
-                        var scope = result.PlantKey is not null
-                            ? $"plant '{result.PlantKey}'"
-                            : string.IsNullOrWhiteSpace(result.PlanId)
-                                ? "forest"
-                                : $"plan '{result.PlanId}'";
+                        var scope =
+                            result.PlantKey is not null ? $"plant '{result.PlantKey}'"
+                            : string.IsNullOrWhiteSpace(result.PlanId) ? "forest"
+                            : $"plan '{result.PlanId}'";
                         output.WriteLine(
                             dryRun
                                 ? $"Would evolve {scope}: {result.PlantsEvolved} evolved, {result.Skipped} skipped"
@@ -137,7 +145,12 @@ public static class EvolveCommand
                     return BaseCommand.WriteInvalidArguments(
                         output,
                         ex.Message,
-                        new { all, planId, plant = plantSelector }
+                        new
+                        {
+                            all,
+                            planId,
+                            plant = plantSelector,
+                        }
                     );
                 }
             }

@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace GitForest.Cli;
+namespace GitForest.Application.Configuration;
 
 public sealed record LlmConfig(
     string Provider,

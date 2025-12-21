@@ -30,4 +30,3 @@ public interface IReadRepository<T, in TId>
         CancellationToken cancellationToken = default
     );
 }
-

@@ -1,7 +1,8 @@
 using System.Net.Sockets;
+using GitForest.Application.Configuration;
 using GitForest.Mediator;
 
-namespace GitForest.Cli.Features.Connection;
+namespace GitForest.Application.Features.Connection;
 
 public sealed record GetForestConnectionStatusQuery() : IRequest<ForestConnectionStatusResult>;
 
@@ -52,9 +53,10 @@ internal sealed class GetForestConnectionStatusHandler
         var gatewayHost = string.IsNullOrWhiteSpace(orleans.GatewayHost)
             ? ForestConfigReader.DefaultOrleansGatewayHost
             : orleans.GatewayHost.Trim();
-        var gatewayPort = orleans.GatewayPort <= 0
-            ? ForestConfigReader.DefaultOrleansGatewayPort
-            : orleans.GatewayPort;
+        var gatewayPort =
+            orleans.GatewayPort <= 0
+                ? ForestConfigReader.DefaultOrleansGatewayPort
+                : orleans.GatewayPort;
         var clusterId = string.IsNullOrWhiteSpace(orleans.ClusterId)
             ? ForestConfigReader.DefaultOrleansClusterId
             : orleans.ClusterId.Trim();

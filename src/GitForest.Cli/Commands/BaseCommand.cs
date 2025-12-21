@@ -9,7 +9,10 @@ internal static class BaseCommand
     {
         if (output.Json)
         {
-            output.WriteJsonError(code: "forest_not_initialized", message: "Forest not initialized");
+            output.WriteJsonError(
+                code: "forest_not_initialized",
+                message: "Forest not initialized"
+            );
         }
         else
         {
@@ -72,7 +75,9 @@ internal static class BaseCommand
         }
         else
         {
-            output.WriteErrorLine($"Plant '{selector}': ambiguous; matched {matches.Length} plants");
+            output.WriteErrorLine(
+                $"Plant '{selector}': ambiguous; matched {matches.Length} plants"
+            );
             if (printMatches)
             {
                 foreach (var key in matches.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
@@ -135,7 +140,11 @@ internal static class BaseCommand
     {
         if (output.Json)
         {
-            output.WriteJsonError(code: "confirmation_required", message: message, details: details);
+            output.WriteJsonError(
+                code: "confirmation_required",
+                message: message,
+                details: details
+            );
         }
         else
         {
@@ -146,6 +155,33 @@ internal static class BaseCommand
     }
 
     internal static int WriteGitFailed(Output output, GitRunner.GitRunnerException ex)
+    {
+        if (output.Json)
+        {
+            output.WriteJsonError(
+                code: "git_failed",
+                message: ex.Message,
+                details: new
+                {
+                    exitCode = ex.ExitCode,
+                    stdout = ex.StdOut,
+                    stderr = ex.StdErr,
+                }
+            );
+        }
+        else
+        {
+            output.WriteErrorLine($"Error: {ex.Message}");
+            if (!string.IsNullOrWhiteSpace(ex.StdErr))
+            {
+                output.WriteErrorLine(ex.StdErr.Trim());
+            }
+        }
+
+        return ExitCodes.GitOperationFailed;
+    }
+
+    internal static int WriteGitFailed(Output output, GitServiceException ex)
     {
         if (output.Json)
         {
@@ -190,4 +226,3 @@ internal static class BaseCommand
         return ExitCodes.InvalidArguments;
     }
 }
-

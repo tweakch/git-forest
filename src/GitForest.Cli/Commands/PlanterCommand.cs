@@ -1,5 +1,7 @@
 using System.CommandLine;
-using GitForest.Cli.Features.Planters;
+using GitForest.Application.Features.Planters;
+using GitForest.Application.Features.Plants.Commands;
+using GitForest.Core.Services;
 using GitForest.Mediator;
 
 namespace GitForest.Cli.Commands;
@@ -148,15 +150,15 @@ public static class PlanterCommand
                 {
                     return BaseCommand.WriteForestNotInitialized(output);
                 }
-                catch (ForestStore.PlantNotFoundException)
+                catch (PlantNotFoundException)
                 {
                     return BaseCommand.WritePlantNotFound(output, selector);
                 }
-                catch (ForestStore.PlantAmbiguousSelectorException ex)
+                catch (PlantAmbiguousSelectorException ex)
                 {
                     return BaseCommand.WritePlantAmbiguous(output, ex.Selector, ex.Matches);
                 }
-                catch (GitRunner.GitRunnerException ex)
+                catch (GitServiceException ex)
                 {
                     return BaseCommand.WriteGitFailed(output, ex);
                 }
@@ -229,15 +231,15 @@ public static class PlanterCommand
                 {
                     return BaseCommand.WriteForestNotInitialized(output);
                 }
-                catch (ForestStore.PlantNotFoundException)
+                catch (PlantNotFoundException)
                 {
                     return BaseCommand.WritePlantNotFound(output, selector);
                 }
-                catch (ForestStore.PlantAmbiguousSelectorException ex)
+                catch (PlantAmbiguousSelectorException ex)
                 {
                     return BaseCommand.WritePlantAmbiguous(output, ex.Selector, ex.Matches);
                 }
-                catch (GitRunner.GitRunnerException ex)
+                catch (GitServiceException ex)
                 {
                     return BaseCommand.WriteGitFailed(output, ex);
                 }

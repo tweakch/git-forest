@@ -51,7 +51,11 @@ internal sealed class AssignPlanterToPlantHandler
         if (request is null)
             throw new ArgumentNullException(nameof(request));
 
-        var resolved = await PlantSelector.ResolveAsync(_plants, request.Selector, cancellationToken);
+        var resolved = await PlantSelector.ResolveAsync(
+            _plants,
+            request.Selector,
+            cancellationToken
+        );
         var updated = Clone(resolved);
 
         var normalizedPlanterId = (request.PlanterId ?? string.Empty).Trim();
@@ -133,7 +137,11 @@ internal sealed class UnassignPlanterFromPlantHandler
         if (request is null)
             throw new ArgumentNullException(nameof(request));
 
-        var resolved = await PlantSelector.ResolveAsync(_plants, request.Selector, cancellationToken);
+        var resolved = await PlantSelector.ResolveAsync(
+            _plants,
+            request.Selector,
+            cancellationToken
+        );
 
         var updated = AssignPlanterToPlantHandler.Clone(resolved);
 
@@ -182,7 +190,11 @@ internal sealed class HarvestPlantHandler : IRequestHandler<HarvestPlantCommand,
         if (request is null)
             throw new ArgumentNullException(nameof(request));
 
-        var resolved = await PlantSelector.ResolveAsync(_plants, request.Selector, cancellationToken);
+        var resolved = await PlantSelector.ResolveAsync(
+            _plants,
+            request.Selector,
+            cancellationToken
+        );
         var updated = AssignPlanterToPlantHandler.Clone(resolved);
 
         if (
@@ -227,7 +239,11 @@ internal sealed class ArchivePlantHandler : IRequestHandler<ArchivePlantCommand,
         if (request is null)
             throw new ArgumentNullException(nameof(request));
 
-        var resolved = await PlantSelector.ResolveAsync(_plants, request.Selector, cancellationToken);
+        var resolved = await PlantSelector.ResolveAsync(
+            _plants,
+            request.Selector,
+            cancellationToken
+        );
         var updated = AssignPlanterToPlantHandler.Clone(resolved);
 
         if (
@@ -268,7 +284,11 @@ internal sealed class RemovePlantHandler : IRequestHandler<RemovePlantCommand, P
         if (request is null)
             throw new ArgumentNullException(nameof(request));
 
-        var resolved = await PlantSelector.ResolveAsync(_plants, request.Selector, cancellationToken);
+        var resolved = await PlantSelector.ResolveAsync(
+            _plants,
+            request.Selector,
+            cancellationToken
+        );
 
         if (
             !request.Force
@@ -294,7 +314,12 @@ internal sealed class RemovePlantHandler : IRequestHandler<RemovePlantCommand, P
 public sealed record RemovePlantsByPlanCommand(string PlanId, bool Force, bool DryRun)
     : IRequest<RemovePlantsByPlanResult>;
 
-public sealed record RemovePlantsByPlanResult(string PlanId, bool DryRun, bool Force, string[] PlantKeys);
+public sealed record RemovePlantsByPlanResult(
+    string PlanId,
+    bool DryRun,
+    bool Force,
+    string[] PlantKeys
+);
 
 internal sealed class RemovePlantsByPlanHandler
     : IRequestHandler<RemovePlantsByPlanCommand, RemovePlantsByPlanResult>

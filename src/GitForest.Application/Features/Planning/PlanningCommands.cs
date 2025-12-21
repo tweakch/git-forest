@@ -4,7 +4,7 @@ using GitForest.Core.Services;
 using GitForest.Core.Specifications.Plans;
 using GitForest.Mediator;
 
-namespace GitForest.Cli.Features.Planning;
+namespace GitForest.Application.Features.Planning;
 
 public sealed record PlanForestCommand(string? PlanId, string? PlannerId, bool DryRun)
     : IRequest<PlanForestResult>;

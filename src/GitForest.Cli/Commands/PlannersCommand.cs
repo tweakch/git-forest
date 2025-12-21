@@ -1,8 +1,9 @@
 using System.CommandLine;
 using GitForest.Application.Features.Planners;
-using GitForest.Cli.Features.Planning;
 using GitForest.Mediator;
+using AppPlanning = GitForest.Application.Features.Planning;
 using AppPlans = GitForest.Application.Features.Plans;
+using AppReconcile = GitForest.Application.Features.Reconcile;
 
 namespace GitForest.Cli.Commands;
 
@@ -122,7 +123,12 @@ public static class PlannersCommand
                     return BaseCommand.WriteInvalidArguments(
                         output,
                         "Specify --all, --plan, or --planner",
-                        new { all, planId, plannerId }
+                        new
+                        {
+                            all,
+                            planId,
+                            plannerId,
+                        }
                     );
                 }
 
@@ -135,7 +141,7 @@ public static class PlannersCommand
                     }
 
                     var result = await mediator.Send(
-                        new PlanForestCommand(
+                        new AppPlanning.PlanForestCommand(
                             PlanId: all ? null : planId,
                             PlannerId: plannerId,
                             DryRun: dryRun
@@ -147,7 +153,7 @@ public static class PlannersCommand
                     if (reconcile)
                     {
                         reconcileResult = await mediator.Send(
-                            new GitForest.Cli.Features.Reconcile.ReconcileForestCommand(
+                            new AppReconcile.ReconcileForestCommand(
                                 PlanId: result.PlanId,
                                 DryRun: dryRun
                             ),
@@ -185,7 +191,10 @@ public static class PlannersCommand
                                 : $"Planned {scope}: +{result.PlantsCreated} ~{result.PlantsUpdated}"
                         );
 
-                        if (reconcile && reconcileResult is GitForest.Cli.Features.Reconcile.ReconcileForestResult reconciled)
+                        if (
+                            reconcile
+                            && reconcileResult is AppReconcile.ReconcileForestResult reconciled
+                        )
                         {
                             output.WriteLine(
                                 $"Reconciled {scope}: {reconciled.PlantsUpdated} updated, {reconciled.NeedsSelection} need selection"
@@ -221,5 +230,4 @@ public static class PlannersCommand
         value ??= string.Empty;
         return value.Length <= max ? value : value[..Math.Max(0, max - 3)] + "...";
     }
-
 }

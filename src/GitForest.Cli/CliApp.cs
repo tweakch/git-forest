@@ -1,4 +1,5 @@
 using System.CommandLine;
+using GitForest.Application.Configuration;
 using GitForest.Application.Features.Plans;
 using GitForest.Cli.Commands;
 using GitForest.Cli.Orleans;
@@ -6,8 +7,10 @@ using GitForest.Cli.Reconciliation;
 using GitForest.Core.Persistence;
 using GitForest.Core.Services;
 using GitForest.Infrastructure.FileSystem.Forest;
+using GitForest.Infrastructure.FileSystem.Git;
 using GitForest.Infrastructure.FileSystem.Llm;
 using GitForest.Infrastructure.FileSystem.Plans;
+using GitForest.Infrastructure.FileSystem.Planters;
 using GitForest.Infrastructure.FileSystem.Repositories;
 using GitForest.Infrastructure.Memory;
 using GitForest.Mediator;
@@ -104,6 +107,11 @@ public static class CliApp
         var llmProvider = string.IsNullOrWhiteSpace(forestConfig.Llm.Provider)
             ? ForestConfigReader.DefaultLlmProvider
             : forestConfig.Llm.Provider.Trim().ToLowerInvariant();
+
+        // Git + planter discovery/growth ports (filesystem + command-line).
+        services.AddSingleton<IGitService, CommandLineGitService>();
+        services.AddSingleton<IPlanterDiscovery>(_ => new FileSystemPlanterDiscovery(forestDir));
+        services.AddSingleton<IPlanterGrowthApplier, DeterministicGrowthApplier>();
 
         switch (llmProvider)
         {

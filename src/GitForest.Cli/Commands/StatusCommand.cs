@@ -1,5 +1,5 @@
 using System.CommandLine;
-using GitForest.Cli.Features.Connection;
+using GitForest.Application.Features.Connection;
 using GitForest.Mediator;
 using AppForest = GitForest.Application.Features.Forest;
 
@@ -24,11 +24,17 @@ public static class StatusCommand
                         throw new ForestStore.ForestNotInitializedException(forestDir);
                     }
 
-                    var connection = await mediator.Send(new GetForestConnectionStatusQuery(), token);
+                    var connection = await mediator.Send(
+                        new GetForestConnectionStatusQuery(),
+                        token
+                    );
 
                     if (connection.Type == "orleans" && !connection.Available)
                     {
-                        var lite = await mediator.Send(new AppForest.GetForestStatusLiteQuery(), token);
+                        var lite = await mediator.Send(
+                            new AppForest.GetForestStatusLiteQuery(),
+                            token
+                        );
 
                         if (output.Json)
                         {
@@ -64,7 +70,9 @@ public static class StatusCommand
                                 $"Connection: {connection.Type} ({connection.Details}) unavailable"
                             );
                             output.WriteLine($"Plans: {lite.PlansCount} installed");
-                            output.WriteLine("Plants: unavailable (backend not reachable; run `aspire run`)");
+                            output.WriteLine(
+                                "Plants: unavailable (backend not reachable; run `aspire run`)"
+                            );
                             output.WriteLine(
                                 $"Planters: {lite.PlantersAvailable.Length} available | (active unknown)"
                             );
@@ -126,7 +134,9 @@ public static class StatusCommand
                         output.WriteLine("Forest: initialized  Repo: origin/main");
                         if (connection.Type == "orleans")
                         {
-                            output.WriteLine($"Connection: {connection.Type} ({connection.Details})");
+                            output.WriteLine(
+                                $"Connection: {connection.Type} ({connection.Details})"
+                            );
                         }
                         else
                         {

@@ -1,9 +1,10 @@
+using GitForest.Application.Features.Plants;
 using GitForest.Core;
 using GitForest.Core.Persistence;
 using GitForest.Core.Specifications.Plants;
 using GitForest.Mediator;
 
-namespace GitForest.Cli.Features.Reconcile;
+namespace GitForest.Application.Features.Reconcile;
 
 public sealed record ReconcilePlantCommand(
     string Selector,
@@ -226,7 +227,10 @@ internal sealed class ReconcileForestHandler
                 continue;
             }
 
-            if (planId is not null && !string.Equals(plant.PlanId, planId, StringComparison.OrdinalIgnoreCase))
+            if (
+                planId is not null
+                && !string.Equals(plant.PlanId, planId, StringComparison.OrdinalIgnoreCase)
+            )
             {
                 continue;
             }

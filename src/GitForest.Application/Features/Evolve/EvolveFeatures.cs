@@ -1,6 +1,6 @@
 using System.Text;
 using GitForest.Application.Features.Plans;
-using GitForest.Cli.Features;
+using GitForest.Application.Features.Plants;
 using GitForest.Core;
 using GitForest.Core.Persistence;
 using GitForest.Core.Services;
@@ -8,7 +8,7 @@ using GitForest.Core.Specifications.Plans;
 using GitForest.Core.Specifications.Plants;
 using GitForest.Mediator;
 
-namespace GitForest.Cli.Features.Evolve;
+namespace GitForest.Application.Features.Evolve;
 
 public sealed record EvolveForestCommand(string? PlanId, string? PlantSelector, bool DryRun)
     : IRequest<EvolveForestResult>;
@@ -32,8 +32,25 @@ internal static class EvolveHelpers
             return "git-forest/untitled";
         }
 
-        var (planId, slug) = ForestStore.SplitPlantKey(plantKey);
+        var (planId, slug) = SplitPlantKey(plantKey);
         return NormalizeBranchName($"{id}/{planId}__{slug}");
+    }
+
+    public static (string planId, string slug) SplitPlantKey(string plantKey)
+    {
+        var key = (plantKey ?? string.Empty).Trim();
+        if (key.Length == 0)
+        {
+            return (string.Empty, string.Empty);
+        }
+
+        var idx = key.IndexOf(':', StringComparison.Ordinal);
+        if (idx <= 0 || idx == key.Length - 1)
+        {
+            return (key, string.Empty);
+        }
+
+        return (key[..idx], key[(idx + 1)..]);
     }
 
     public static string NormalizeBranchName(string input)
@@ -83,7 +100,9 @@ internal static class EvolveHelpers
             AssignedPlanters = source.AssignedPlanters is null
                 ? new List<string>()
                 : new List<string>(source.AssignedPlanters),
-            Branches = source.Branches is null ? new List<string>() : new List<string>(source.Branches),
+            Branches = source.Branches is null
+                ? new List<string>()
+                : new List<string>(source.Branches),
             SelectedBranch = source.SelectedBranch,
             CreatedDate = source.CreatedDate,
             LastActivityDate = source.LastActivityDate,
@@ -180,12 +199,19 @@ internal sealed class EvolveForestHandler : IRequestHandler<EvolveForestCommand,
     private readonly IPlanRepository _plans;
     private readonly IPlantRepository _plants;
     private readonly IPlanReconciler _reconciler;
+    private readonly IGitService _git;
 
-    public EvolveForestHandler(IPlanRepository plans, IPlantRepository plants, IPlanReconciler reconciler)
+    public EvolveForestHandler(
+        IPlanRepository plans,
+        IPlantRepository plants,
+        IPlanReconciler reconciler,
+        IGitService git
+    )
     {
         _plans = plans ?? throw new ArgumentNullException(nameof(plans));
         _plants = plants ?? throw new ArgumentNullException(nameof(plants));
         _reconciler = reconciler ?? throw new ArgumentNullException(nameof(reconciler));
+        _git = git ?? throw new ArgumentNullException(nameof(git));
     }
 
     public async Task<EvolveForestResult> Handle(
@@ -202,7 +228,11 @@ internal sealed class EvolveForestHandler : IRequestHandler<EvolveForestCommand,
         // Single-plant mode: no lazy seeding (matches spec).
         if (plantSelector is not null)
         {
-            var resolved = await PlantSelector.ResolveAsync(_plants, plantSelector, cancellationToken);
+            var resolved = await PlantSelector.ResolveAsync(
+                _plants,
+                plantSelector,
+                cancellationToken
+            );
             var (considered, evolved, skipped) = await EvolveOnePlantAsync(
                 resolved,
                 request.DryRun,
@@ -223,7 +253,9 @@ internal sealed class EvolveForestHandler : IRequestHandler<EvolveForestCommand,
         var allPlans = await _plans.ListAsync(new AllPlansSpec(), cancellationToken);
         if (planId is not null)
         {
-            var exists = allPlans.Any(p => string.Equals(p.Id, planId, StringComparison.OrdinalIgnoreCase));
+            var exists = allPlans.Any(p =>
+                string.Equals(p.Id, planId, StringComparison.OrdinalIgnoreCase)
+            );
             if (!exists)
             {
                 throw new PlanNotInstalledException(planId);
@@ -231,8 +263,13 @@ internal sealed class EvolveForestHandler : IRequestHandler<EvolveForestCommand,
         }
 
         var plansToConsider = planId is null
-            ? allPlans.Where(p => !string.IsNullOrWhiteSpace(p.Id)).OrderBy(p => p.Id, StringComparer.OrdinalIgnoreCase).ToArray()
-            : allPlans.Where(p => string.Equals(p.Id, planId, StringComparison.OrdinalIgnoreCase)).ToArray();
+            ? allPlans
+                .Where(p => !string.IsNullOrWhiteSpace(p.Id))
+                .OrderBy(p => p.Id, StringComparer.OrdinalIgnoreCase)
+                .ToArray()
+            : allPlans
+                .Where(p => string.Equals(p.Id, planId, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
 
         // Lazy seed: for any plan with zero plants, run plan reconciliation.
         foreach (var plan in plansToConsider)
@@ -246,7 +283,12 @@ internal sealed class EvolveForestHandler : IRequestHandler<EvolveForestCommand,
             var existing = await _plants.ListAsync(new PlantsByPlanIdSpec(id), cancellationToken);
             if (existing.Count == 0)
             {
-                _ = await _reconciler.ReconcileAsync(id, request.DryRun, forum: null, cancellationToken: cancellationToken);
+                _ = await _reconciler.ReconcileAsync(
+                    id,
+                    request.DryRun,
+                    forum: null,
+                    cancellationToken: cancellationToken
+                );
             }
         }
 
@@ -301,7 +343,7 @@ internal sealed class EvolveForestHandler : IRequestHandler<EvolveForestCommand,
         var updated = EvolveHelpers.Clone(plant);
 
         var plantKey = updated.Key ?? string.Empty;
-        var (planId, _) = ForestStore.SplitPlantKey(plantKey);
+        var (planId, _) = EvolveHelpers.SplitPlantKey(plantKey);
 
         var planters = EvolveHelpers.NormalizeOrderedIds(updated.AssignedPlanters);
         if (planters.Count == 0)
@@ -324,11 +366,11 @@ internal sealed class EvolveForestHandler : IRequestHandler<EvolveForestCommand,
         {
             var baseBranch = EvolveHelpers.ComputeBaseBranchName(planterId, plantKey);
 
-            var chosenBranch = ChooseAvailableBranchName(baseBranch, existingBranches);
+            var chosenBranch = ChooseAvailableBranchName(_git, baseBranch, existingBranches);
 
             if (!dryRun)
             {
-                GitRunner.CreateBranch(chosenBranch);
+                _git.CreateBranch(chosenBranch);
             }
 
             EvolveHelpers.ApplyEvolutionMetadata(updated, planterId, chosenBranch);
@@ -342,7 +384,9 @@ internal sealed class EvolveForestHandler : IRequestHandler<EvolveForestCommand,
             await _plants.UpdateAsync(updated, cancellationToken);
         }
 
-        return evolvedThisPlant ? (considered, evolved: 1, skipped: 0) : (considered, evolved: 0, skipped: 1);
+        return evolvedThisPlant
+            ? (considered, evolved: 1, skipped: 0)
+            : (considered, evolved: 0, skipped: 1);
     }
 
     private static string? Normalize(string? value)
@@ -351,7 +395,11 @@ internal sealed class EvolveForestHandler : IRequestHandler<EvolveForestCommand,
         return trimmed.Length == 0 ? null : trimmed;
     }
 
-    private static string ChooseAvailableBranchName(string baseBranchName, IReadOnlyList<string> existingBranches)
+    private static string ChooseAvailableBranchName(
+        IGitService git,
+        string baseBranchName,
+        IReadOnlyList<string> existingBranches
+    )
     {
         var baseName = (baseBranchName ?? string.Empty).Trim();
         if (baseName.Length == 0)
@@ -359,7 +407,10 @@ internal sealed class EvolveForestHandler : IRequestHandler<EvolveForestCommand,
             baseName = "git-forest/untitled";
         }
 
-        if (!GitRunner.BranchExists(baseName) && !EvolveHelpers.ListContainsIgnoreCase(existingBranches, baseName))
+        if (
+            !git.BranchExists(baseName)
+            && !EvolveHelpers.ListContainsIgnoreCase(existingBranches, baseName)
+        )
         {
             return baseName;
         }
@@ -367,7 +418,7 @@ internal sealed class EvolveForestHandler : IRequestHandler<EvolveForestCommand,
         for (var suffix = 2; suffix < 10000; suffix++)
         {
             var candidate = $"{baseName}--{suffix}";
-            if (GitRunner.BranchExists(candidate))
+            if (git.BranchExists(candidate))
             {
                 continue;
             }
@@ -380,6 +431,8 @@ internal sealed class EvolveForestHandler : IRequestHandler<EvolveForestCommand,
             return candidate;
         }
 
-        throw new InvalidOperationException($"Unable to find available branch name for base '{baseName}'.");
+        throw new InvalidOperationException(
+            $"Unable to find available branch name for base '{baseName}'."
+        );
     }
 }

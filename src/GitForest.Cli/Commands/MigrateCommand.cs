@@ -1,4 +1,5 @@
 using System.CommandLine;
+using GitForest.Application.Configuration;
 using GitForest.Cli.Orleans;
 using GitForest.Core;
 using GitForest.Core.Persistence;

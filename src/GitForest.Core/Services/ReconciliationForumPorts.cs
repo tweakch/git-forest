@@ -94,4 +94,3 @@ public sealed record ReconciliationStrategy(
     string? Summary = null,
     IReadOnlyDictionary<string, string>? Metadata = null
 );
-

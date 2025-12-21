@@ -23,4 +23,3 @@ internal sealed class GetPlantBySelectorHandler : IRequestHandler<GetPlantBySele
         return PlantSelector.ResolveAsync(_plants, request.Selector, cancellationToken);
     }
 }
-

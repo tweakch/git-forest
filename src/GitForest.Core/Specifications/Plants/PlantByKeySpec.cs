@@ -9,4 +9,3 @@ public sealed class PlantByKeySpec : Specification<Plant>, ISingleResultSpecific
         Query.Where(p => p.Key == key);
     }
 }
-

@@ -1,6 +1,6 @@
 using GitForest.Mediator;
 
-namespace GitForest.Cli.Features.Planner;
+namespace GitForest.Application.Features.Planners;
 
 public sealed record RunPlannerCommand(string PlannerId, string PlanId)
     : IRequest<RunPlannerResult>;
@@ -15,6 +15,8 @@ internal sealed class RunPlannerHandler : IRequestHandler<RunPlannerCommand, Run
     )
     {
         _ = cancellationToken;
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
 
         // Placeholder: current CLI always reports "completed".
         return Task.FromResult(

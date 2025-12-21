@@ -1,7 +1,7 @@
 using System.CommandLine;
 using GitForest.Application.Features.Plants;
-using AppPlantCmd = GitForest.Application.Features.Plants.Commands;
 using GitForest.Mediator;
+using AppPlantCmd = GitForest.Application.Features.Plants.Commands;
 
 namespace GitForest.Cli.Commands;
 
@@ -77,9 +77,7 @@ public static class PlantsCommand
                             {
                                 var planter =
                                     p.AssignedPlanters.Count > 0 ? p.AssignedPlanters[0] : "-";
-                                output.WriteLine(
-                                    $"{p.Key} {p.Status} {planter}"
-                                );
+                                output.WriteLine($"{p.Key} {p.Status} {planter}");
                             }
                         }
                     }

@@ -1,5 +1,6 @@
 using System.CommandLine;
-using GitForest.Cli.Features.Config;
+using GitForest.Application.Configuration;
+using GitForest.Application.Features.Config;
 using GitForest.Mediator;
 
 namespace GitForest.Cli.Commands;
@@ -8,21 +9,25 @@ public static class ConfigCommand
 {
     public static Command Build(CliOptions cliOptions, IMediator mediator)
     {
-        var configCommand = new Command("config", "Manage configuration");
+        var configCommand = CliCommandBuilder.Create("config", "Manage configuration");
 
-        var showCommand = new Command("show", "Show configuration");
+        var showCommand = CliCommandBuilder.Create("show", "Show configuration");
         var effectiveOption = new Option<bool>("--effective")
         {
             Description = "Show effective configuration",
         };
-        showCommand.Options.Add(effectiveOption);
+        showCommand.AddOption(effectiveOption);
 
-        showCommand.SetAction(
+        showCommand.Action(
             async (parseResult, token) =>
             {
                 var output = parseResult.GetOutput(cliOptions);
                 var effective = parseResult.GetValue(effectiveOption);
-                var result = await mediator.Send(new ShowConfigQuery(Effective: effective), token);
+                var forestDir = ForestStore.GetDefaultForestDir();
+                var result = await mediator.Send(
+                    new ShowConfigQuery(ForestDir: forestDir, Effective: effective),
+                    token
+                );
 
                 if (output.Json)
                 {
@@ -90,19 +95,19 @@ public static class ConfigCommand
             }
         );
 
-        configCommand.Subcommands.Add(showCommand);
+        configCommand.AddSubcommand(showCommand);
 
-        var setCommand = new Command("set", "Set a configuration value");
+        var setCommand = CliCommandBuilder.Create("set", "Set a configuration value");
         var keyArg = new Argument<string>("key")
         {
             Description =
                 "Config key (persistence.provider | orleans.gatewayHost | orleans.gatewayPort | orleans.clusterId | orleans.serviceId)",
         };
         var valueArg = new Argument<string>("value") { Description = "Value to set" };
-        setCommand.Arguments.Add(keyArg);
-        setCommand.Arguments.Add(valueArg);
+        setCommand.AddArgument(keyArg);
+        setCommand.AddArgument(valueArg);
 
-        setCommand.SetAction(
+        setCommand.Action(
             async (parseResult, token) =>
             {
                 _ = token;
@@ -212,7 +217,7 @@ public static class ConfigCommand
             }
         );
 
-        configCommand.Subcommands.Add(setCommand);
-        return configCommand;
+        configCommand.AddSubcommand(setCommand);
+        return configCommand.Build();
     }
 }

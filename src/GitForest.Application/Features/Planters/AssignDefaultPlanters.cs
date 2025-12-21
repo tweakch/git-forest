@@ -5,7 +5,7 @@ using GitForest.Core.Specifications.Plans;
 using GitForest.Core.Specifications.Plants;
 using GitForest.Mediator;
 
-namespace GitForest.Cli.Features.Planters;
+namespace GitForest.Application.Features.Planters;
 
 public sealed record AssignDefaultPlantersCommand(
     string? PlanId,

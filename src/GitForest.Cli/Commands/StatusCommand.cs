@@ -1,5 +1,6 @@
 using System.CommandLine;
-using MediatR;
+using GitForest.Application.Features.Connection;
+using GitForest.Mediator;
 using AppForest = GitForest.Application.Features.Forest;
 
 namespace GitForest.Cli.Commands;
@@ -23,6 +24,67 @@ public static class StatusCommand
                         throw new ForestStore.ForestNotInitializedException(forestDir);
                     }
 
+                    var connection = await mediator.Send(
+                        new GetForestConnectionStatusQuery(),
+                        token
+                    );
+
+                    if (connection.Type == "orleans" && !connection.Available)
+                    {
+                        var lite = await mediator.Send(
+                            new AppForest.GetForestStatusLiteQuery(),
+                            token
+                        );
+
+                        if (output.Json)
+                        {
+                            output.WriteJson(
+                                new
+                                {
+                                    forest = "initialized",
+                                    repo = "origin/main",
+                                    connection = new
+                                    {
+                                        type = connection.Type,
+                                        available = connection.Available,
+                                        details = connection.Details,
+                                        error = connection.Error,
+                                    },
+                                    plans = lite.PlansCount,
+                                    plants = (int?)null,
+                                    planters = lite.PlantersAvailable.Length,
+                                    planners = lite.PlannersAvailable.Length,
+                                    @lock = lite.LockStatus,
+                                    plantsByStatus = (object?)null,
+                                    plantersAvailable = lite.PlantersAvailable,
+                                    plantersActive = Array.Empty<string>(),
+                                    plannersAvailable = lite.PlannersAvailable,
+                                    plannersActive = Array.Empty<string>(),
+                                }
+                            );
+                        }
+                        else
+                        {
+                            output.WriteLine("Forest: initialized  Repo: origin/main");
+                            output.WriteLine(
+                                $"Connection: {connection.Type} ({connection.Details}) unavailable"
+                            );
+                            output.WriteLine($"Plans: {lite.PlansCount} installed");
+                            output.WriteLine(
+                                "Plants: unavailable (backend not reachable; run `aspire run`)"
+                            );
+                            output.WriteLine(
+                                $"Planters: {lite.PlantersAvailable.Length} available | (active unknown)"
+                            );
+                            output.WriteLine(
+                                $"Planners: {lite.PlannersAvailable.Length} available | (active unknown)"
+                            );
+                            output.WriteLine($"Lock: {lite.LockStatus}");
+                        }
+
+                        return ExitCodes.OrleansNotAvailable;
+                    }
+
                     var status = await mediator.Send(new AppForest.GetForestStatusQuery(), token);
 
                     var planned = GetCount(status.PlantsByStatus, "planned");
@@ -39,6 +101,13 @@ public static class StatusCommand
                             {
                                 forest = "initialized",
                                 repo = "origin/main",
+                                connection = new
+                                {
+                                    type = connection.Type,
+                                    available = connection.Available,
+                                    details = connection.Details,
+                                    error = connection.Error,
+                                },
                                 plans = status.PlansCount,
                                 plants = status.PlantsCount,
                                 planters = status.PlantersAvailable.Length,
@@ -63,6 +132,16 @@ public static class StatusCommand
                     else
                     {
                         output.WriteLine("Forest: initialized  Repo: origin/main");
+                        if (connection.Type == "orleans")
+                        {
+                            output.WriteLine(
+                                $"Connection: {connection.Type} ({connection.Details})"
+                            );
+                        }
+                        else
+                        {
+                            output.WriteLine($"Connection: {connection.Type}");
+                        }
                         output.WriteLine($"Plans: {status.PlansCount} installed");
                         output.WriteLine(
                             $"Plants: planned {planned} | planted {planted} | growing {growing} | harvestable {harvestable} | harvested {harvested} | archived {archived}"
@@ -80,19 +159,7 @@ public static class StatusCommand
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "forest_not_initialized",
-                            message: "Forest not initialized"
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: forest not initialized");
-                    }
-
-                    return ExitCodes.ForestNotInitialized;
+                    return BaseCommand.WriteForestNotInitialized(output);
                 }
             }
         );

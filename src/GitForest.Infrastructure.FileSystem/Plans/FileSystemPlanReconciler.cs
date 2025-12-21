@@ -74,6 +74,7 @@ public sealed class FileSystemPlanReconciler : IPlanReconciler
                 PlannerId: plannerId,
                 AssignedPlanters: assignedPlanters,
                 Branches: Array.Empty<string>(),
+                SelectedBranch: null,
                 CreatedAt: now,
                 UpdatedAt: null,
                 Description: null

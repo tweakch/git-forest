@@ -60,7 +60,7 @@ public sealed class ForumPlanReconciler : IPlanReconciler
         );
 
         var strategy = await _forums.RunAsync(context, forum, cancellationToken);
-        var desired = NormalizeDesiredPlants(id, strategy?.DesiredPlants);
+        var desired = NormalizeDesiredPlants(id, plan, strategy?.DesiredPlants);
 
         var existingByKey = existingPlants
             .Where(p => !string.IsNullOrWhiteSpace(p.Key))
@@ -86,7 +86,7 @@ public sealed class ForumPlanReconciler : IPlanReconciler
                         Status = "planned",
                         Title = d.Title ?? string.Empty,
                         Description = d.Description ?? string.Empty,
-                        AssignedPlanters = d.AssignedPlanters.ToList(),
+                        AssignedPlanters = (d.AssignedPlanters ?? Array.Empty<string>()).ToList(),
                         Branches = new List<string>(),
                         CreatedDate = now,
                         LastActivityDate = null,
@@ -102,8 +102,9 @@ public sealed class ForumPlanReconciler : IPlanReconciler
             var normalizedPlannerId = d.PlannerId ?? string.Empty;
             var normalizedTitle = d.Title ?? string.Empty;
             var normalizedDescription = d.Description ?? string.Empty;
-            var normalizedAssignedPlanters = d.AssignedPlanters.ToList();
-
+            var normalizedAssignedPlanters = (
+                d.AssignedPlanters ?? Array.Empty<string>()
+            ).ToArray();
             var changed = false;
 
             if (!string.Equals(existing.PlanId ?? string.Empty, id, StringComparison.Ordinal))
@@ -154,9 +155,9 @@ public sealed class ForumPlanReconciler : IPlanReconciler
                 changed = true;
             }
 
-            if (!ListEquals(existing.AssignedPlanters, normalizedAssignedPlanters))
+            if (!SameList(existing.AssignedPlanters, normalizedAssignedPlanters))
             {
-                existing.AssignedPlanters = normalizedAssignedPlanters;
+                existing.AssignedPlanters = normalizedAssignedPlanters.ToList();
                 changed = true;
             }
 
@@ -175,6 +176,7 @@ public sealed class ForumPlanReconciler : IPlanReconciler
 
     private static IReadOnlyList<NormalizedDesiredPlant> NormalizeDesiredPlants(
         string planId,
+        Plan plan,
         IReadOnlyList<DesiredPlant>? desiredPlants
     )
     {
@@ -185,6 +187,8 @@ public sealed class ForumPlanReconciler : IPlanReconciler
         }
 
         var input = desiredPlants ?? Array.Empty<DesiredPlant>();
+
+        var planters = NormalizeIdsPreserveOrder(plan.Planters);
 
         // Normalize fields first, then sort to ensure stable application order.
         var normalized = new List<NormalizedDesiredPlant>(input.Count);
@@ -237,11 +241,7 @@ public sealed class ForumPlanReconciler : IPlanReconciler
             var description = (d.Description ?? string.Empty).Trim();
             var plannerId = (d.PlannerId ?? string.Empty).Trim();
 
-            var assigned = (d.AssignedPlanters ?? Array.Empty<string>())
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => x.Trim())
-                .Distinct(StringComparer.Ordinal)
-                .ToList();
+            var assigned = NormalizeIdsPreserveOrder(d.AssignedPlanters);
 
             normalized.Add(
                 new NormalizedDesiredPlant(
@@ -309,10 +309,53 @@ public sealed class ForumPlanReconciler : IPlanReconciler
             }
         }
 
+        // Deterministic fallback planter assignment:
+        // If a forum did not assign planters, assign a single planter from the plan's configured planters (round-robin).
+        if (planters.Length > 0)
+        {
+            for (var i = 0; i < normalized.Count; i++)
+            {
+                var item = normalized[i];
+                if (item.AssignedPlanters.Count > 0)
+                {
+                    continue;
+                }
+
+                var assigned = new[] { planters[i % planters.Length] };
+                normalized[i] = item with { AssignedPlanters = assigned };
+            }
+        }
+
         return normalized;
     }
 
-    private static bool ListEquals(IReadOnlyList<string>? a, IReadOnlyList<string>? b)
+    private static string[] NormalizeIdsPreserveOrder(IReadOnlyList<string>? ids)
+    {
+        if (ids is null || ids.Count == 0)
+        {
+            return Array.Empty<string>();
+        }
+
+        var results = new List<string>(ids.Count);
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var raw in ids)
+        {
+            var value = (raw ?? string.Empty).Trim();
+            if (value.Length == 0)
+            {
+                continue;
+            }
+
+            if (seen.Add(value))
+            {
+                results.Add(value);
+            }
+        }
+
+        return results.Count == 0 ? Array.Empty<string>() : results.ToArray();
+    }
+
+    private static bool SameList(IReadOnlyList<string>? a, IReadOnlyList<string>? b)
     {
         if (ReferenceEquals(a, b))
         {
@@ -329,9 +372,9 @@ public sealed class ForumPlanReconciler : IPlanReconciler
 
         for (var i = 0; i < a.Count; i++)
         {
-            if (
-                !string.Equals(a[i] ?? string.Empty, b[i] ?? string.Empty, StringComparison.Ordinal)
-            )
+            var left = (a[i] ?? string.Empty).Trim();
+            var right = (b[i] ?? string.Empty).Trim();
+            if (!string.Equals(left, right, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }

@@ -1,8 +1,9 @@
-using MediatR;
+using GitForest.Application.Configuration;
+using GitForest.Mediator;
 
-namespace GitForest.Cli.Features.Config;
+namespace GitForest.Application.Features.Config;
 
-public sealed record ShowConfigQuery(bool Effective) : IRequest<ShowConfigResult>;
+public sealed record ShowConfigQuery(string ForestDir, bool Effective) : IRequest<ShowConfigResult>;
 
 public sealed record ShowConfigResult(ForestConfig Config);
 
@@ -13,10 +14,17 @@ internal sealed class ShowConfigHandler : IRequestHandler<ShowConfigQuery, ShowC
         CancellationToken cancellationToken
     )
     {
-        _ = request;
         _ = cancellationToken;
 
-        var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
+
+        var dir = string.IsNullOrWhiteSpace(request.ForestDir)
+            ? ".git-forest"
+            : request.ForestDir.Trim();
+        var forestDir = Path.IsPathRooted(dir)
+            ? dir
+            : Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, dir));
 
         ForestConfig config;
         if (request.Effective)

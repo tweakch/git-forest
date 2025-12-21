@@ -1,6 +1,7 @@
 using System.CommandLine;
-using GitForest.Application.Features.Planters;
-using MediatR;
+using GitForest.Mediator;
+using AppPlans = GitForest.Application.Features.Plans;
+using AppPlanters = GitForest.Application.Features.Planters;
 
 namespace GitForest.Cli.Commands;
 
@@ -42,7 +43,7 @@ public static class PlantersCommand
                     var includeCustom = !builtin && !custom || custom;
                     var merged = (
                         await mediator.Send(
-                            new ListPlantersQuery(
+                            new AppPlanters.ListPlantersQuery(
                                 IncludeBuiltin: includeBuiltin,
                                 IncludeCustom: includeCustom
                             ),
@@ -92,24 +93,136 @@ public static class PlantersCommand
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "forest_not_initialized",
-                            message: "Forest not initialized"
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: forest not initialized");
-                    }
-
-                    return ExitCodes.ForestNotInitialized;
+                    return BaseCommand.WriteForestNotInitialized(output);
                 }
             }
         );
 
         plantersCommand.Subcommands.Add(listCommand);
+
+        var plantCommand = new Command("plant", "Assign planters to plants (metadata only)");
+        var allOption = new Option<bool>("--all")
+        {
+            Description = "Assign default planters for all plants",
+        };
+        var planOption = new Option<string?>("--plan")
+        {
+            Description = "Plan identifier to scope assignment",
+        };
+        var singleOption = new Option<bool>("--single")
+        {
+            Description = "Assign a single planter per plant (deterministic)",
+        };
+        var resetOption = new Option<bool>("--reset")
+        {
+            Description = "Overwrite existing assignments",
+        };
+        var onlyUnassignedOption = new Option<bool>("--only-unassigned")
+        {
+            Description = "Assign only when a plant has no planters",
+        };
+        var dryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Show what would be done without applying",
+        };
+
+        plantCommand.Options.Add(allOption);
+        plantCommand.Options.Add(planOption);
+        plantCommand.Options.Add(singleOption);
+        plantCommand.Options.Add(resetOption);
+        plantCommand.Options.Add(onlyUnassignedOption);
+        plantCommand.Options.Add(dryRunOption);
+
+        plantCommand.SetAction(
+            async (parseResult, token) =>
+            {
+                var output = parseResult.GetOutput(cliOptions);
+                var all = parseResult.GetValue(allOption);
+                var planId = parseResult.GetValue(planOption);
+                var single = parseResult.GetValue(singleOption);
+                var reset = parseResult.GetValue(resetOption);
+                var onlyUnassigned = parseResult.GetValue(onlyUnassignedOption);
+                var dryRun = parseResult.GetValue(dryRunOption);
+
+                if (!all && string.IsNullOrWhiteSpace(planId))
+                {
+                    return BaseCommand.WriteInvalidArguments(
+                        output,
+                        "Specify --all or --plan",
+                        new { all, planId }
+                    );
+                }
+
+                if (reset && onlyUnassigned)
+                {
+                    return BaseCommand.WriteInvalidArguments(
+                        output,
+                        "Cannot combine --reset with --only-unassigned",
+                        new { reset, onlyUnassigned }
+                    );
+                }
+
+                try
+                {
+                    var forestDir = ForestStore.GetForestDir(ForestStore.DefaultForestDirName);
+                    if (!ForestStore.IsInitialized(forestDir))
+                    {
+                        throw new ForestStore.ForestNotInitializedException(forestDir);
+                    }
+
+                    var result = await mediator.Send(
+                        new AppPlanters.AssignDefaultPlantersCommand(
+                            PlanId: all ? null : planId,
+                            Single: single,
+                            Reset: reset,
+                            OnlyUnassigned: onlyUnassigned,
+                            DryRun: dryRun
+                        ),
+                        token
+                    );
+
+                    if (output.Json)
+                    {
+                        output.WriteJson(
+                            new
+                            {
+                                status = "assigned",
+                                dryRun,
+                                planId = result.PlanId,
+                                plants = new
+                                {
+                                    considered = result.PlantsConsidered,
+                                    updated = result.PlantsUpdated,
+                                },
+                            }
+                        );
+                    }
+                    else
+                    {
+                        var scope = string.IsNullOrWhiteSpace(result.PlanId)
+                            ? "forest"
+                            : $"plan '{result.PlanId}'";
+                        output.WriteLine(
+                            dryRun
+                                ? $"Would assign planters for {scope}: {result.PlantsUpdated} updated"
+                                : $"Assigned planters for {scope}: {result.PlantsUpdated} updated"
+                        );
+                    }
+
+                    return ExitCodes.Success;
+                }
+                catch (ForestStore.ForestNotInitializedException)
+                {
+                    return BaseCommand.WriteForestNotInitialized(output);
+                }
+                catch (AppPlans.PlanNotInstalledException)
+                {
+                    return BaseCommand.WritePlanNotFound(output, planId ?? string.Empty);
+                }
+            }
+        );
+
+        plantersCommand.Subcommands.Add(plantCommand);
         return plantersCommand;
     }
 

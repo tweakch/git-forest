@@ -1,16 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\GitForest.Core\GitForest.Core.csproj" />
-    <ProjectReference Include="..\GitForest.Application\GitForest.Application.csproj" />
-    <ProjectReference Include="..\GitForest.Infrastructure.FileSystem\GitForest.Infrastructure.FileSystem.csproj" />
-    <ProjectReference Include="..\GitForest.Infrastructure.Memory\GitForest.Infrastructure.Memory.csproj" />
-    <ProjectReference Include="..\GitForest.Mediator\GitForest.Mediator.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\GitForest.Core\GitForest.Core.csproj" />
+        <ProjectReference Include="..\GitForest.Application\GitForest.Application.csproj" />
+        <ProjectReference Include="..\GitForest.Infrastructure.FileSystem\GitForest.Infrastructure.FileSystem.csproj" />
+        <ProjectReference Include="..\GitForest.Infrastructure.Memory\GitForest.Infrastructure.Memory.csproj" />
+        <ProjectReference Include="..\GitForest.Mediator\GitForest.Mediator.csproj" />
+    </ItemGroup>
 </Project>

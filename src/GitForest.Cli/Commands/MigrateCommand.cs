@@ -1,4 +1,5 @@
 using System.CommandLine;
+using GitForest.Application.Configuration;
 using GitForest.Cli.Orleans;
 using GitForest.Core;
 using GitForest.Core.Persistence;
@@ -195,6 +196,7 @@ public static class MigrateCommand
             Branches = source.Branches is null
                 ? new List<string>()
                 : new List<string>(source.Branches),
+            SelectedBranch = source.SelectedBranch,
             CreatedDate = source.CreatedDate,
             LastActivityDate = source.LastActivityDate,
         };

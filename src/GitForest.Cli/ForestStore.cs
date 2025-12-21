@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using GitForest.Application.Configuration;
 using GitForest.Infrastructure.FileSystem.Serialization;
 
 namespace GitForest.Cli;
@@ -301,7 +302,7 @@ internal static class ForestStore
                 : new List<string> { "default-plant" };
         var planners =
             plan.Planners.Count > 0 ? plan.Planners : new List<string> { "default-planner" };
-        var planters = plan.Planters.Count > 0 ? plan.Planters : new List<string>();
+        var planters = plan.Planters.Count > 0 ? plan.Planters : Array.Empty<string>();
 
         var created = 0;
         var updated = 0;
@@ -316,7 +317,7 @@ internal static class ForestStore
 
             var plannerId = planners[i % planners.Count];
             var assignedPlanters =
-                planters.Count > 0 ? new[] { planters[i % planters.Count] } : Array.Empty<string>();
+                planters.Count > 0 ? new[] { planters[0] } : Array.Empty<string>();
 
             var now = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
             var plant = new PlantRecord(
@@ -327,6 +328,7 @@ internal static class ForestStore
                 PlannerId: plannerId,
                 AssignedPlanters: assignedPlanters,
                 Branches: Array.Empty<string>(),
+                SelectedBranch: null,
                 CreatedAt: now,
                 UpdatedAt: null
             );
@@ -636,6 +638,7 @@ internal static class ForestStore
             PlannerId: plant.PlannerId,
             AssignedPlanters: plant.AssignedPlanters ?? Array.Empty<string>(),
             Branches: plant.Branches ?? Array.Empty<string>(),
+            SelectedBranch: plant.SelectedBranch,
             CreatedAt: plant.CreatedAt,
             UpdatedAt: plant.UpdatedAt,
             Description: null
@@ -652,6 +655,7 @@ internal static class ForestStore
             PlannerId: plant.PlannerId,
             AssignedPlanters: plant.AssignedPlanters ?? Array.Empty<string>(),
             Branches: plant.Branches ?? Array.Empty<string>(),
+            SelectedBranch: plant.SelectedBranch,
             CreatedAt: plant.CreatedAt,
             UpdatedAt: plant.UpdatedAt
         );
@@ -681,6 +685,7 @@ internal static class ForestStore
         string? PlannerId,
         IReadOnlyList<string> AssignedPlanters,
         IReadOnlyList<string> Branches,
+        string? SelectedBranch,
         string CreatedAt,
         string? UpdatedAt
     );

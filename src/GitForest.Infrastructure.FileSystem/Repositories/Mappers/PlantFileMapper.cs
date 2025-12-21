@@ -31,6 +31,9 @@ internal static class PlantFileMapper
             PlannerId: string.IsNullOrWhiteSpace(plant.PlannerId) ? null : plant.PlannerId,
             AssignedPlanters: plant.AssignedPlanters ?? new List<string>(),
             Branches: plant.Branches ?? new List<string>(),
+            SelectedBranch: string.IsNullOrWhiteSpace(plant.SelectedBranch)
+                ? null
+                : plant.SelectedBranch,
             CreatedAt: created.ToString("O", CultureInfo.InvariantCulture),
             UpdatedAt: updated?.ToString("O", CultureInfo.InvariantCulture),
             Description: string.IsNullOrWhiteSpace(plant.Description) ? null : plant.Description
@@ -65,6 +68,9 @@ internal static class PlantFileMapper
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Select(x => x.Trim())
                 .ToList(),
+            SelectedBranch = string.IsNullOrWhiteSpace(model.SelectedBranch)
+                ? null
+                : model.SelectedBranch.Trim(),
             CreatedDate = created,
             LastActivityDate = updated,
         };

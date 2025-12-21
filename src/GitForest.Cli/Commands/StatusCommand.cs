@@ -149,19 +149,7 @@ public static class StatusCommand
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "forest_not_initialized",
-                            message: "Forest not initialized"
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: forest not initialized");
-                    }
-
-                    return ExitCodes.ForestNotInitialized;
+                    return BaseCommand.WriteForestNotInitialized(output);
                 }
             }
         );

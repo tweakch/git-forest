@@ -86,36 +86,11 @@ public static class PlanCommand
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "forest_not_initialized",
-                            message: "Forest not initialized"
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: forest not initialized");
-                    }
-
-                    return ExitCodes.ForestNotInitialized;
+                    return BaseCommand.WriteForestNotInitialized(output);
                 }
                 catch (AppPlans.PlanNotInstalledException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plan_not_found",
-                            message: "Plan not found",
-                            details: new { planId }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Error: plan not found: {planId}");
-                    }
-
-                    return ExitCodes.PlanNotFound;
+                    return BaseCommand.WritePlanNotFound(output, planId);
                 }
             }
         );

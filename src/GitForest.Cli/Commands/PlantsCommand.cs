@@ -88,19 +88,7 @@ public static class PlantsCommand
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "forest_not_initialized",
-                            message: "Forest not initialized"
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: forest not initialized");
-                    }
-
-                    return ExitCodes.ForestNotInitialized;
+                    return BaseCommand.WriteForestNotInitialized(output);
                 }
             }
         );
@@ -147,45 +135,29 @@ public static class PlantsCommand
                 var hasPlan = !string.IsNullOrWhiteSpace(planId);
                 if (hasSelector && hasPlan)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "invalid_arguments",
-                            message: "Use either <selector> or --plan (not both).",
-                            details: new { selector, planId }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine(
-                            "Error: use either <selector> or --plan (not both)."
-                        );
-                    }
-
-                    return ExitCodes.InvalidArguments;
+                    return BaseCommand.WriteInvalidArguments(
+                        output,
+                        "Use either <selector> or --plan (not both).",
+                        new { selector, planId }
+                    );
                 }
 
                 if (!hasSelector && !hasPlan)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "invalid_arguments",
-                            message: "Provide either <selector> or --plan.",
-                            details: null
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: provide either <selector> or --plan.");
-                    }
-
-                    return ExitCodes.InvalidArguments;
+                    return BaseCommand.WriteInvalidArguments(
+                        output,
+                        "Provide either <selector> or --plan.",
+                        details: null
+                    );
                 }
 
                 if (!dryRun && !yes)
                 {
-                    return WriteConfirmationRequired(output);
+                    return BaseCommand.WriteConfirmationRequired(
+                        output,
+                        message: "Use --yes to remove a plant.",
+                        details: null
+                    );
                 }
 
                 try
@@ -272,44 +244,27 @@ public static class PlantsCommand
                 }
                 catch (InvalidOperationException ex)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "invalid_state",
-                            message: ex.Message,
-                            details: new { selector, force }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Error: {ex.Message}");
-                    }
-
-                    return ExitCodes.InvalidArguments;
+                    return BaseCommand.WriteInvalidState(
+                        output,
+                        message: ex.Message,
+                        details: new { selector, force }
+                    );
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "forest_not_initialized",
-                            message: "Forest not initialized"
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: forest not initialized");
-                    }
-
-                    return ExitCodes.ForestNotInitialized;
+                    return BaseCommand.WriteForestNotInitialized(output);
                 }
                 catch (AppPlantCmd.PlantNotFoundException)
                 {
-                    return WritePlantNotFound(output, selector ?? string.Empty);
+                    return BaseCommand.WritePlantNotFound(output, selector ?? string.Empty);
                 }
                 catch (AppPlantCmd.PlantAmbiguousSelectorException ex)
                 {
-                    return WritePlantAmbiguous(output, selector: ex.Selector, matches: ex.Matches);
+                    return BaseCommand.WritePlantAmbiguous(
+                        output,
+                        selector: ex.Selector,
+                        matches: ex.Matches
+                    );
                 }
             }
         );
@@ -317,62 +272,6 @@ public static class PlantsCommand
         plantsCommand.Subcommands.Add(listCommand);
         plantsCommand.Subcommands.Add(removeCommand);
         return plantsCommand;
-    }
-
-    private static int WriteConfirmationRequired(Output output)
-    {
-        if (output.Json)
-        {
-            output.WriteJsonError(
-                code: "confirmation_required",
-                message: "Use --yes to remove a plant.",
-                details: null
-            );
-        }
-        else
-        {
-            output.WriteErrorLine("Error: confirmation required. Re-run with --yes.");
-        }
-
-        return ExitCodes.InvalidArguments;
-    }
-
-    private static int WritePlantNotFound(Output output, string selector)
-    {
-        if (output.Json)
-        {
-            output.WriteJsonError(
-                code: "plant_not_found",
-                message: "Plant not found",
-                details: new { selector }
-            );
-        }
-        else
-        {
-            output.WriteErrorLine($"Plant '{selector}': not found");
-        }
-
-        return ExitCodes.PlantNotFoundOrAmbiguous;
-    }
-
-    private static int WritePlantAmbiguous(Output output, string selector, string[] matches)
-    {
-        if (output.Json)
-        {
-            output.WriteJsonError(
-                code: "plant_ambiguous",
-                message: "Plant selector is ambiguous",
-                details: new { selector, matches }
-            );
-        }
-        else
-        {
-            output.WriteErrorLine(
-                $"Plant '{selector}': ambiguous; matched {matches.Length} plants"
-            );
-        }
-
-        return ExitCodes.PlantNotFoundOrAmbiguous;
     }
 
     private static string Truncate(string value, int max)

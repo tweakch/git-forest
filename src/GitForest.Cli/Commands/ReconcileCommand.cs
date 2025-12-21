@@ -53,7 +53,7 @@ public static class ReconcileCommand
                     + (!string.IsNullOrWhiteSpace(plantSelector) ? 1 : 0);
                 if (specified != 1)
                 {
-                    return WriteInvalidArguments(
+                    return BaseCommand.WriteInvalidArguments(
                         output,
                         "Specify exactly one of: --all, --plan, or --plant",
                         new { all, planId, plant = plantSelector }
@@ -137,19 +137,23 @@ public static class ReconcileCommand
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    return WriteForestNotInitialized(output);
+                    return BaseCommand.WriteForestNotInitialized(output);
                 }
                 catch (AppPlantCmd.PlantNotFoundException)
                 {
-                    return WritePlantNotFound(output, plantSelector ?? string.Empty);
+                    return BaseCommand.WritePlantNotFound(output, plantSelector ?? string.Empty);
                 }
                 catch (AppPlantCmd.PlantAmbiguousSelectorException ex)
                 {
-                    return WritePlantAmbiguous(output, selector: ex.Selector, matches: ex.Matches);
+                    return BaseCommand.WritePlantAmbiguous(
+                        output,
+                        selector: ex.Selector,
+                        matches: ex.Matches
+                    );
                 }
                 catch (InvalidOperationException ex)
                 {
-                    return WriteInvalidArguments(
+                    return BaseCommand.WriteInvalidArguments(
                         output,
                         ex.Message,
                         new { all, planId, plant = plantSelector }
@@ -243,97 +247,28 @@ public static class ReconcileCommand
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    return WriteForestNotInitialized(output);
+                    return BaseCommand.WriteForestNotInitialized(output);
                 }
                 catch (AppPlantCmd.PlantNotFoundException)
                 {
-                    return WritePlantNotFound(output, selector);
+                    return BaseCommand.WritePlantNotFound(output, selector);
                 }
                 catch (AppPlantCmd.PlantAmbiguousSelectorException ex)
                 {
-                    return WritePlantAmbiguous(output, selector: ex.Selector, matches: ex.Matches);
+                    return BaseCommand.WritePlantAmbiguous(
+                        output,
+                        selector: ex.Selector,
+                        matches: ex.Matches
+                    );
                 }
                 catch (InvalidOperationException ex)
                 {
-                    return WriteInvalidArguments(output, ex.Message, new { selector });
+                    return BaseCommand.WriteInvalidArguments(output, ex.Message, new { selector });
                 }
             }
         );
 
         command.Subcommands.Add(plantCommand);
         return command;
-    }
-
-    private static int WriteForestNotInitialized(Output output)
-    {
-        if (output.Json)
-        {
-            output.WriteJsonError(
-                code: "forest_not_initialized",
-                message: "Forest not initialized"
-            );
-        }
-        else
-        {
-            output.WriteErrorLine("Error: forest not initialized");
-        }
-
-        return ExitCodes.ForestNotInitialized;
-    }
-
-    private static int WritePlantNotFound(Output output, string selector)
-    {
-        if (output.Json)
-        {
-            output.WriteJsonError(
-                code: "plant_not_found",
-                message: "Plant not found",
-                details: new { selector }
-            );
-        }
-        else
-        {
-            output.WriteErrorLine($"Plant '{selector}': not found");
-        }
-
-        return ExitCodes.PlantNotFoundOrAmbiguous;
-    }
-
-    private static int WritePlantAmbiguous(Output output, string selector, string[] matches)
-    {
-        if (output.Json)
-        {
-            output.WriteJsonError(
-                code: "plant_ambiguous",
-                message: "Plant selector is ambiguous",
-                details: new { selector, matches }
-            );
-        }
-        else
-        {
-            output.WriteErrorLine(
-                $"Plant '{selector}': ambiguous; matched {matches.Length} plants"
-            );
-        }
-
-        return ExitCodes.PlantNotFoundOrAmbiguous;
-    }
-
-    private static int WriteInvalidArguments(Output output, string message, object? details)
-    {
-        if (output.Json)
-        {
-            output.WriteJsonError(
-                code: "invalid_arguments",
-                message: message,
-                details: details
-            );
-        }
-        else
-        {
-            output.WriteErrorLine($"Error: {message}");
-        }
-
-        return ExitCodes.InvalidArguments;
     }
 }

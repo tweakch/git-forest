@@ -93,19 +93,7 @@ public static class PlantersCommand
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "forest_not_initialized",
-                            message: "Forest not initialized"
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: forest not initialized");
-                    }
-
-                    return ExitCodes.ForestNotInitialized;
+                    return BaseCommand.WriteForestNotInitialized(output);
                 }
             }
         );
@@ -158,7 +146,7 @@ public static class PlantersCommand
 
                 if (!all && string.IsNullOrWhiteSpace(planId))
                 {
-                    return WriteInvalidArguments(
+                    return BaseCommand.WriteInvalidArguments(
                         output,
                         "Specify --all or --plan",
                         new { all, planId }
@@ -167,7 +155,7 @@ public static class PlantersCommand
 
                 if (reset && onlyUnassigned)
                 {
-                    return WriteInvalidArguments(
+                    return BaseCommand.WriteInvalidArguments(
                         output,
                         "Cannot combine --reset with --only-unassigned",
                         new { reset, onlyUnassigned }
@@ -225,36 +213,11 @@ public static class PlantersCommand
                 }
                 catch (ForestStore.ForestNotInitializedException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "forest_not_initialized",
-                            message: "Forest not initialized"
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine("Error: forest not initialized");
-                    }
-
-                    return ExitCodes.ForestNotInitialized;
+                    return BaseCommand.WriteForestNotInitialized(output);
                 }
                 catch (AppPlans.PlanNotInstalledException)
                 {
-                    if (output.Json)
-                    {
-                        output.WriteJsonError(
-                            code: "plan_not_found",
-                            message: "Plan not found",
-                            details: new { planId }
-                        );
-                    }
-                    else
-                    {
-                        output.WriteErrorLine($"Error: plan not found: {planId}");
-                    }
-
-                    return ExitCodes.PlanNotFound;
+                    return BaseCommand.WritePlanNotFound(output, planId ?? string.Empty);
                 }
             }
         );
@@ -275,21 +238,4 @@ public static class PlantersCommand
         return value.Length <= max ? value : value[..Math.Max(0, max - 3)] + "...";
     }
 
-    private static int WriteInvalidArguments(Output output, string message, object? details)
-    {
-        if (output.Json)
-        {
-            output.WriteJsonError(
-                code: "invalid_arguments",
-                message: message,
-                details: details
-            );
-        }
-        else
-        {
-            output.WriteErrorLine($"Error: {message}");
-        }
-
-        return ExitCodes.InvalidArguments;
-    }
 }

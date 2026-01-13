@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.2" />
     <PackageReference Include="Microsoft.Orleans.Server" Version="9.2.1" />
     <PackageReference Include="Microsoft.Orleans.Persistence.Memory" Version="9.2.1" />
     <PackageReference Include="Microsoft.Orleans.Serialization.SystemTextJson" Version="9.2.1" />

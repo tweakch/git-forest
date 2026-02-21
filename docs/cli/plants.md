@@ -24,6 +24,18 @@ List plants.
 
 ```bash
 $ git-forest plants list
-Key                             Status   Title                         Plan   Planter
 No plants found
 ```
+
+### `plants remove`
+
+Remove a plant (by selector) or remove all plants for a plan.
+
+```bash
+git-forest plants remove [<selector>] [--plan <plan-id>] [--yes] [--force] [--dry-run] [--json]
+```
+
+Notes:
+
+- `--yes` is required unless `--dry-run`.
+- By default, removal is only allowed for `archived` plants; use `--force` to override.

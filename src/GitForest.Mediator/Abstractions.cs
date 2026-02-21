@@ -1,4 +1,4 @@
-namespace MediatR;
+namespace GitForest.Mediator;
 
 public interface IRequest<out TResponse> { }
 

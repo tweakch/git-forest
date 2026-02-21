@@ -1,5 +1,5 @@
 using GitForest.Core.Services;
-using MediatR;
+using GitForest.Mediator;
 
 namespace GitForest.Application.Features.Forest;
 

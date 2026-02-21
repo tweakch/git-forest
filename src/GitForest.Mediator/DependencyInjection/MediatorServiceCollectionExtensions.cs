@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Reflection;
-using MediatR;
-using Microsoft.Extensions.DependencyInjection;
+using GitForest.Mediator;
 
 namespace Microsoft.Extensions.DependencyInjection;
 

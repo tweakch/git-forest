@@ -47,7 +47,7 @@ public sealed class FileSystemReconciliationForum : IReconciliationForum
                 : new List<string> { "default-plant" };
         var planners =
             parsed.Planners.Count > 0 ? parsed.Planners : new List<string> { "default-planner" };
-        var planters = parsed.Planters.Count > 0 ? parsed.Planters : new List<string>();
+        _ = parsed.Planters; // planners/planters are resolved during assignment, not planning.
 
         var desired = new List<DesiredPlant>(templates.Count);
         for (var i = 0; i < templates.Count; i++)
@@ -56,9 +56,6 @@ public sealed class FileSystemReconciliationForum : IReconciliationForum
             var key = $"{planId}:{slug}";
 
             var plannerId = planners[i % planners.Count];
-            var assignedPlanters =
-                planters.Count > 0 ? new[] { planters[i % planters.Count] } : Array.Empty<string>();
-
             var title = $"{parsed.Name}".Trim() == string.Empty ? slug : $"{parsed.Name}: {slug}";
             desired.Add(
                 new DesiredPlant(
@@ -67,7 +64,7 @@ public sealed class FileSystemReconciliationForum : IReconciliationForum
                     Title: title,
                     Description: string.Empty,
                     PlannerId: plannerId,
-                    AssignedPlanters: assignedPlanters
+                    AssignedPlanters: Array.Empty<string>()
                 )
             );
         }

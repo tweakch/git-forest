@@ -13,6 +13,40 @@ namespace GitForest.Application.Tests;
 [TestFixture]
 public sealed class HandlerAndRepositoryTests
 {
+    private sealed class TestPlanterDiscovery : IPlanterDiscovery
+    {
+        private readonly HashSet<string> _customIds;
+
+        public TestPlanterDiscovery(IEnumerable<string>? customIds = null)
+        {
+            _customIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (customIds is null)
+            {
+                return;
+            }
+
+            foreach (var raw in customIds)
+            {
+                var id = (raw ?? string.Empty).Trim();
+                if (id.Length > 0)
+                {
+                    _customIds.Add(id);
+                }
+            }
+        }
+
+        public IReadOnlyList<string> ListCustomPlanterIds()
+        {
+            return _customIds.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray();
+        }
+
+        public bool CustomPlanterExists(string planterId)
+        {
+            var id = (planterId ?? string.Empty).Trim();
+            return id.Length > 0 && _customIds.Contains(id);
+        }
+    }
+
     [Test]
     public async Task ListPlants_returns_all_plants_sorted_by_key()
     {
@@ -233,7 +267,7 @@ public sealed class HandlerAndRepositoryTests
                 },
             }
         );
-        var planters = new InMemoryPlanterRepository();
+        var planters = new TestPlanterDiscovery();
 
         var handler = new ListPlantersHandler(plans, planters);
 
@@ -261,17 +295,7 @@ public sealed class HandlerAndRepositoryTests
                 },
             }
         );
-        var planters = new InMemoryPlanterRepository(
-            new[]
-            {
-                new Planter
-                {
-                    Id = "alpha",
-                    Type = "custom",
-                    Origin = "user",
-                },
-            }
-        );
+        var planters = new TestPlanterDiscovery(customIds: new[] { "alpha" });
 
         var handler = new GetPlanterHandler(plans, planters);
 

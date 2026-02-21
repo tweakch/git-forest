@@ -11,6 +11,7 @@ public sealed record PlantFileModel(
     string? PlannerId,
     IReadOnlyList<string> AssignedPlanters,
     IReadOnlyList<string> Branches,
+    string? SelectedBranch,
     string CreatedAt,
     string? UpdatedAt,
     string? Description
@@ -71,6 +72,11 @@ public static class PlantYamlLite
             }
         }
 
+        if (!string.IsNullOrWhiteSpace(plant.SelectedBranch))
+        {
+            sb.Append("selected_branch: ").Append(plant.SelectedBranch.Trim()).AppendLine();
+        }
+
         var createdAt = string.IsNullOrWhiteSpace(plant.CreatedAt)
             ? DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture)
             : plant.CreatedAt.Trim();
@@ -92,6 +98,7 @@ public static class PlantYamlLite
         string? plannerId = null;
         var assignedPlanters = new List<string>();
         var branches = new List<string>();
+        var selectedBranch = string.Empty;
         var createdAt = string.Empty;
         string? updatedAt = null;
 
@@ -139,6 +146,11 @@ public static class PlantYamlLite
                 if (TryParseScalar(line, "plan_id", out v))
                 {
                     planId = v;
+                    continue;
+                }
+                if (TryParseScalar(line, "selected_branch", out v))
+                {
+                    selectedBranch = v;
                     continue;
                 }
                 if (TryParseScalar(line, "created_at", out v))
@@ -236,6 +248,7 @@ public static class PlantYamlLite
             PlannerId: plannerId,
             AssignedPlanters: assignedPlanters,
             Branches: branches,
+            SelectedBranch: string.IsNullOrWhiteSpace(selectedBranch) ? null : selectedBranch,
             CreatedAt: createdAt,
             UpdatedAt: updatedAt,
             Description: string.IsNullOrWhiteSpace(description) ? null : description

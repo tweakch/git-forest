@@ -2,7 +2,7 @@ using GitForest.Core.Persistence;
 using GitForest.Core.Services;
 using GitForest.Core.Specifications.Plans;
 using GitForest.Core.Specifications.Plants;
-using MediatR;
+using GitForest.Mediator;
 
 namespace GitForest.Application.Features.Forest;
 

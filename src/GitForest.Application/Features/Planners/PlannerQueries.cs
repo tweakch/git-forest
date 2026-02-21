@@ -1,6 +1,6 @@
 using GitForest.Core.Persistence;
 using GitForest.Core.Specifications.Plans;
-using MediatR;
+using GitForest.Mediator;
 
 namespace GitForest.Application.Features.Planners;
 

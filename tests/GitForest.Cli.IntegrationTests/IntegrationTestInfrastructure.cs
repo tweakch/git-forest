@@ -14,14 +14,54 @@ internal static class TestEnvironments
             ["DOTNET_NOLOGO"] = "1",
             ["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1",
             ["DOTNET_SKIP_FIRST_TIME_EXPERIENCE"] = "1",
+            // Avoid localized .NET CLI output affecting string-based assertions.
+            ["DOTNET_CLI_UI_LANGUAGE"] = "en-US",
         };
 
-    public static IReadOnlyDictionary<string, string> Git { get; } =
+    public static IReadOnlyDictionary<string, string> GitBase { get; } =
         new Dictionary<string, string>
         {
             ["GIT_TERMINAL_PROMPT"] = "0",
             ["GIT_CONFIG_NOSYSTEM"] = "1",
+            // Never paginate in test runners (prevents hanging / truncated output).
+            ["GIT_PAGER"] = "cat",
+            ["PAGER"] = "cat",
         };
+
+    public static IReadOnlyDictionary<string, string> CliBase { get; } =
+        new Dictionary<string, string>
+        {
+            // Prefer deterministic, uncolored output.
+            ["NO_COLOR"] = "1",
+            ["CLICOLOR"] = "0",
+        };
+
+    public static IReadOnlyDictionary<string, string> CreateGitSandbox(string gitConfigGlobalPath)
+    {
+        Assert.That(
+            File.Exists(gitConfigGlobalPath),
+            Is.True,
+            () => $"Expected git global config file at: {gitConfigGlobalPath}"
+        );
+
+        return Merge(GitBase, new Dictionary<string, string> { ["GIT_CONFIG_GLOBAL"] = gitConfigGlobalPath });
+    }
+
+    public static IReadOnlyDictionary<string, string> Merge(
+        params IReadOnlyDictionary<string, string>[] environments
+    )
+    {
+        var merged = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var env in environments)
+        {
+            foreach (var (key, value) in env)
+            {
+                merged[key] = value;
+            }
+        }
+
+        return merged;
+    }
 }
 
 internal static class RepoPaths
@@ -69,6 +109,8 @@ internal static class ProcessRunner
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true,
+                StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8,
             },
         };
 
@@ -126,12 +168,25 @@ internal static class ProcessRunner
             catch
             { /* ignore */
             }
+
+            try
+            {
+                await process.WaitForExitAsync(CancellationToken.None);
+            }
+            catch
+            { /* ignore */
+            }
             sw.Stop();
             TestContext.Progress.WriteLine(
                 $"[proc:timeout] {commandLine}\n  elapsedMs: {sw.ElapsedMilliseconds}\n"
             );
-            throw new TimeoutException($"Process timed out after {timeout}: {commandLine}");
+            throw new TimeoutException(
+                $"Process timed out after {timeout}: {commandLine}\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}"
+            );
         }
+
+        // When using async output reading, wait for all events to flush.
+        process.WaitForExit();
 
         sw.Stop();
 
@@ -184,7 +239,7 @@ internal static class GitRepo
         await EnsureSuccessAsync(
             await ProcessRunner.RunAsync(
                 "git",
-                ["init"],
+                ["init", "--initial-branch", "main"],
                 directory,
                 environmentVariables,
                 TimeSpan.FromMinutes(1)
@@ -255,14 +310,18 @@ internal static class GitRepo
 
 internal static class Git
 {
-    public static string AsText(string workingDirectory, IReadOnlyList<string> args)
+    public static string AsText(
+        string workingDirectory,
+        IReadOnlyList<string> args,
+        IReadOnlyDictionary<string, string>? environmentVariables = null
+    )
     {
         var result = ProcessRunner
             .RunAsync(
                 fileName: "git",
                 arguments: args,
                 workingDirectory: workingDirectory,
-                environmentVariables: TestEnvironments.Git,
+                environmentVariables: environmentVariables ?? TestEnvironments.GitBase,
                 timeout: TimeSpan.FromMinutes(1)
             )
             .GetAwaiter()
@@ -287,7 +346,8 @@ internal static class GitForestCli
     public static async Task<ProcessResult> RunAsync(
         string workingDirectory,
         IReadOnlyList<string> args,
-        TimeSpan timeout
+        TimeSpan timeout,
+        IReadOnlyDictionary<string, string> environmentVariables
     )
     {
         var cliDll = await GetCliDllPathAsync();
@@ -298,7 +358,7 @@ internal static class GitForestCli
             fileName: "dotnet",
             arguments: arguments,
             workingDirectory: workingDirectory,
-            environmentVariables: TestEnvironments.DotNet,
+            environmentVariables: environmentVariables,
             timeout: timeout
         );
     }
@@ -411,5 +471,134 @@ internal static class ToolPaths
         }
 
         return Path.Combine(toolPathDirectory, fileName);
+    }
+}
+
+internal sealed class TestWorkspace : IAsyncDisposable
+{
+    private bool _succeeded;
+
+    private TestWorkspace(
+        string rootDirectory,
+        string repoDirectory,
+        IReadOnlyDictionary<string, string> dotNetEnvironment,
+        IReadOnlyDictionary<string, string> gitEnvironment,
+        IReadOnlyDictionary<string, string> cliEnvironment
+    )
+    {
+        RootDirectory = rootDirectory;
+        RepoDirectory = repoDirectory;
+        DotNetEnvironment = dotNetEnvironment;
+        GitEnvironment = gitEnvironment;
+        CliEnvironment = cliEnvironment;
+    }
+
+    public string RootDirectory { get; }
+    public string RepoDirectory { get; }
+    public IReadOnlyDictionary<string, string> DotNetEnvironment { get; }
+    public IReadOnlyDictionary<string, string> GitEnvironment { get; }
+    public IReadOnlyDictionary<string, string> CliEnvironment { get; }
+
+    public Task<ProcessResult> RunGitForestAsync(IReadOnlyList<string> args, TimeSpan timeout) =>
+        GitForestCli.RunAsync(
+            workingDirectory: RepoDirectory,
+            args: args,
+            timeout: timeout,
+            environmentVariables: CliEnvironment
+        );
+
+    public Task<ProcessResult> RunGitAsync(IReadOnlyList<string> args, TimeSpan timeout) =>
+        ProcessRunner.RunAsync(
+            fileName: "git",
+            arguments: args,
+            workingDirectory: RepoDirectory,
+            environmentVariables: GitEnvironment,
+            timeout: timeout
+        );
+
+    public string GitAsText(IReadOnlyList<string> args) =>
+        Git.AsText(RepoDirectory, args, GitEnvironment);
+
+    public static TestWorkspace Create()
+    {
+        var rootDirectory = Path.Combine(
+            Path.GetTempPath(),
+            "git-forest-integration",
+            Guid.NewGuid().ToString("N")
+        );
+        Directory.CreateDirectory(rootDirectory);
+
+        var repoDirectory = Path.Combine(rootDirectory, "repo");
+        Directory.CreateDirectory(repoDirectory);
+
+        // Isolate git from developer/CI global config.
+        var gitConfigGlobalPath = Path.Combine(rootDirectory, "gitconfig-global");
+        File.WriteAllText(gitConfigGlobalPath, string.Empty, Encoding.UTF8);
+
+        var dotNetEnvironment = TestEnvironments.DotNet;
+        var gitEnvironment = TestEnvironments.CreateGitSandbox(gitConfigGlobalPath);
+        var cliEnvironment = TestEnvironments.Merge(
+            TestEnvironments.DotNet,
+            gitEnvironment,
+            TestEnvironments.CliBase
+        );
+
+        TestContext.Progress.WriteLine($"[workspace] {rootDirectory}");
+        return new TestWorkspace(
+            rootDirectory,
+            repoDirectory,
+            dotNetEnvironment,
+            gitEnvironment,
+            cliEnvironment
+        );
+    }
+
+    public string CreateDirectory(params string[] segments)
+    {
+        var path = RootDirectory;
+        foreach (var segment in segments)
+        {
+            path = Path.Combine(path, segment);
+        }
+
+        Directory.CreateDirectory(path);
+        return path;
+    }
+
+    public void MarkSucceeded() => _succeeded = true;
+
+    public ValueTask DisposeAsync()
+    {
+        if (ShouldKeepTemp() || !_succeeded)
+        {
+            TestContext.Progress.WriteLine($"[workspace:keep] {RootDirectory}");
+            return ValueTask.CompletedTask;
+        }
+
+        try
+        {
+            if (Directory.Exists(RootDirectory))
+            {
+                Directory.Delete(RootDirectory, recursive: true);
+            }
+        }
+        catch
+        {
+            // Best-effort cleanup.
+            TestContext.Progress.WriteLine($"[workspace:cleanup-failed] {RootDirectory}");
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
+    private static bool ShouldKeepTemp()
+    {
+        var raw = Environment.GetEnvironmentVariable("GITFOREST_IT_KEEP_TEMP");
+        return raw is not null
+            && (
+                string.Equals(raw, "1", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(raw, "true", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(raw, "yes", StringComparison.OrdinalIgnoreCase)
+            );
     }
 }

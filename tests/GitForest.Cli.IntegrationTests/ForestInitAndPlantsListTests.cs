@@ -27,33 +27,16 @@ public sealed class ForestInitAndPlantsListTests
             () => $"Expected plan file to exist in repo: {planSource}"
         );
 
-        var tempRoot = Path.Combine(
-            Path.GetTempPath(),
-            "git-forest-integration",
-            Guid.NewGuid().ToString("N")
-        );
-        Directory.CreateDirectory(tempRoot);
+        await using var workspace = TestWorkspace.Create();
 
-        var workingRepoDir = Path.Combine(tempRoot, "repo");
-        Directory.CreateDirectory(workingRepoDir);
-
-        try
         {
-            await GitRepo.CreateAsync(workingRepoDir, TestEnvironments.Git);
+            await GitRepo.CreateAsync(workspace.RepoDirectory, workspace.GitEnvironment);
 
             // 1) init
-            var init = await GitForestCli.RunAsync(
-                workingRepoDir,
-                ["init"],
-                timeout: TimeSpan.FromMinutes(3)
-            );
-            Assert.That(
-                init.ExitCode,
-                Is.EqualTo(0),
-                () => $"git-forest init failed.\nSTDOUT:\n{init.StdOut}\nSTDERR:\n{init.StdErr}"
-            );
+            var init = await workspace.RunGitForestAsync(["init"], timeout: TimeSpan.FromMinutes(3));
+            CliTestAsserts.Succeeded(init, "git-forest init failed");
 
-            var forestDir = Path.Combine(workingRepoDir, ".git-forest");
+            var forestDir = Path.Combine(workspace.RepoDirectory, ".git-forest");
             Assert.That(
                 Directory.Exists(forestDir),
                 Is.True,
@@ -103,17 +86,11 @@ public sealed class ForestInitAndPlantsListTests
             );
 
             // 2) plans install
-            var install = await GitForestCli.RunAsync(
-                workingRepoDir,
+            var install = await workspace.RunGitForestAsync(
                 ["plans", "install", planSource],
                 timeout: TimeSpan.FromMinutes(3)
             );
-            Assert.That(
-                install.ExitCode,
-                Is.EqualTo(0),
-                () =>
-                    $"git-forest plans install failed.\nSTDOUT:\n{install.StdOut}\nSTDERR:\n{install.StdErr}"
-            );
+            CliTestAsserts.Succeeded(install, "git-forest plans install failed");
 
             var installedPlanYaml = Path.Combine(
                 forestDir,
@@ -128,17 +105,11 @@ public sealed class ForestInitAndPlantsListTests
             );
 
             // 3) plan reconcile (seed plants deterministically)
-            var reconcile = await GitForestCli.RunAsync(
-                workingRepoDir,
+            var reconcile = await workspace.RunGitForestAsync(
                 ["plan", "integration-testing-harness", "reconcile"],
                 timeout: TimeSpan.FromMinutes(3)
             );
-            Assert.That(
-                reconcile.ExitCode,
-                Is.EqualTo(0),
-                () =>
-                    $"git-forest plan reconcile failed.\nSTDOUT:\n{reconcile.StdOut}\nSTDERR:\n{reconcile.StdErr}"
-            );
+            CliTestAsserts.Succeeded(reconcile, "git-forest plan reconcile failed");
 
             var seededPlantYaml = Path.Combine(
                 forestDir,
@@ -154,17 +125,11 @@ public sealed class ForestInitAndPlantsListTests
             var seededPlantYamlBefore = await File.ReadAllTextAsync(seededPlantYaml, Encoding.UTF8);
 
             // 3b) second reconcile should be idempotent (no duplicates, no rewrites)
-            var reconcile2 = await GitForestCli.RunAsync(
-                workingRepoDir,
+            var reconcile2 = await workspace.RunGitForestAsync(
                 ["plan", "integration-testing-harness", "reconcile"],
                 timeout: TimeSpan.FromMinutes(3)
             );
-            Assert.That(
-                reconcile2.ExitCode,
-                Is.EqualTo(0),
-                () =>
-                    $"git-forest plan reconcile (second run) failed.\nSTDOUT:\n{reconcile2.StdOut}\nSTDERR:\n{reconcile2.StdErr}"
-            );
+            CliTestAsserts.Succeeded(reconcile2, "git-forest plan reconcile (second run) failed");
             var seededPlantYamlAfter = await File.ReadAllTextAsync(seededPlantYaml, Encoding.UTF8);
             Assert.That(
                 seededPlantYamlAfter,
@@ -173,17 +138,8 @@ public sealed class ForestInitAndPlantsListTests
             );
 
             // 4) plants list (human output should include key + plan + planter)
-            var list = await GitForestCli.RunAsync(
-                workingRepoDir,
-                ["plants", "list"],
-                timeout: TimeSpan.FromMinutes(1)
-            );
-            Assert.That(
-                list.ExitCode,
-                Is.EqualTo(0),
-                () =>
-                    $"git-forest plants list failed.\nSTDOUT:\n{list.StdOut}\nSTDERR:\n{list.StdErr}"
-            );
+            var list = await workspace.RunGitForestAsync(["plants", "list"], timeout: TimeSpan.FromMinutes(1));
+            CliTestAsserts.Succeeded(list, "git-forest plants list failed");
             Assert.That(
                 list.StdOut,
                 Does.Contain("integration-testing-harness:add-integration-tests")
@@ -196,17 +152,11 @@ public sealed class ForestInitAndPlantsListTests
             );
 
             // 4b) plant <key> show should resolve the plant and show details (regression for stub implementation)
-            var show = await GitForestCli.RunAsync(
-                workingRepoDir,
+            var show = await workspace.RunGitForestAsync(
                 ["plant", "integration-testing-harness:add-integration-tests", "show"],
                 timeout: TimeSpan.FromMinutes(1)
             );
-            Assert.That(
-                show.ExitCode,
-                Is.EqualTo(0),
-                () =>
-                    $"git-forest plant <key> show failed.\nSTDOUT:\n{show.StdOut}\nSTDERR:\n{show.StdErr}"
-            );
+            CliTestAsserts.Succeeded(show, "git-forest plant <key> show failed");
             Assert.That(
                 show.StdOut,
                 Does.Contain("Key: integration-testing-harness:add-integration-tests")
@@ -214,19 +164,16 @@ public sealed class ForestInitAndPlantsListTests
             Assert.That(show.StdOut, Does.Contain("Plan: integration-testing-harness"));
 
             // 4a2) planters list --json should include the planter IDs
-            var plantersJson = await GitForestCli.RunAsync(
-                workingRepoDir,
+            var plantersJson = await workspace.RunGitForestAsync(
                 ["planters", "list", "--json"],
                 timeout: TimeSpan.FromMinutes(1)
             );
-            Assert.That(
-                plantersJson.ExitCode,
-                Is.EqualTo(0),
-                () =>
-                    $"git-forest planters list --json failed.\nSTDOUT:\n{plantersJson.StdOut}\nSTDERR:\n{plantersJson.StdErr}"
-            );
+            CliTestAsserts.Succeeded(plantersJson, "git-forest planters list --json failed");
 
-            using (var plantersDoc = JsonDocument.Parse(plantersJson.StdOut.Trim()))
+            using (var plantersDoc = CliTestAsserts.ParseJsonFromStdOut(
+                       plantersJson,
+                       "git-forest planters list --json"
+                   ))
             {
                 var rootPlanters = plantersDoc.RootElement;
                 Assert.That(
@@ -249,19 +196,16 @@ public sealed class ForestInitAndPlantsListTests
             }
 
             // 4c) planners list --json should include the planner IDs
-            var plannersJson = await GitForestCli.RunAsync(
-                workingRepoDir,
+            var plannersJson = await workspace.RunGitForestAsync(
                 ["planners", "list", "--json"],
                 timeout: TimeSpan.FromMinutes(1)
             );
-            Assert.That(
-                plannersJson.ExitCode,
-                Is.EqualTo(0),
-                () =>
-                    $"git-forest planners list --json failed.\nSTDOUT:\n{plannersJson.StdOut}\nSTDERR:\n{plannersJson.StdErr}"
-            );
+            CliTestAsserts.Succeeded(plannersJson, "git-forest planners list --json failed");
 
-            using (var plannersDoc = JsonDocument.Parse(plannersJson.StdOut.Trim()))
+            using (var plannersDoc = CliTestAsserts.ParseJsonFromStdOut(
+                       plannersJson,
+                       "git-forest planners list --json"
+                   ))
             {
                 var rootPlanners = plannersDoc.RootElement;
                 Assert.That(rootPlanners.TryGetProperty("planners", out var planners), Is.True);
@@ -281,19 +225,13 @@ public sealed class ForestInitAndPlantsListTests
             }
 
             // 5) plants list --json should reference planner + planters explicitly
-            var listJson = await GitForestCli.RunAsync(
-                workingRepoDir,
+            var listJson = await workspace.RunGitForestAsync(
                 ["plants", "list", "--json"],
                 timeout: TimeSpan.FromMinutes(1)
             );
-            Assert.That(
-                listJson.ExitCode,
-                Is.EqualTo(0),
-                () =>
-                    $"git-forest plants list --json failed.\nSTDOUT:\n{listJson.StdOut}\nSTDERR:\n{listJson.StdErr}"
-            );
+            CliTestAsserts.Succeeded(listJson, "git-forest plants list --json failed");
 
-            using var doc = JsonDocument.Parse(listJson.StdOut.Trim());
+            using var doc = CliTestAsserts.ParseJsonFromStdOut(listJson, "git-forest plants list --json");
             var root = doc.RootElement;
             Assert.That(root.TryGetProperty("plants", out var plants), Is.True);
             Assert.That(plants.ValueKind, Is.EqualTo(JsonValueKind.Array));
@@ -332,20 +270,8 @@ public sealed class ForestInitAndPlantsListTests
                 planters.EnumerateArray().Select(x => x.GetString()).ToArray(),
                 Does.Contain("harness-builder")
             );
-        }
-        finally
-        {
-            try
-            {
-                if (Directory.Exists(tempRoot))
-                {
-                    Directory.Delete(tempRoot, recursive: true);
-                }
-            }
-            catch
-            {
-                // best-effort cleanup
-            }
+
+            workspace.MarkSucceeded();
         }
     }
 
@@ -367,82 +293,46 @@ public sealed class ForestInitAndPlantsListTests
             () => $"Expected plan file to exist in repo: {planSource}"
         );
 
-        var tempRoot = Path.Combine(
-            Path.GetTempPath(),
-            "git-forest-integration",
-            Guid.NewGuid().ToString("N")
-        );
-        Directory.CreateDirectory(tempRoot);
+        await using var workspace = TestWorkspace.Create();
 
-        var workingRepoDir = Path.Combine(tempRoot, "repo");
-        Directory.CreateDirectory(workingRepoDir);
-
-        try
         {
-            await GitRepo.CreateAsync(workingRepoDir, TestEnvironments.Git);
+            await GitRepo.CreateAsync(workspace.RepoDirectory, workspace.GitEnvironment);
 
             // init + install + reconcile
-            Assert.That(
-                (
-                    await GitForestCli.RunAsync(
-                        workingRepoDir,
-                        ["init"],
-                        timeout: TimeSpan.FromMinutes(3)
-                    )
-                ).ExitCode,
-                Is.EqualTo(0)
+            var init = await workspace.RunGitForestAsync(["init"], timeout: TimeSpan.FromMinutes(3));
+            CliTestAsserts.Succeeded(init, "git-forest init failed");
+
+            var install = await workspace.RunGitForestAsync(
+                ["plans", "install", planSource],
+                timeout: TimeSpan.FromMinutes(3)
             );
-            Assert.That(
-                (
-                    await GitForestCli.RunAsync(
-                        workingRepoDir,
-                        ["plans", "install", planSource],
-                        timeout: TimeSpan.FromMinutes(3)
-                    )
-                ).ExitCode,
-                Is.EqualTo(0)
+            CliTestAsserts.Succeeded(install, "git-forest plans install failed");
+
+            var reconcile = await workspace.RunGitForestAsync(
+                ["plan", "integration-testing-harness", "reconcile"],
+                timeout: TimeSpan.FromMinutes(3)
             );
-            Assert.That(
-                (
-                    await GitForestCli.RunAsync(
-                        workingRepoDir,
-                        ["plan", "integration-testing-harness", "reconcile"],
-                        timeout: TimeSpan.FromMinutes(3)
-                    )
-                ).ExitCode,
-                Is.EqualTo(0)
-            );
+            CliTestAsserts.Succeeded(reconcile, "git-forest plan reconcile failed");
 
             var plantKey = "integration-testing-harness:add-integration-tests";
             var planterId = "harness-builder";
 
             // planned -> planted (assign)
-            var assign = await GitForestCli.RunAsync(
-                workingRepoDir,
+            var assign = await workspace.RunGitForestAsync(
                 ["plant", plantKey, "assign", planterId],
                 timeout: TimeSpan.FromMinutes(1)
             );
-            Assert.That(
-                assign.ExitCode,
-                Is.EqualTo(0),
-                () => $"assign failed\nSTDOUT:\n{assign.StdOut}\nSTDERR:\n{assign.StdErr}"
-            );
+            CliTestAsserts.Succeeded(assign, "assign failed");
 
             // planter plant (branch + record branch)
-            var plant = await GitForestCli.RunAsync(
-                workingRepoDir,
+            var plant = await workspace.RunGitForestAsync(
                 ["planter", planterId, "plant", plantKey, "--branch", "auto", "--yes"],
                 timeout: TimeSpan.FromMinutes(2)
             );
-            Assert.That(
-                plant.ExitCode,
-                Is.EqualTo(0),
-                () => $"planter plant failed\nSTDOUT:\n{plant.StdOut}\nSTDERR:\n{plant.StdErr}"
-            );
+            CliTestAsserts.Succeeded(plant, "planter plant failed");
 
             // branch exists + checked out
-            var headBranch = Git.AsText(workingRepoDir, ["rev-parse", "--abbrev-ref", "HEAD"])
-                .Trim();
+            var headBranch = workspace.GitAsText(["rev-parse", "--abbrev-ref", "HEAD"]).Trim();
             Assert.That(
                 headBranch.StartsWith(planterId + "/", StringComparison.OrdinalIgnoreCase),
                 Is.True,
@@ -450,72 +340,45 @@ public sealed class ForestInitAndPlantsListTests
             );
 
             // grow apply (writes README marker and commits)
-            var grow = await GitForestCli.RunAsync(
-                workingRepoDir,
+            var grow = await workspace.RunGitForestAsync(
                 ["planter", planterId, "grow", plantKey, "--mode", "apply"],
                 timeout: TimeSpan.FromMinutes(2)
             );
-            Assert.That(
-                grow.ExitCode,
-                Is.EqualTo(0),
-                () => $"grow failed\nSTDOUT:\n{grow.StdOut}\nSTDERR:\n{grow.StdErr}"
-            );
+            CliTestAsserts.Succeeded(grow, "grow failed");
 
             // one new commit should exist on the branch
-            var log = Git.AsText(workingRepoDir, ["log", "--max-count", "1", "--pretty=%B"]).Trim();
+            var log = workspace.GitAsText(["log", "--max-count", "1", "--pretty=%B"]).Trim();
             Assert.That(log, Does.Contain($"git-forest: grow {plantKey}"));
 
             // harvestable -> harvested
-            var harvest = await GitForestCli.RunAsync(
-                workingRepoDir,
+            var harvest = await workspace.RunGitForestAsync(
                 ["plant", plantKey, "harvest"],
                 timeout: TimeSpan.FromMinutes(1)
             );
-            Assert.That(
-                harvest.ExitCode,
-                Is.EqualTo(0),
-                () => $"harvest failed\nSTDOUT:\n{harvest.StdOut}\nSTDERR:\n{harvest.StdErr}"
-            );
+            CliTestAsserts.Succeeded(harvest, "harvest failed");
 
             // harvested -> archived
-            var archive = await GitForestCli.RunAsync(
-                workingRepoDir,
+            var archive = await workspace.RunGitForestAsync(
                 ["plant", plantKey, "archive"],
                 timeout: TimeSpan.FromMinutes(1)
             );
-            Assert.That(
-                archive.ExitCode,
-                Is.EqualTo(0),
-                () => $"archive failed\nSTDOUT:\n{archive.StdOut}\nSTDERR:\n{archive.StdErr}"
-            );
+            CliTestAsserts.Succeeded(archive, "archive failed");
 
             // status should count archived >= 1
-            var status = await GitForestCli.RunAsync(
-                workingRepoDir,
+            var status = await workspace.RunGitForestAsync(
                 ["status", "--json"],
                 timeout: TimeSpan.FromMinutes(1)
             );
-            Assert.That(status.ExitCode, Is.EqualTo(0));
-            using var statusDoc = JsonDocument.Parse(status.StdOut.Trim());
+            CliTestAsserts.Succeeded(status, "git-forest status --json failed");
+
+            using var statusDoc = CliTestAsserts.ParseJsonFromStdOut(status, "git-forest status --json");
             var plantsByStatus = statusDoc.RootElement.GetProperty("plantsByStatus");
             Assert.That(
                 plantsByStatus.GetProperty("archived").GetInt32(),
                 Is.GreaterThanOrEqualTo(1)
             );
-        }
-        finally
-        {
-            try
-            {
-                if (Directory.Exists(tempRoot))
-                {
-                    Directory.Delete(tempRoot, recursive: true);
-                }
-            }
-            catch
-            {
-                // best-effort cleanup
-            }
+
+            workspace.MarkSucceeded();
         }
     }
 }
